@@ -48,14 +48,14 @@ def _get_columns(table_name):
     describe  {table_name}
     """
     sdf = spark.sql(sql)
-    df1 = sdf.toPandas()
+    table_df = sdf.toPandas()
 
     float_list = []
     int_list = []
     timestamp = []
     string_list = []
 
-    for index, row in df1.iterrows():
+    for index, row in table_df.iterrows():
         if ('decimal' in row['data_type']) or 'double' in row['data_type']:
             float_list.append(row['col_name'])
 
@@ -68,10 +68,10 @@ def _get_columns(table_name):
         elif 'string' in row['data_type']:
             string_list.append(row['col_name'])
 
-    if len(df1) != len(string_list) + len(timestamp) + len(int_list) + len(float_list):
+    if len(table_df) != len(string_list) + len(timestamp) + len(int_list) + len(float_list):
         print('some columns are missing!')
-        missing = df1['col_name'][
-            ~df1['col_name'].isin(float_list + int_list + timestamp + string_list)]
+        missing = table_df['col_name'][
+            ~table_df['col_name'].isin(float_list + int_list + timestamp + string_list)]
         print('missings = ', missing)
 
     return int_list, float_list, timestamp, string_list
@@ -102,8 +102,6 @@ def read_data(df, table_name):
     df = df[np.isfinite(df['item_id'])]
     df = df[np.isfinite(df['sub_id'])]
 
-    print(1/4)
-
     for i in int_list + string_list:
         try:
             df[i] = df[i].astype(int)
@@ -115,8 +113,6 @@ def read_data(df, table_name):
             #print('type int, error on ', i)
             float_list.append(i)
             continue
-
-    print(2/4)
 
     for i in float_list + string_list:
         try:
@@ -137,7 +133,7 @@ def read_data(df, table_name):
             #print('type datetime, error on ', i)
             string_list.append(i)
             continue
-    print(3/4)
+
     errors = []
     for i in string_list:
         try:
@@ -147,7 +143,6 @@ def read_data(df, table_name):
             errors.append(i)
             continue
 
-    print(4/4)
     df['full_item'] = df['item_id'].astype(str) + '_' + df['sub_id'].astype(str)
     df['item_store'] = df['full_item'] + '_' + df['store_code'].astype(str)
 
@@ -182,36 +177,36 @@ def read_features(features_folder):
     for file in glob.glob(features_folder + "/*.csv"):
         features_files.append(file)
 
-    dumm = [s for s in features_files if 'dummies_features' in s]
-    flat = [s for s in features_files if 'flat_features' in s]
-    time = [s for s in features_files if 'time_features' in s]
-    iden = [s for s in features_files if 'identification' in s]
+    dummy_features = [s for s in features_files if 'dummies_features' in s]
+    flat_features = [s for s in features_files if 'flat_features' in s]
+    time_features = [s for s in features_files if 'time_features' in s]
+    identification_features = [s for s in features_files if 'identification' in s]
 
-    if (len(dumm) != 1) or (len(flat) != 1) or (len(time) != 1) or (len(iden) != 1):
-        print('dumm', dumm)
-        print('flat', flat)
-        print('time', time)
-        print('iden', iden)
+    if (len(dummy_features) != 1) or (len(flat_features) != 1) or (len(time_features) != 1) or (len(identification_features) != 1):
+        print('dumm', dummy_features)
+        print('flat_features', flat_features)
+        print('time_features', time_features)
+        print('identification_features', identification_features)
         raise Exception('Multiple duplicated files in the features folder.')
 
-    dumm = dumm[0]
-    flat = flat[0]
-    time = time[0]
-    iden = iden[0]
+    dummy_features = dummy_features[0]
+    flat_features = flat_features[0]
+    time_features = time_features[0]
+    identification_features = identification_features[0]
 
-    dummies_features = pd.read_csv(dumm, squeeze=True).tolist()
-    flat_features = pd.read_csv(flat, squeeze=True).tolist()
-    identification = pd.read_csv(iden, squeeze=True).tolist()
+    dummies_features = pd.read_csv(dummy_features, squeeze=True).tolist()
+    flat_features = pd.read_csv(flat_features, squeeze=True).tolist()
+    identification = pd.read_csv(identification_features, squeeze=True).tolist()
 
     try:
-        time_features = pd.read_csv(time, squeeze=True).tolist()
-        feat = dummies_features + flat_features + time_features
+        time_features = pd.read_csv(time_features, squeeze=True).tolist()
+        features = dummies_features + flat_features + time_features
     except:
         time_features = []
-        feat = dummies_features + flat_features
+        features = dummies_features + flat_features
         print('Warning: no time features. Ignore if promo model.')
 
-    return feat, dummies_features, flat_features, time_features, identification
+    return features, dummies_features, flat_features, time_features, identification
 
 
 def get_dummies(df, dummies_names):
@@ -359,7 +354,6 @@ class Model():
         plt.show()
 
         graph_name = 'performance_graph_' + self.running_name + '_' + self.now + '_.png'
-        #plt.savefig(self.folder + graph_name)
 
         return plt
 
@@ -379,9 +373,6 @@ class Model():
         fig.set_size_inches(15, 20)
 
         graph_name = 'importance_graph_' + self.running_name + '_' + self.now + '_.png'
-        #plt.savefig(self.folder + graph_name)
-
-        # return fig
 
     def save_features_importance(self, file_name):
         """[Save and return feature importance]
@@ -395,7 +386,7 @@ class Model():
         features_xg = pd.DataFrame(
             self.boost.feature_importances_, columns=['value'])
         features_xg['features_names'] = self.features
-        #features_xg.sort_values('value', ascending=False).to_csv(file_name, index=False)
+
         return features_xg
 
     def _weeks_to_pred(self):
@@ -406,7 +397,7 @@ class Model():
         """
         self.weeks_to_pred = self.df.loc[self.df['week_end_date'] >
                                          self.date_starting_test, 'week_key'].sort_values().unique()
-        #print('weeks to pred = ', self.weeks_to_pred)
+
         return self.weeks_to_pred
 
     def predict(self, week_max=9):
@@ -436,7 +427,6 @@ class Model():
             method='ffill')
 
         X_test = df_forecast[self.features]
-        y_test = df_forecast[self.target_value]
 
         forecast = self.boost.predict(X_test)
 
@@ -446,14 +436,14 @@ class Model():
         else:
             df_forecast['forecast'] = forecast
 
-        usefull = ['item_store', 'week_key', 'forecast']
+        useful = ['item_store', 'week_key', 'forecast']
         weeks = self._weeks_to_pred()[:week_max].astype(float)
         df_forecast = df_forecast[df_forecast['week_key'].astype(
             float).isin(weeks)]
 
         self.df_forecast = df_forecast
         self.df['week_key'] = self.df['week_key'].astype(float)
-        self.df = self.df.merge(df_forecast[usefull], how='left')
+        self.df = self.df.merge(df_forecast[useful], how='left')
 
         print('predict sucessful!')
 
@@ -543,7 +533,7 @@ class Model():
         ax.set_ylabel(self.error)
         if ylim is not None:
             ax.set_ylim(ylim)
-        #fig.savefig('Sprint_2/abs_err_' + '.png')
+
         return fig, ax
 
     def error_for_volume(self, value):
@@ -556,11 +546,12 @@ class Model():
             [type] -- [value of error]
         """
         print('{} for given volume:'.format(self.error))
+
         return self.errors[self.errors.index > value]
 
     def volume_for_error(self, value):
         """
-        [returns the valeur of the cumulative (in %) volume for a given error]
+        [returns the valeu of the cumulative (in %) volume for a given error]
 
         Arguments:
             value {[float]} -- [value of the error]
@@ -569,6 +560,7 @@ class Model():
             [type] -- [value of error]
         """
         print('Volume for given error')
+
         return self.errors.loc[self.errors[self.error] > value]
 
     def check_forecast(self, quantile=0.999, multiplier=2):

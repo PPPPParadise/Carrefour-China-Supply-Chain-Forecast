@@ -1,6 +1,8 @@
-from download_data import *
-from weekly_model_preprocessing import *
-from weekly_model_train import *
+# -*- coding: utf-8 -*-
+
+from download_data import download_data
+from weekly_model_preprocessing import preprocess
+from weekly_model_train import run_model
 import datetime
 import os
 proc_root = os.path.dirname(os.path.realpath(__file__))
@@ -21,11 +23,7 @@ parser.add_argument("-f", "--local_folder", help="local folder")
 parser.add_argument("-s", "--date_stop_train", help="date stop train")
 args = parser.parse_args()
 
-# config = {}
-# config['database'] = 'temp'
-# config['local_folder'] = 'test_3_folder_weekly/'
-# config['date_stop_train'] = '2019-07-01'
-# python3 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_weekly.py -d temp -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/test_3_folder_weekly/' -s '2019-07-01'
+
 config = {}
 config['database'] = args.database_name
 config['local_folder'] = args.local_folder
@@ -34,7 +32,7 @@ print(config)
 if (args.database_name is None) or (args.local_folder is None) or (args.date_stop_train is None):
     print('config needed ')
     sys.exit()
-    
+
 def impalaexec(sql,create_table=False):
     """
     execute sql using impala
@@ -49,13 +47,6 @@ def main():
     now = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
     folder = config['local_folder']
     os.system(f"rm -r {folder}")
-    
-    
-    # Daily dataset
-    ##big_table_name = 'vartefact.forecast_sprint4_add_dm_to_daily'
-
-    # Promo dataset
-    ##big_table_name = 'vartefact.forecast_sprint4_promo_mecha_v4'
 
     # Weekly dataset
     big_table_name = f"{config['database']}.forecast_sprint3_v10_flag_sprint4"
@@ -74,14 +65,13 @@ def main():
     desc = 'weekly_test'
     data_set1 = dataset_name + '_part1.pkl'
     data_set2 = dataset_name + '_part2.pkl'
-    
+
     date_stop_train = config['date_stop_train']
     os.system(f"cp {proc_root}/calendar.pkl {config['local_folder']}")
-    # learning_rate = 0.3
 
     run_model(folder=folder, data_set1=data_set1, data_set2=data_set2, futur_prediction=True,
                         date_stop_train=date_stop_train)
-    # save csv as table 
+    # save csv as table
     print('saving csv as table')
     file_list = os.listdir(config['local_folder'])
 
@@ -126,7 +116,7 @@ def main():
     sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """
     impalaexec(sql)
     print('csv saved in the table')
-    
+
 
 
 if __name__ == '__main__':

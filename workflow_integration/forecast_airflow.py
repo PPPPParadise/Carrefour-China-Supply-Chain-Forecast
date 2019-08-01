@@ -967,7 +967,7 @@ step_promo_to_day_1 = PythonOperator(task_id="step_promo_to_day_1",
                               'file_path':'./sqls/PRED_TO_DAY/3_1dm_week_to_day_intermediate.sql',
                               'set_timeperiod':True},
                            dag=dag)
-step_promo_to_day_1.set_upstream(step_normal_to_day_5)
+step_promo_to_day_1.set_upstream(step_promo_11_model)
 
 #2
 # execute_impala_by_sql_file('dm_daily_sales',\

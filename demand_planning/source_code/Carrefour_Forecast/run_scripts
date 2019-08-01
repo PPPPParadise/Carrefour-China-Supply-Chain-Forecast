@@ -1,0 +1,5 @@
+spark-submit --class "carrefour.forecast.process.OnStockForecastProcess" --master yarn --driver-memory 8G --num-executors 8 carrefour_forecast_2.11-0.1.jar 20190108 >> onstock_log.txt
+
+spark-submit --class "carrefour.forecast.process.XDockingForecastProcess" --master yarn --driver-memory 8G --num-executors 8 carrefour_forecast_2.11-0.1.jar 20190108 >> xdocking_log.txt
+
+spark-submit --class "carrefour.forecast.process.OnStockSimulationProcess" --master yarn --driver-memory 8G --num-executors 8 carrefour_forecast_2.11-0.1.jar 20190108 >> onstock_simulation.log

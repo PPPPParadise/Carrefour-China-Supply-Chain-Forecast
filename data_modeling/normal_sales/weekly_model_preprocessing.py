@@ -1,22 +1,7 @@
 # -*- coding: utf-8 -*-
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.1.6
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
 
 import datetime
 import os
-##### part 2 Load and preprocess
 import sys
 import warnings
 
@@ -30,9 +15,6 @@ reload(utils_v2)
 from utils_v2 import read_data
 
 warnings.filterwarnings('ignore')
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', 100)
-pd.set_option('max_colwidth', 200)
 pd.set_option('mode.use_inf_as_na', True)
 
 
@@ -57,142 +39,46 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
 
     table_path = folder + big_table
 
-    df_test = pd.read_csv(table_path)
+    table_df = pd.read_csv(table_path)
 
-    df = df_test
-
-    # df.columns.to_list()
-
-    # len(df[df['out_stock_flag'] == 1])
-
-    # len(df[df['ind_out_of_stock'] == 1])
-
-    # len(df[df['out_stock_flag'] == 1]) / len(df)
-
-    # len(df[df['ind_out_of_stock'] == 1]) / len(df)
-
-    df['full_item'] = df['item_id'].astype(str) + '_' + df['sub_id'].astype(str)
-    df['full_item'] = df['item_id'].astype(str) + '_' + df['sub_id'].astype(str)
-    df['item_store'] = df['full_item'] + '_' + df['store_code'].astype(str)
-
-    # len(df)
-
-    # len(df[(df['out_stock_flag'] == 1) & (df['ind_current_on_dm_flag'] == 1)]) / len(df[
-    #     df['ind_current_on_dm_flag'] == 1])
-
-    # len(df[(df['out_stock_flag'] == 1) & (df['ind_current_on_dm_flag'] != 1)]) / len(df[
-    #     df['ind_current_on_dm_flag'] != 1])
-
-    # len(df[(df['ind_out_of_stock'] == 1) & (df['ind_current_on_dm_flag'] == 1)]) / len(df[
-    #     df['ind_current_on_dm_flag'] == 1])
-
-    # len(df[(df['ind_out_of_stock'] == 1) & (df['ind_current_on_dm_flag'] != 1)]) / len(df[
-    #     df['ind_current_on_dm_flag'] != 1])
-
-    # len(df[(df['ind_out_of_stock'] == 1) & (
-    #     df['ind_current_on_dm_flag'] == 1)]) / len(df)
-
-    # len(df[(df['ind_out_of_stock'] == 1) & (
-    #     df['ind_current_on_dm_flag'] != 1)]) / len(df)
-
-    # len(df[(df['week_key'] > 201901)
-    #        & (df['assortment_active_flag'] == 1)])
-
-    # len(df[(df['week_key'] > 201901)])
-
-    # len(df[(df['week_key'] > 201901)
-    #        & (df['assortment_active_flag'] == 1)]) / len(df[(df['week_key'] > 201901)])
+    table_df['full_item'] = table_df['item_id'].astype(str) + '_' + table_df['sub_id'].astype(str)
+    table_df['full_item'] = table_df['item_id'].astype(str) + '_' + table_df['sub_id'].astype(str)
+    table_df['item_store'] = table_df['full_item'] + '_' + table_df['store_code'].astype(str)
 
 
     # ### Load and preprocess
-    # with open('calendar.pkl', 'rb') as input_file:
-    #     calendar = pickle.load(input_file)
-    df2, errors, liste = read_data(df, sql_table)
-    # errors
-    # len(df2)
 
-    df = df2
+    table_df, errors, liste = read_data(table_df, sql_table)
+
     # ## Clean data and quick analysis
 
-    # len(df.loc[:, 'full_item'].unique())
+    table_df.current_dm_psp_start_date = pd.to_datetime(table_df.current_dm_psp_start_date)
+    table_df.current_dm_psp_end_date = pd.to_datetime(table_df.current_dm_psp_end_date)
+    table_df.next_dm_start_date = pd.to_datetime(table_df.next_dm_start_date)
+    table_df.next_dm_end_date = pd.to_datetime(table_df.next_dm_end_date)
 
-    # len(df.loc[:, 'item_store'].unique())
-
-    # +
-    # Previously: 3038235 active flags
-    # -
-
-    # len(df.loc[df['active_flag'] == 1])
-
-    # try:
-    #     len(df.loc[df['bp_flag'] == 1])
-    # except:
-    #     print('NO BP FLAG')
-
-    # len(df.loc[df['planned_bp_flag'] == 1])
-
-    # + {"active": ""}
-    # len(df.loc[(df['bp_flag'] == 0) | (df['planned_bp_flag'] == 0)])
-    # -
-
-    # len(df.loc[:, 'full_item'].unique())
-
-    # + {"active": ""}
-    # len(df.loc[df['iqr_trxn_flag'] == 1])
-
-    # + {"active": ""}
-    # df.loc[df['iqr_trxn_flag'] == 1, 'sales_qty_sum'].sum() / df.loc[:, 'sales_qty_sum'].sum()
-    # -
-
-    # + {"active": ""}
-    # df.loc[df['iqr_trxn_flag'] == 1, 'sales_qty_sum_new'].sum() / df.loc[:, 'sales_qty_sum_new'].sum()
-    # -
-
-    # df['out_stock_flag'].unique()
-
-    # +
-    # Previously: 208664
-    # -
-
-    # len(df.loc[df['out_stock_flag'] == 1.])
-
-    # len(df.loc[df['out_stock_flag'] == 0])
-
-    # len(df[df['planned_bp_flag'] == 0])
-
-    # len(df.loc[df['assortment_active_flag'] == 1])
-
-    # # Adding extra features:
-
-    # +
-    # current_dm_busday
-    df.current_dm_psp_start_date = pd.to_datetime(df.current_dm_psp_start_date)
-    df.current_dm_psp_end_date = pd.to_datetime(df.current_dm_psp_end_date)
-    df.next_dm_start_date = pd.to_datetime(df.next_dm_start_date)
-    df.next_dm_end_date = pd.to_datetime(df.next_dm_end_date)
-
-    df.loc[df.current_dm_psp_start_date.notnull(), 'current_dm_busday'] = np.busday_count(
-        df.current_dm_psp_start_date.dropna().values.astype('datetime64[D]'),
-        df.current_dm_psp_end_date.dropna().values.astype('datetime64[D]'))
+    table_df.loc[table_df.current_dm_psp_start_date.notnull(), 'current_dm_busday'] = np.busday_count(
+        table_df.current_dm_psp_start_date.dropna().values.astype('datetime64[D]'),
+        table_df.current_dm_psp_end_date.dropna().values.astype('datetime64[D]'))
 
     # number weekend in current DM
-    df['current_dm_weekend_days'] = df.curr_psp_days - df.current_dm_busday
+    table_df['current_dm_weekend_days'] = table_df.curr_psp_days - table_df.current_dm_busday
 
     # next_dm_busday
-    df.loc[df.next_dm_start_date.notnull(), 'next_dm_busday'] = np.busday_count(
-        df.next_dm_start_date.dropna().values.astype('datetime64[D]'),
-        df.next_dm_end_date.dropna().values.astype('datetime64[D]'))
+    table_df.loc[table_df.next_dm_start_date.notnull(), 'next_dm_busday'] = np.busday_count(
+        table_df.next_dm_start_date.dropna().values.astype('datetime64[D]'),
+        table_df.next_dm_end_date.dropna().values.astype('datetime64[D]'))
     
     # number weekend in next DM
-    df['next_dm_weekend_days'] = df.next_dm_days - df.next_dm_busday
+    table_df['next_dm_weekend_days'] = table_df.next_dm_days - table_df.next_dm_busday
 
     # ### Adding BP feature
     try:
-        df['bp_flag']
+        table_df['bp_flag']
 
-        df = df.sort_values(
+        table_df = table_df.sort_values(
             ['item_id', 'sub_id', 'store_code', 'week_key']).reset_index(drop=True)
-        ordered = df.groupby(['item_id', 'sub_id', 'store_code', 'week_key'])[
+        ordered = table_df.groupby(['item_id', 'sub_id', 'store_code', 'week_key'])[
             'bp_flag'].sum().reset_index()
 
         ordered['rolling_sum'] = ordered['bp_flag'].shift(1).rolling(
@@ -201,10 +87,10 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
         ordered['rolling_count'] = ordered['bp_flag'].shift(1).rolling(
             52, min_periods=0).count()
 
-        ordered['item_store'] = df['item_id'].astype(str) + '_' +\
-            df['sub_id'].astype(str) + '_' + df['store_code'].astype(str)
+        ordered['item_store'] = table_df['item_id'].astype(str) + '_' +\
+            table_df['sub_id'].astype(str) + '_' + table_df['store_code'].astype(str)
 
-        missings = df[~df.item_store.isin(ordered.item_store)]
+        missings = table_df[~table_df.item_store.isin(ordered.item_store)]
         missing_bp = missings.groupby(['item_id', 'sub_id', 'store_code', 'week_key'])[
             'bp_flag'].sum().reset_index()
 
@@ -216,22 +102,16 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
 
         total = pd.concat([ordered, missing_bp])
 
-        len(total)
+        table_df = table_df.merge(total, how="left")
 
-        df = df.merge(total, how="left")
-
-        len(df)
-
-        df["bp_ratio"] = df['rolling_sum'] / df['rolling_count']
+        table_df["bp_ratio"] = table_df['rolling_sum'] / table_df['rolling_count']
 
     except:
         print('NO BP FLAG')
-    # -
 
     # ### Preparing data for xgboost
 
-    # +
-    identification = [
+    identification_features = [
         'full_item',
         'item_store',
         'week_key',
@@ -270,7 +150,6 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
         'ind_out_of_stock',
 
     ]
-    # -
 
     flat_features = [
         'trxn_year',
@@ -420,7 +299,7 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
 
     ]
 
-    dummies_names = [
+    dummy_features = [
         'festival_type',
 
         'store_code',
@@ -446,39 +325,10 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
 
     # # Check features missing
 
-    used_cols = dummies_names + time_features + flat_features + identification
-
-    # ok = df.columns[df.columns.isin(used_cols)]
-    # not_used = df.columns[~df.columns.isin(used_cols)]
-    # print('Columns not used:')
-    # print(not_used.to_list())
-
-    # + {"active": ""}
-    # type id: 3 types
-    #     01, 02, 04
-    #     80% is 01, direct discount, dd
-    #     17% 02, next purchase coupon, np
-    #     04, changing coupon, cp
-    #     --> we dont have 03, AC advertising coupon in our scope
-    #
-    # type code: 14 different
-    #     7 in our table
-    #     CP: customer purchase, 94%
-    #     MPM: promotion for carrefour members, 2%
-    #     MP: member price, 2%
-    #     CC: customer changing coupon, less than 1%
-    #     MPCM: member point used for items, 0.3%
-    #     MSG: member point, less 0.2
-    #     EX: exchange coupon, less 0.2
-    #
-    # NDV: Number of distinct value
-    #   ndv_coupon_activity_type_id
-    #   ndv_coupon_typecode
-    #
-    # -
+    used_cols = dummy_features + time_features + flat_features + identification_features
 
     used_cols_df = pd.Series(used_cols)
-    error_do_not_exist = used_cols_df[~used_cols_df.isin(df.columns)]
+    error_do_not_exist = used_cols_df[~used_cols_df.isin(table_df.columns)]
 
     if not(error_do_not_exist.to_list() == []):
         print(error_do_not_exist)
@@ -493,33 +343,22 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
             df = pd.concat([df, pd.get_dummies(df[i], prefix=i+"_")], axis=1)
         return df
 
-    df = create_dummies(dummies_names, df)
+    table_df = create_dummies(dummy_features, table_df)
 
     dummies_features = []
-    for i in df.columns:
-        if any([i.startswith(s + '__') for s in dummies_names]):
+    for i in table_df.columns:
+        if any([i.startswith(s + '__') for s in dummy_features]):
             dummies_features.append(i)
-
-    # dummies_names
 
     features = dummies_features + flat_features + time_features
 
-    sample = df.loc[:50, features]
-
-    sample.columns[sample.columns.duplicated()]
+    sample = table_df.loc[:50, features]
 
     if not(sample.columns[sample.columns.duplicated()].to_list() == []):
         print(sample.columns[sample.columns.duplicated()])
         raise Exception('Some features are duplicated. Check the names!')
 
     # #### Features engineering
-
-
-    # len(set(flat_features))
-
-    # len(set(time_features))
-
-    # len(set(dummies_names))
 
     # ### Filter active version
 
@@ -544,47 +383,23 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
         names_features[1], index=False, header=False)
     pd.Series(time_features).to_csv(
         names_features[2], index=False, header=False)
-    pd.Series(identification).to_csv(
+    pd.Series(identification_features).to_csv(
         names_features[3], index=False, header=False)
 
-    dummies_features = pd.read_csv(names_features[0], squeeze=True).tolist()
-    flat_features = pd.read_csv(names_features[1], squeeze=True).tolist()
-    time_features = pd.read_csv(names_features[2], squeeze=True).tolist()
-    identification = pd.read_csv(names_features[3], squeeze=True).tolist()
 
-    # +
-
-    #df_filtered = df_filtered[df_filtered['planned_bp_flag'] != 1]
-    df[target_value] = df[target_value].astype(float)
-
-    # -
+    table_df[target_value] = table_df[target_value].astype(float)
 
     # ### DELETE NEGATIVE SALES
 
-    df = df[df['sales_qty_sum'] >= 0]
-
-    # len(df)
+    table_df = table_df[table_df['sales_qty_sum'] >= 0]
 
     # ## Change name of dataset
 
-    # len(df[df['sales_qty_sum'] == 0])
-
-    df_noz = df[df['sales_qty_sum'] >= 0]
-
-    # len(df)
-
-    # len(df_noz)
+    df_noz = table_df[table_df['sales_qty_sum'] >= 0]
 
     df_noz['sales_qty_sum'].describe()
 
-    # + {"active": ""}
-    # import pickle
-    # with open(folder+ dataset_name + '_high_OOS_filled_med'+'.pkl', 'wb') as output_file:
-    #     pickle.dump(df_filtered, output_file)
-    # -
-
     mid = int(round(len(df_noz)/2, 0))
-    # mid
 
     import pickle
     with open(folder + dataset_name + '_part1'+'.pkl', 'wb') as output_file:
@@ -593,7 +408,6 @@ def preprocess(folder, big_table, sql_table, target_value, dataset_name):
     import pickle
     with open(folder + dataset_name + '_part2'+'.pkl', 'wb') as output_file:
         pickle.dump(df_noz[mid:], output_file)
-
 
 
 if __name__ == '__main__':

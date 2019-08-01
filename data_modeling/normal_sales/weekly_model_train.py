@@ -24,10 +24,8 @@ reload(utils_v2)
 
 # # Load input from file
 
-# +
 
-
-def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
+def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
     """[To train and predict using the weekly model]
 
     Arguments:
@@ -47,36 +45,32 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
     print(datetime.datetime.now(), "Load data")
 
     with open(folder + data_set1, 'rb') as input_file:
-        inputDf_1 = pickle.load(input_file)
+        input_df_1 = pickle.load(input_file)
 
     with open(folder + data_set2, 'rb') as input_file:
-        inputDf_2 = pickle.load(input_file)
+        input_df_2 = pickle.load(input_file)
 
-    inputDf = pd.concat([inputDf_1, inputDf_2]).reset_index(drop=True)
+    input_df = pd.concat([input_df_1, input_df_2]).reset_index(drop=True)
 
     with open(calendar_file, 'rb') as input_file:
-        calendarDf = pickle.load(input_file)
+        calendar_df = pickle.load(input_file)
 
     feat, dummies_features, flat_features, time_features, identification = read_features(
         folder + 'features')
 
-    descDf = inputDf[['sales_qty_sum', 'full_item']].groupby(
+    desc_df = input_df[['sales_qty_sum', 'full_item']].groupby(
         'full_item').agg(['describe', sum])
-    descDf.columns = ['count', 'mean', 'std',
+    desc_df.columns = ['count', 'mean', 'std',
                       'min', '25%', '50%', '75%', 'max', 'sum']
-    descDf = descDf.sort_values(by='sum', ascending=False)
-    descDf['cum_sum'] = descDf['sum'].cumsum()
-    descDf['sale_cum_w'] = descDf['sum'].cumsum() / inputDf.sales_qty_sum.sum()
-    descDf.head()
+    desc_df = desc_df.sort_values(by='sum', ascending=False)
+    desc_df['cum_sum'] = desc_df['sum'].cumsum()
+    desc_df['sale_cum_w'] = desc_df['sum'].cumsum() / input_df.sales_qty_sum.sum()
+    desc_df.head()
 
-    item_list = list(descDf.index)
-    # -
+    item_list = list(desc_df.index)
 
     # # Model variables
 
-    len(item_list)
-
-    # +
     # input date should be a Sunday.
     # Week end with this Sunday is the last week in traning
     # Week starting from next day (the Monday) is week 1
@@ -88,21 +82,18 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
     # To predict every week from 1 to 10 included
     predict_week = [i for i in range(1, 11)]
 
-    # Value to predict
-    target_value = 'sales_qty_sum'
-
     # output folder
     model_name = "forecast_10w_on_the_fututre"
 
-    top10FeatureFile = f"top10_feature_{model_name}.csv"
-    top50AllFile = f"resulst_{model_name}.csv"
-    skippedWeekFile = f"skipped_week_{model_name}.csv"
+    top10_feature_file = f"top10_feature_{model_name}.csv"
+    top50_all_file = f"resulst_{model_name}.csv"
+    skipped_week_file = f"skipped_week_{model_name}.csv"
 
-    if futur_prediction:
-        savePath = folder + "weekly_model_training_for_futur_predictions_created_on_" + \
+    if future_prediction:
+        save_path = folder + "weekly_model_training_for_futur_predictions_created_on_" + \
                    datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     else:
-        savePath = folder + "weekly_model_training_for_result_evaluation_created_on_" + \
+        save_path = folder + "weekly_model_training_for_result_evaluation_created_on_" + \
                    datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 
     # week_shift = predict_week - 1
@@ -110,12 +101,11 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
     target_week_value = ['w{}_sales_qty'.format(x) for x in week_shift]
     target_week_value_copied = target_week_value
-    # -
 
     # cut_item_list = item_list[0:10]
 
-    inputDf["week_end_date"] = pd.to_datetime(
-        inputDf["week_end_date"], format="%Y-%m-%d")
+    input_df["week_end_date"] = pd.to_datetime(
+        input_df["week_end_date"], format="%Y-%m-%d")
 
     # # Model Logic
 
@@ -123,12 +113,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
     print(datetime.datetime.now(), 'Start model processing')
 
     try:
-        shutil.rmtree(f'{savePath}/model_result')
+        shutil.rmtree(f'{save_path}/model_result')
     except:
         pass
 
     try:
-        os.makedirs(f'{savePath}/model_result')
+        os.makedirs(f'{save_path}/model_result')
     except:
         pass
 
@@ -139,22 +129,22 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                   "feature_4", "feature_5", "feature_6",
                   "feature_7", "feature_8", "feature_9",
                   "feature_10", "item_id", "week", "index"]).transpose() \
-        .to_csv(f'{savePath}/{top10FeatureFile}', mode='w', index=False, header=False)
+        .to_csv(f'{save_path}/{top10_feature_file}', mode='w', index=False, header=False)
 
     # Save the items and weeks that have been skipped
     pd.DataFrame(['item_store', 'skipped_week', 'sales_qty_sum', 'w{}_sales_qty'
                  .format(week_shift)]).transpose() \
-        .to_csv(f'{savePath}/{skippedWeekFile}', mode='w', index=False, header=False)
+        .to_csv(f'{save_path}/{skipped_week_file}', mode='w', index=False, header=False)
 
     # Save the log files
-    logFile = open(
-        f'{savePath}/{model_name}_log_{str(datetime.datetime.now())}.txt', "a")
-    errorFile = open(
-        f'{savePath}/{model_name}_error_{str(datetime.datetime.now())}.txt', "a")
+    log_file = open(
+        f'{save_path}/{model_name}_log_{str(datetime.datetime.now())}.txt', "a")
+    error_file = open(
+        f'{save_path}/{model_name}_error_{str(datetime.datetime.now())}.txt', "a")
 
     counter = 0
     progress = int(len(item_list) / 100) + 1
-    progressCounter = 1
+    progress_counter = 1
 
     # for item
     for item in item_list:
@@ -163,21 +153,17 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
         if (counter % progress) == 0:
             print(datetime.datetime.now(),
-                  f' item {counter}, {progressCounter}% finished')
-            progressCounter = progressCounter + 1
+                  f' item {counter}, {progress_counter}% finished')
+            progress_counter = progress_counter + 1
 
-        logFile.write(str(datetime.datetime.now()) +
+        log_file.write(str(datetime.datetime.now()) +
                       ' start item ' + str(counter) + "\n")
 
         # If we predict on the future, we can't compare the results to the reality
 
-        if futur_prediction:
+        if future_prediction:
             score_dict = {'full_item': [], 'store_code': [],
                           'week': [], 'train_mape_score': [],
-                          # 'predict_mape_score': [],
-                          # 'cumul/somme': [],
-                          # 'rel_error': [],
-                          # 'actual_sales': [],
                           'predict_sales': [],
                           'predict_sales_error_squared': [],
                           'predict_sales_max_confidence_interval': [],
@@ -196,57 +182,56 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                           'order_prediction': []}
 
         # get data for item only
-        df_oneItem = inputDf[(inputDf['full_item'] == item)]
+        df_one_item = input_df[(input_df['full_item'] == item)]
 
         # Get all week keys within training data time period.
-        week_key_min = df_oneItem['week_key'].min()
-        week_key_max = df_oneItem['week_key'].max()
-        week_keysDf = calendarDf.loc[(calendarDf['week_key'] >= week_key_min)
-                                     & (calendarDf['week_key'] <= week_key_max), ['week_key', 'week_end_date']] \
+        week_key_min = df_one_item['week_key'].min()
+        week_key_max = df_one_item['week_key'].max()
+        week_keys_df = calendar_df.loc[(calendar_df['week_key'] >= week_key_min)
+                                     & (calendar_df['week_key'] <= week_key_max), ['week_key', 'week_end_date']] \
             .drop_duplicates()
 
         # Get all stores
-        storesDf = df_oneItem["item_store"].drop_duplicates()
+        stores_df = df_one_item["item_store"].drop_duplicates()
 
         # Generate all store and week key combinations
-        AllWeekStoresDf = pd.DataFrame(itertools.product(
-            storesDf, week_keysDf["week_key"].transpose()))
-        AllWeekStoresDf.columns = ['item_store', 'week_key']
+        all_week_stores_df = pd.DataFrame(itertools.product(
+            stores_df, week_keys_df["week_key"].transpose()))
+        all_week_stores_df.columns = ['item_store', 'week_key']
 
         # Outer join the training data to the combinations.
         # The combination with no transaction will be handled
-        df_oneItemW = pd.merge(AllWeekStoresDf, df_oneItem, on=[
+        df_one_item_w = pd.merge(all_week_stores_df, df_one_item, on=[
             'week_key', 'item_store'], how='outer')
 
         # Remove all the weeks with no weekly sales or no to-predict weekly sales (e.g. week 2 sales)
         # The method is fill it with not possible value and filter by this value
-        df_oneItemW.fillna({'sales_qty_sum': -1}, inplace=True)
+        df_one_item_w.fillna({'sales_qty_sum': -1}, inplace=True)
 
         # Create 10 colums that corresponds to the target value to predict
         # Sales of week1, sales of week2, etc..
         # Flag the weeks with missing sales quantity by assigning -1 to the value
         for week_shift_number in week_shift:
-            df_oneItemW['w{}_sales_qty'.format(week_shift_number)] = \
-                df_oneItemW[['sales_qty_sum', 'week_key', 'item_store']].groupby(
+            df_one_item_w['w{}_sales_qty'.format(week_shift_number)] = \
+                df_one_item_w[['sales_qty_sum', 'week_key', 'item_store']].groupby(
                     ['item_store']).shift(-week_shift_number).reset_index()['sales_qty_sum'].values
 
-            df_oneItemW[
-                (df_oneItemW['sales_qty_sum'] == -1) | (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] == -1)][[
+            df_one_item_w[
+                (df_one_item_w['sales_qty_sum'] == -1) | (df_one_item_w['w{}_sales_qty'.format(week_shift_number)] == -1)][[
                 'item_store', 'week_key', 'sales_qty_sum', 'w{}_sales_qty'.format(week_shift_number)]] \
-                .to_csv(f'{savePath}/{skippedWeekFile}', mode='a', index=False, header=False)
+                .to_csv(f'{save_path}/{skipped_week_file}', mode='a', index=False, header=False)
 
-            df_oneFinal = df_oneItemW[
-                (df_oneItemW['sales_qty_sum'] != -1) & (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] != -1)]
+            df_one_final = df_one_item_w[
+                (df_one_item_w['sales_qty_sum'] != -1) & (df_one_item_w['w{}_sales_qty'.format(week_shift_number)] != -1)]
 
         # All features
         features = flat_features + time_features
 
         week_end = date_stop_train
-        predict_week_key = calendarDf[calendarDf['date_value'] == week_end]["week_key"].max()
 
         # Train/Test split
-        train = df_oneFinal.loc[df_oneFinal['week_end_date'] < date_stop_train]
-        test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
+        train = df_one_final.loc[df_one_final['week_end_date'] < date_stop_train]
+        test = df_one_final.loc[df_one_final['week_end_date'] >= date_stop_train]
 
         # Weekly loops : we train one model per week
 
@@ -257,11 +242,9 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
             X_train = train[features]
             y_train = train[target_week_value]
 
-            X_test = test[features]
             y_test = test[target_week_value]
 
             score = 0.0
-            # best_scores = []
 
             try:
                 results = np.zeros(len(X_train))
@@ -270,7 +253,6 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     learning_rate=0.03,
                     n_estimators=10000,
                     max_depth=4,
-                    # sub_sample=0.8,
                     gamma=1,
                     colsample_bytree=0.8,
                     n_jobs=30
@@ -281,25 +263,24 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     learning_rate=0.03,
                     n_estimators=100,
                     max_depth=4,
-                    # sub_sample=0.8,
                     gamma=1,
                     colsample_bytree=0.8,
                     n_jobs=30
                 )
 
-                numFolds = 3
+                num_folds = 3
 
                 # The item needs to have at least 3 rows of data
-                if len(X_train > numFolds):
+                if len(X_train > num_folds):
                     pass
                 else:
-                    errorFile.write("".join([str(datetime.datetime.now()), ', index ', str(counter),
+                    error_file.write("".join([str(datetime.datetime.now()), ', index ', str(counter),
                                              ', item ', item, ', week ', str(
                             week),
                                              ', target value, ', target_week_value, ' does not have enough points\n']))
                     continue
 
-                kf = KFold(n_splits=numFolds, shuffle=False, random_state=7)
+                kf = KFold(n_splits=num_folds, shuffle=False, random_state=7)
 
                 # KFold training
                 for train_index, test_index in kf.split(X_train):
@@ -321,12 +302,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
                                                              eval_metric="mae")
 
-                score /= numFolds
+                score /= num_folds
 
             except Exception as e:
                 # print('error for target_value:', target_week_value, 'and week', week)
 
-                errorFile.write("".join([str(datetime.datetime.now()),
+                error_file.write("".join([str(datetime.datetime.now()),
                                          ', index ', str(
                         counter), ', item ', item,
                                          ', week ', str(week), ', ', str(e), "\n"]))
@@ -346,9 +327,9 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 top10Feature["week"] = 'week' + str(week)
                 top10Feature["index"] = str(counter)
                 top10Feature.to_csv(
-                    f'{savePath}/{top10FeatureFile}', mode='a', index=False, header=False)
+                    f'{save_path}/{top10_feature_file}', mode='a', index=False, header=False)
 
-                filename = f'{savePath}/model_result/{item}!{week}.model'
+                filename = f'{save_path}/model_result/{item}!{week}.model'
 
                 pickle.dump(sales_prediction_model, open(filename, 'wb'))
 
@@ -357,17 +338,17 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                     # The week sales to predict
                     predict_week_end = date_stop_train + timedelta(days=7 * i)
-                    predict_week_key = calendarDf[calendarDf['date_value']
+                    predict_week_key = calendar_df[calendar_df['date_value']
                                                   == predict_week_end]["week_key"].min()
 
                     # The input data to perform perdict
-                    test = df_oneFinal.loc[df_oneFinal['week_key']
+                    test = df_one_final.loc[df_one_final['week_key']
                                            == predict_week_key]
                     test = test.sort_values(
                         ['item_store', 'week_key'], ascending=True)
 
                     X_test = test[features]
-                    if futur_prediction:
+                    if future_prediction:
                         pass
                     else:
                         y_test = test[target_week_value]
@@ -417,7 +398,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                     # If the predictions are not on the futur, we can compute the metrics
 
-                    if futur_prediction:
+                    if future_prediction:
                         pass
                     else:
                         errors = pd.DataFrame(
@@ -438,13 +419,13 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     predict_sales_max_confidence_interval = list(
                         test.predict_sales_max_confidence_interval)
 
-                    # Save the metrics in a dictionnary
+                    # Save the metrics in a dictionary
                     for i in range(0, len(forecast)):
                         score_dict['full_item'].append(item)
                         score_dict['week'].append(predict_week_key + week)
                         score_dict['train_mape_score'].append(score)
 
-                        if futur_prediction:
+                        if future_prediction:
                             pass
                         else:
                             score_dict['predict_mape_score'].append(
@@ -473,18 +454,18 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         score_df = pd.DataFrame(score_dict)
         if counter == 1:
             score_df[score_df.full_item == 'head_only'].to_csv(
-                f'{savePath}/{top50AllFile}', mode='w', index=False)
+                f'{save_path}/{top50_all_file}', mode='w', index=False)
 
-        score_df.to_csv(f'{savePath}/{top50AllFile}',
+        score_df.to_csv(f'{save_path}/{top50_all_file}',
                         mode='a', index=False, header=False)
-        logFile.write(str(datetime.datetime.now()) +
+        log_file.write(str(datetime.datetime.now()) +
                       ' end item index ' + str(counter) + "\n")
 
-    logFile.write(str(datetime.datetime.now()) + " finish\n")
+    log_file.write(str(datetime.datetime.now()) + " finish\n")
     print(datetime.datetime.now(), '100% finished\n')
 
-    logFile.close()
-    errorFile.close()
+    log_file.close()
+    error_file.close()
     # -
 
 
@@ -496,6 +477,6 @@ if __name__ == '__main__':
     data_set1 = 'dataset_1307dataset_1307_part1.pkl'
     data_set2 = 'dataset_1307dataset_1307_part2.pkl'
     date_stop_train = '2019-01-13'
-    futur_prediction = False
+    future_prediction = False
 
-    run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train)
+    run_model(folder, data_set1, data_set2, future_prediction, date_stop_train)

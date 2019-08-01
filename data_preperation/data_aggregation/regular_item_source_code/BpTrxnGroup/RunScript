@@ -1,0 +1,1 @@
+spark-submit --class "carrefour.forecast.process.BpTrxnGroup" --master yarn --num-executors 8 --executor-memory 8G bptrxngroup_2.11-1.0.jar vartefact forecast_trxn_v7_full_item_id_sprint4 forecast_trxn_v7_full_item_id_sprint4_group_id

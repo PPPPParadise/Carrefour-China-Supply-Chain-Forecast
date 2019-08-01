@@ -13,13 +13,15 @@ from importlib import reload
 
 import numpy as np
 import pandas as pd
+import utils_v2
 import xgboost as xgb
 from sklearn.model_selection import KFold
-
-import utils_v2
 from utils_v2 import read_features
+
 sys.path.append(os.getcwd())
 reload(utils_v2)
+
+
 # # Load input from file
 
 # +
@@ -98,12 +100,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
     if futur_prediction:
         savePath = folder + "weekly_model_training_for_futur_predictions_created_on_" + \
-            datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+                   datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     else:
         savePath = folder + "weekly_model_training_for_result_evaluation_created_on_" + \
-            datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+                   datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 
-    #week_shift = predict_week - 1
+    # week_shift = predict_week - 1
     week_shift = [x - 1 for x in predict_week]
 
     target_week_value = ['w{}_sales_qty'.format(x) for x in week_shift]
@@ -141,7 +143,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
     # Save the items and weeks that have been skipped
     pd.DataFrame(['item_store', 'skipped_week', 'sales_qty_sum', 'w{}_sales_qty'
-                  .format(week_shift)]).transpose() \
+                 .format(week_shift)]).transpose() \
         .to_csv(f'{savePath}/{skippedWeekFile}', mode='w', index=False, header=False)
 
     # Save the log files
@@ -214,7 +216,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         # Outer join the training data to the combinations.
         # The combination with no transaction will be handled
         df_oneItemW = pd.merge(AllWeekStoresDf, df_oneItem, on=[
-                               'week_key', 'item_store'], how='outer')
+            'week_key', 'item_store'], how='outer')
 
         # Remove all the weeks with no weekly sales or no to-predict weekly sales (e.g. week 2 sales)
         # The method is fill it with not possible value and filter by this value
@@ -224,11 +226,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         # Sales of week1, sales of week2, etc..
         # Flag the weeks with missing sales quantity by assigning -1 to the value
         for week_shift_number in week_shift:
+            df_oneItemW['w{}_sales_qty'.format(week_shift_number)] = \
+                df_oneItemW[['sales_qty_sum', 'week_key', 'item_store']].groupby(
+                    ['item_store']).shift(-week_shift_number).reset_index()['sales_qty_sum'].values
 
-            df_oneItemW['w{}_sales_qty'.format(week_shift_number)] = df_oneItemW[['sales_qty_sum', 'week_key', 'item_store']].groupby(
-                ['item_store']).shift(-week_shift_number).reset_index()['sales_qty_sum'].values
-
-            df_oneItemW[(df_oneItemW['sales_qty_sum'] == -1) | (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] == -1)][[
+            df_oneItemW[
+                (df_oneItemW['sales_qty_sum'] == -1) | (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] == -1)][[
                 'item_store', 'week_key', 'sales_qty_sum', 'w{}_sales_qty'.format(week_shift_number)]] \
                 .to_csv(f'{savePath}/{skippedWeekFile}', mode='a', index=False, header=False)
 
@@ -245,7 +248,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         train = df_oneFinal.loc[df_oneFinal['week_end_date'] < date_stop_train]
         test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
 
-       # Weekly loops : we train one model per week
+        # Weekly loops : we train one model per week
 
         for target_week_value, week in zip(target_week_value_copied, week_shift):
 
@@ -292,7 +295,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 else:
                     errorFile.write("".join([str(datetime.datetime.now()), ', index ', str(counter),
                                              ', item ', item, ', week ', str(
-                                                 week),
+                            week),
                                              ', target value, ', target_week_value, ' does not have enough points\n']))
                     continue
 
@@ -313,7 +316,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     score += mape
 
                     # Train the error squared predictor
-                    error_y_test = (results[test_index] - y_te)**2
+                    error_y_test = (results[test_index] - y_te) ** 2
 
                     sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
                                                              eval_metric="mae")
@@ -321,11 +324,11 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 score /= numFolds
 
             except Exception as e:
-                #print('error for target_value:', target_week_value, 'and week', week)
+                # print('error for target_value:', target_week_value, 'and week', week)
 
                 errorFile.write("".join([str(datetime.datetime.now()),
                                          ', index ', str(
-                                             counter), ', item ', item,
+                        counter), ', item ', item,
                                          ', week ', str(week), ', ', str(e), "\n"]))
 
             else:
@@ -336,7 +339,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 top10Feature = features_xg.sort_values(
                     'feature_value', ascending=False).head(10)
                 top10Feature["features"] = top10Feature.index + \
-                    ":" + top10Feature["feature_value"].astype(str)
+                                           ":" + top10Feature["feature_value"].astype(str)
                 top10Feature = top10Feature[["features"]]
                 top10Feature = top10Feature.transpose()
                 top10Feature["item_id"] = item
@@ -383,7 +386,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     # As reference: 3* = 90% interval, 1.28* = 80% interval... Cf normal distribution
 
                     test.loc[:, 'predict_sales_max_confidence_interval'] = (
-                        test.forecast + 3*(test.error_squared_forecast**0.5))
+                            test.forecast + 3 * (test.error_squared_forecast ** 0.5))
 
                     predict_sales_max_confidence_interval = list(
                         test.predict_sales_max_confidence_interval)
@@ -393,19 +396,19 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     # (CI : confidence interval)
 
                     test.loc[:, 'order_prediction'] = (
-                        test.predict_sales_max_confidence_interval -
-                        (test[['item_store',
-                               'week_key',
-                               'predict_sales_max_confidence_interval']]
-                            .groupby(['item_store'])
-                            .shift(1)
-                            .predict_sales_max_confidence_interval
-                         - test[['item_store',
-                                 'week_key',
-                                 'forecast']]
-                            .groupby(['item_store'])
-                            .shift(1)
-                            .forecast))
+                            test.predict_sales_max_confidence_interval -
+                            (test[['item_store',
+                                   'week_key',
+                                   'predict_sales_max_confidence_interval']]
+                             .groupby(['item_store'])
+                             .shift(1)
+                             .predict_sales_max_confidence_interval
+                             - test[['item_store',
+                                     'week_key',
+                                     'forecast']]
+                             .groupby(['item_store'])
+                             .shift(1)
+                             .forecast))
 
                     test.order_prediction = test.order_prediction.fillna(
                         test.predict_sales_max_confidence_interval)
@@ -438,7 +441,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                     # Save the metrics in a dictionnary
                     for i in range(0, len(forecast)):
                         score_dict['full_item'].append(item)
-                        score_dict['week'].append(predict_week_key+week)
+                        score_dict['week'].append(predict_week_key + week)
                         score_dict['train_mape_score'].append(score)
 
                         if futur_prediction:
@@ -458,11 +461,11 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                         score_dict['store_code'].append(
                             rel_error_store_list[i])
                         score_dict['predict_sales'].append(predict_sales[i])
-                        score_dict['predict_sales_error_squared']\
+                        score_dict['predict_sales_error_squared'] \
                             .append(predict_sales_error_squared[i])
-                        score_dict['predict_sales_max_confidence_interval']\
+                        score_dict['predict_sales_max_confidence_interval'] \
                             .append(predict_sales_max_confidence_interval[i])
-                        score_dict['order_prediction']\
+                        score_dict['order_prediction'] \
                             .append(order_prediction[i])
 
         # Save the metrics in a csv

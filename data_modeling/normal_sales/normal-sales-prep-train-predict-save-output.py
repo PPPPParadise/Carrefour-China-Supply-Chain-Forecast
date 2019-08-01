@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import datetime
+import os
+
 from download_data import download_data
 from weekly_model_preprocessing import preprocess
 from weekly_model_train import run_model
-import datetime
-import os
+
 proc_root = os.path.dirname(os.path.realpath(__file__))
 
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
 from pyspark.sql.functions import lpad
 from impala.dbapi import connect
 import argparse
+
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
 warehouse_location = abspath('spark-warehouse')
 
@@ -22,7 +24,6 @@ parser.add_argument("-d", "--database_name", help="database name")
 parser.add_argument("-f", "--local_folder", help="local folder")
 parser.add_argument("-s", "--date_stop_train", help="date stop train")
 args = parser.parse_args()
-
 
 config = {}
 config['database'] = args.database_name
@@ -33,14 +34,17 @@ if (args.database_name is None) or (args.local_folder is None) or (args.date_sto
     print('config needed ')
     sys.exit()
 
-def impalaexec(sql,create_table=False):
+
+def impalaexec(sql, create_table=False):
     """
     execute sql using impala
     """
     print(sql)
-    with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019', database=config['database']) as conn:
+    with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019',
+                 database=config['database']) as conn:
         curr = conn.cursor()
         curr.execute(sql)
+
 
 def main():
     # Download data
@@ -59,7 +63,7 @@ def main():
     target_value = 'sales_qty_sum'
     dataset_name = 'dataset_test_weekly'
     preprocess(folder=folder, big_table=big_table, sql_table=sql_table,
-                     target_value=target_value, dataset_name=dataset_name)
+               target_value=target_value, dataset_name=dataset_name)
 
     # Train the model
     desc = 'weekly_test'
@@ -70,7 +74,7 @@ def main():
     os.system(f"cp {proc_root}/calendar.pkl {config['local_folder']}")
 
     run_model(folder=folder, data_set1=data_set1, data_set2=data_set2, futur_prediction=True,
-                        date_stop_train=date_stop_train)
+              date_stop_train=date_stop_train)
     # save csv as table
     print('saving csv as table')
     file_list = os.listdir(config['local_folder'])
@@ -94,7 +98,8 @@ def main():
 
     sqlContext = SQLContext(spark)
 
-    spark_df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load(f"resulst_forecast_10w_on_the_fututre.csv")
+    spark_df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load(
+        f"resulst_forecast_10w_on_the_fututre.csv")
     split_col = pyspark.sql.functions.split(spark_df['full_item'], '_')
     spark_df = spark_df.withColumn('item_id', split_col.getItem(0))
     spark_df = spark_df.withColumn('sub_id', split_col.getItem(1))
@@ -103,20 +108,21 @@ def main():
     spark_df = spark_df.withColumn("week", spark_df["week"].cast(IntegerType()))
     spark_df = spark_df.withColumn("train_mape_score", spark_df["train_mape_score"].cast(FloatType()))
     spark_df = spark_df.withColumn("predict_sales", spark_df["predict_sales"].cast(FloatType()))
-    spark_df = spark_df.withColumn("predict_sales_error_squared", spark_df["predict_sales_error_squared"].cast(FloatType()))
-    spark_df = spark_df.withColumn("predict_sales_max_confidence_interval", spark_df["predict_sales_max_confidence_interval"].cast(FloatType()))
+    spark_df = spark_df.withColumn("predict_sales_error_squared",
+                                   spark_df["predict_sales_error_squared"].cast(FloatType()))
+    spark_df = spark_df.withColumn("predict_sales_max_confidence_interval",
+                                   spark_df["predict_sales_max_confidence_interval"].cast(FloatType()))
     spark_df = spark_df.withColumn("order_prediction", spark_df["order_prediction"].cast(FloatType()))
-    spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'],3,'0'))
-    spark_df = spark_df.withColumnRenamed('week','week_key')
-    spark_df = spark_df.withColumnRenamed('predict_sales','sales_prediction')
-    spark_df = spark_df.withColumnRenamed('predict_sales_max_confidence_interval','max_confidence_interval')
+    spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'], 3, '0'))
+    spark_df = spark_df.withColumnRenamed('week', 'week_key')
+    spark_df = spark_df.withColumnRenamed('predict_sales', 'sales_prediction')
+    spark_df = spark_df.withColumnRenamed('predict_sales_max_confidence_interval', 'max_confidence_interval')
     spark_df.write.mode('overwrite').saveAsTable(f"{config['database']}.result_forecast_10w_on_the_fututre")
     spark.stop()
 
     sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """
     impalaexec(sql)
     print('csv saved in the table')
-
 
 
 if __name__ == '__main__':

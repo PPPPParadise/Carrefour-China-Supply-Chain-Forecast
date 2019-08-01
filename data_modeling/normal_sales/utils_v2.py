@@ -1,25 +1,18 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
 import datetime
-import numpy as np
-import pandas as pd
+import glob
 import os
 import pickle
-import numpy as np
-import pyspark
+import warnings
+from os.path import abspath
+
 import matplotlib.pyplot as plt
-import warnings
-import datetime
-import csv
-from os.path import expanduser, join, abspath
-from pyspark.sql.types import *
+import numpy as np
+import pandas as pd
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
-import glob
-import pickle
+from pyspark.sql.types import *
 from xgboost import plot_importance
-import sys
-import warnings
+
 warnings.filterwarnings('ignore')
 
 
@@ -110,7 +103,7 @@ def read_data(df, table_name):
             except:
                 continue
         except:
-            #print('type int, error on ', i)
+            # print('type int, error on ', i)
             float_list.append(i)
             continue
 
@@ -122,7 +115,7 @@ def read_data(df, table_name):
             except:
                 continue
         except:
-            #print('type float, error on ', i)
+            # print('type float, error on ', i)
             string_list.append(i)
             continue
 
@@ -130,7 +123,7 @@ def read_data(df, table_name):
         try:
             df[i] = pd.to_datetime(df[i])
         except:
-            #print('type datetime, error on ', i)
+            # print('type datetime, error on ', i)
             string_list.append(i)
             continue
 
@@ -182,7 +175,8 @@ def read_features(features_folder):
     time_features = [s for s in features_files if 'time_features' in s]
     identification_features = [s for s in features_files if 'identification' in s]
 
-    if (len(dummy_features) != 1) or (len(flat_features) != 1) or (len(time_features) != 1) or (len(identification_features) != 1):
+    if (len(dummy_features) != 1) or (len(flat_features) != 1) or (len(time_features) != 1) or (
+            len(identification_features) != 1):
         print('dumm', dummy_features)
         print('flat_features', flat_features)
         print('time_features', time_features)
@@ -297,8 +291,8 @@ class Model():
         self.df['week_end_date'] = pd.to_datetime(self.df['week_end_date'])
 
         self.features, self.dummies_features, self.flat_features, \
-            self.time_features, self.identification = read_features(
-                self.folder + self.feature_folder)
+        self.time_features, self.identification = read_features(
+            self.folder + self.feature_folder)
 
         self.now = str(datetime.datetime.now())
 
@@ -409,7 +403,7 @@ class Model():
         print('date starting test: ', self.date_starting_test)
 
         df_forecast = self.df.loc[(
-            self.df['week_end_date'] >= self.date_starting_test)]
+                self.df['week_end_date'] >= self.date_starting_test)]
         week_starting_test = self.df.loc[(self.df['week_end_date'] >= self.date_starting_test),
                                          'week_key']
         week_starting_test = week_starting_test.min()

@@ -14,35 +14,20 @@
 #     name: python3
 # ---
 
-import pandas as pd
-import os
-import pickle
-import numpy as np
-import pyspark
-import csv
-import matplotlib.pyplot as plt
-import warnings
 import datetime
-import xgboost as xgb
-from os.path import expanduser, join, abspath
-from sklearn import preprocessing
-from sklearn import ensemble
-from sklearn import model_selection
-from sklearn.model_selection import GridSearchCV
-from sklearn import tree
-from sklearn.metrics import r2_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
-from sklearn.multioutput import MultiOutputRegressor
+import os
 ##### part 2 Load and preprocess
 import sys
+import warnings
+
+import numpy as np
+import pandas as pd
+
 sys.path.append(os.getcwd())
 from importlib import reload
 import utils_v2
 reload(utils_v2)
 from utils_v2 import read_data
-import pickle
-from datetime import timedelta
 
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', None)

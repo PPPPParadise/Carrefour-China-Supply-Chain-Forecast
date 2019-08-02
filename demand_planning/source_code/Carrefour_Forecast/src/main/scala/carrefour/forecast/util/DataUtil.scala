@@ -85,7 +85,7 @@ object DataUtil {
       s"""
         insert overwrite table ${modelRun.orderTableName} partition(order_day)
          select item_id, sub_id, dept_code, item_code, sub_code, con_holding,
-         supplier_code, delivery_day, minimum_stock_required, order_qty, order_without_pcb,
+         supplier_code, delivery_day, average_sales, order_qty, order_without_pcb,
          order_day
          from ${orderDfView}
         """
@@ -98,7 +98,7 @@ object DataUtil {
       s"""
         insert overwrite table ${modelRun.orderHistTableName} partition(run_date, item_id, sub_id)
          select dept_code, item_code, sub_code, con_holding,
-         supplier_code, order_day, delivery_day, minimum_stock_required, order_qty, order_without_pcb,
+         supplier_code, order_day, delivery_day, average_sales, order_qty, order_without_pcb,
          ${modelRun.runDateStr}, item_id, sub_id
          from ${orderDfView}
         """

@@ -291,7 +291,15 @@ object CoreProcess {
         }
       }
 
-      case FlowType.DC => Map.empty[ItemEntity, List[Tuple2[String, Double]]]
+      case FlowType.DC => {
+        if (modelRun.isSimulation) {
+          SimulationUtil.getSimulationDcPastOrdersMap(startDateStr, endDateStr,
+            modelRun.isDcFlow, modelRun.viewName, spark)
+        } else {
+          QueryUtil.getDcPastOrdersMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName,
+            modelRun.orderTableName, spark)
+        }
+      }
     }
   }
 

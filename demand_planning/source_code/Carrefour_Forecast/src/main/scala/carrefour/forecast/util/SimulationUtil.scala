@@ -23,7 +23,12 @@ object SimulationUtil {
          con_holding, store_code, supplier_code, rotation,
          order_day, delivery_day, order_qty, order_without_pcb,
          is_order_day, matched_sales_start_date, matched_sales_end_date,
-         start_stock, future_stock, minimum_stock_required, dm_delivery, order_delivery,
+         start_stock, future_stock,
+         CASE WHEN minimum_stock_required IS NULL
+          THEN average_sales
+          ELSE minimum_stock_required
+         END as minimum_stock_required,
+         dm_delivery, order_delivery,
          predict_sales, day_end_stock_with_predict, actual_sales, day_end_stock_with_actual,
          ittreplentyp, shelf_capacity, ittminunit,
          '${modelRun.runDateStr}' as run_date, '${modelRun.flowType}' as flow_type
@@ -78,7 +83,12 @@ object SimulationUtil {
         partition(order_day, flow_type)
          select item_id, sub_id, dept_code, item_code, sub_code,
          con_holding, store_code, supplier_code, rotation,
-         delivery_day, order_qty, minimum_stock_required, order_without_pcb,
+         delivery_day, order_qty,
+         CASE WHEN minimum_stock_required IS NULL
+          THEN average_sales
+          ELSE minimum_stock_required
+         END as minimum_stock_required,
+         order_without_pcb,
          order_day, '${modelRun.flowType}' as flow_type
          from ${orderDfView}
         """
@@ -93,7 +103,12 @@ object SimulationUtil {
         partition(run_date, flow_type)
          select item_id, sub_id, dept_code, item_code, sub_code,
          con_holding, store_code, supplier_code, rotation,
-         order_day, delivery_day, minimum_stock_required, order_qty, order_without_pcb,
+         order_day, delivery_day,
+         CASE WHEN minimum_stock_required IS NULL
+          THEN average_sales
+          ELSE minimum_stock_required
+         END as minimum_stock_required,
+         order_qty, order_without_pcb,
          ${modelRun.runDateStr}, '${modelRun.flowType}' as flow_type
          from ${orderDfView}
         """
@@ -102,6 +117,7 @@ object SimulationUtil {
 
     sqlc.sql(s"refresh ${SimulationTables.simulationOrdersHistTable} ")
   }
+
 
   def insertSimulationItemStatusToDatalake(resDf: DataFrame, modelRun: ModelRun, sqlc: SQLContext): Unit = {
     val simulationItemStatuskView = modelRun.flowType + "_simulation_item_status_df"
@@ -197,7 +213,7 @@ object SimulationUtil {
                        sqlc: SQLContext): DataFrame = {
 
     // Get actual sales
-    val actualSalesSql = SimulationQueries.getDcActualSalesSql(startDateStr, endDateStr, viewName)
+    val actualSalesSql = SimulationQueries.getSimulationDcActualSales(startDateStr, endDateStr, viewName)
     var actualSalesDf = sqlc.sql(actualSalesSql)
 
     actualSalesDf = dateMapDf.join(actualSalesDf, Seq("item_id", "sub_id", "entity_code", "date_key"), "left")
@@ -206,5 +222,31 @@ object SimulationUtil {
     actualSalesDf = actualSalesDf.drop("daily_sales_sum")
 
     return actualSalesDf
+  }
+
+  def getSimulationDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
+                         spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+    import spark.implicits._
+
+    val pastOrdersSql = SimulationQueries.getSimulationDcPastOrdersSql(startDateStr, endDateStr, viewName)
+    val pastOrdersDf = spark.sqlContext.sql(pastOrdersSql)
+
+    val grouppedDf = pastOrdersDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),
+      row.getAs[Integer]("sub_id"),
+      row.getAs[String]("entity_code"),
+      isDcFlow))
+
+    val pastOrdersMap = grouppedDf.mapGroups((itemEntity, rows) => {
+      var pastOrdersList: List[Tuple2[String, Double]] = List()
+      for (row <- rows) {
+        pastOrdersList = (row.getAs[String]("order_day"),
+          row.getAs[Double]("order_qty")) :: pastOrdersList
+      }
+      itemEntity -> pastOrdersList
+    }
+
+    ).collect().toMap
+
+    return pastOrdersMap
   }
 }

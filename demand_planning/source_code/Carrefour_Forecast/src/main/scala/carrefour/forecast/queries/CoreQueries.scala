@@ -373,4 +373,21 @@ object CoreQueries {
     """
   }
 
+  def getDcPastOrdersSql(startDateStr: String, endDateStr: String, viewName: String, orderTableName: String): String = {
+    s"""
+    SELECT ord.item_id,
+        ord.sub_id,
+        ord.con_holding as entity_code,
+        ord.order_day,
+        cast(ord.order_qty as double) order_qty
+    FROM ${orderTableName} ord
+    join ${viewName} itmd
+        on ord.item_id = itmd.item_id
+        and ord.sub_id = itmd.sub_id
+        and ord.con_holding = itmd.con_holding
+    WHERE ord.order_day >= '${startDateStr}'
+        AND ord.order_day <= '${endDateStr}'
+    """
+  }
+
 }

@@ -107,7 +107,7 @@ object SimulationQueries {
     """
   }
 
-  def getDcActualSalesSql(startDateStr: String, endDateStr: String, viewName: String): String = {
+  def getSimulationDcActualSales(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
       SELECT t.item_id,
         t.sub_id,
@@ -148,6 +148,23 @@ object SimulationQueries {
         t.sub_id,
         t.entity_code,
         t.date_key
+    """
+  }
+
+  def getSimulationDcPastOrdersSql(startDateStr: String, endDateStr: String, viewName: String): String = {
+    s"""
+    SELECT ord.item_id,
+        ord.sub_id,
+        ord.con_holding as entity_code,
+        ord.order_day,
+        cast(ord.order_qty as double) order_qty
+    FROM ${SimulationTables.simulationOrdersTable} ord
+    join ${viewName} itmd
+        on ord.item_id = itmd.item_id
+        and ord.sub_id = itmd.sub_id
+        and ord.con_holding = itmd.con_holding
+    WHERE ord.order_day >= '${startDateStr}'
+        AND ord.order_day <= '${endDateStr}'
     """
   }
 

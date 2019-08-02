@@ -17,7 +17,6 @@ case class DateRow(
 
                     pcb: Double,
                     delivery_time: String,
-                    var minimum_stock_required: Double,
 
                     order_day: String,
                     delivery_day: String,
@@ -26,6 +25,12 @@ case class DateRow(
                     var order_without_pcb: Double = 0,
                     var order_qty: Integer = 0,
                     var is_order_day: Boolean = false,
+
+                    // For store flow
+                    var minimum_stock_required: Double = 0,
+
+                    // For DC flow
+                    var average_sales: Double = 0,
 
                     // For debug
                     var matched_sales_start_date: String = "",
@@ -38,6 +43,8 @@ case class DateRow(
                     var ittreplentyp: Integer = 0,
                     var shelf_capacity: String = "",
                     var ittminunit: Integer = 0,
+                    var minStock: Double =0,
+                    var maxStock: Double =0,
 
 
                     // For Simulation

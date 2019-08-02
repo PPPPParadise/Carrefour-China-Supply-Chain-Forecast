@@ -132,5 +132,31 @@ object QueryUtil {
     return storeOrderToDcDf
   }
 
+  def getDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
+                          orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+    import spark.implicits._
+
+    val pastOrdersSql = CoreQueries.getDcPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
+    val pastOrdersDf = spark.sqlContext.sql(pastOrdersSql)
+
+    val grouppedDf = pastOrdersDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),
+      row.getAs[Integer]("sub_id"),
+      row.getAs[String]("entity_code"),
+      isDcFlow))
+
+    val pastOrdersMap = grouppedDf.mapGroups((itemEntity, rows) => {
+      var pastOrdersList: List[Tuple2[String, Double]] = List()
+      for (row <- rows) {
+        pastOrdersList = (row.getAs[String]("order_day"),
+          row.getAs[Double]("order_qty")) :: pastOrdersList
+      }
+      itemEntity -> pastOrdersList
+    }
+
+    ).collect().toMap
+
+    return pastOrdersMap
+  }
+
 
 }

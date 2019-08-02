@@ -24,92 +24,26 @@ object OrderUtil {
     var lasti = 0
     var lastj = 0
 
-
-
-    var order: DateRow = DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-      , "", ist.entity_code, "", "", 0.0, "", 0.0, "", "", 0.0
-    )
-
-    if (modelRun.isDcFlow) {
-      order = DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-        , ist.entity_code,  "", "", "", 0.0, "", 0.0, "", "", 0.0
-      )
-    }
+    var order = getEmptyOrder(runDateStr, ist, modelRun.isDcFlow)
 
     try {
 
       var dateRowListBuffer = new ListBuffer[DateRow]()
 
       for (row <- rows) {
-        val dateRow = DateRow(
-          runDateStr,
-          row.getAs[String]("date_key"),
-
-          ist.item_id,
-          ist.sub_id,
-          row.getAs[String]("dept_code"),
-          row.getAs[String]("item_code"),
-          row.getAs[String]("sub_code"),
-
-          row.getAs[String]("con_holding"),
-          row.getAs[String]("store_code"),
-          row.getAs[String]("supplier_code"),
-          row.getAs[String]("rotation"),
-
-          row.getAs[Double]("pcb"),
-          row.getAs[String]("delivery_time"),
-          0.0,
-
-          row.getAs[String]("order_date"),
-          row.getAs[String]("delivery_date"),
-
-          row.getAs[Double]("predict_sales")
-        )
-
-        if (null != dateRow.order_day) {
-          dateRow.is_order_day = true
-          dateRow.minimum_stock_required = getMinimumStock(row, ist.is_dc_flow)
-          dateRow.ittreplentyp = row.getAs[Integer]("ittreplentyp")
-          dateRow.ittminunit = row.getAs[Integer]("ittminunit")
-          dateRow.shelf_capacity = row.getAs[String]("shelf_capacity")
-        }
-
-        if (modelRun.isSimulation) {
-          dateRow.actual_sales = row.getAs[Double]("actual_sales")
-        }
-
-        dateRowListBuffer += dateRow
-
+        dateRowListBuffer += mapDateRow(runDateStr, ist, row, modelRun.isSimulation, modelRun.isDcFlow)
       }
-
       dateRowList = dateRowListBuffer.toList.sortBy(_.date_key)(Ordering[String])
 
       var currentStock = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
-      var dmDeliveryMap: Map[String, Double] = Map()
+
+      val dmDeliveryMap = getDmDeliveryMap(ist, dmOrdersMap)
+
       var deliveryMap: Map[String, Double] = Map()
-
-      if (dmOrdersMap.contains(ist)) {
-        for (dmOrder <- dmOrdersMap(ist)) {
-          var deliveryQty = dmOrder._2
-
-          if (dmDeliveryMap.contains(dmOrder._1)) {
-            deliveryQty = deliveryQty + dmDeliveryMap(dmOrder._1)
-          }
-
-          dmDeliveryMap = dmDeliveryMap + (dmOrder._1 -> deliveryQty)
-        }
-      }
-
-      if (onTheWayStockMap.contains(ist)) {
-        for (onTheWayStock <- onTheWayStockMap(ist)) {
-          var deliveryQty = onTheWayStock._2
-
-          if (deliveryMap.contains(onTheWayStock._1)) {
-            deliveryQty = deliveryQty + deliveryMap(onTheWayStock._1)
-          }
-
-          deliveryMap = deliveryMap + (onTheWayStock._1 -> deliveryQty)
-        }
+      if (modelRun.isDcFlow) {
+        processPastDcOrders(ist, dateRowList, onTheWayStockMap)
+      } else {
+        deliveryMap = getDeliveryMap(ist, onTheWayStockMap)
       }
 
       var i = 0
@@ -170,6 +104,19 @@ object OrderUtil {
 
           futureD = orderD
           order.matched_sales_start_date = dateRowList(futureD).date_key
+          // expected stock on delivery day of order
+          while (dateRowList(futureD).date_key < order.delivery_day) {
+            futureStock = futureStock - dateRowList(futureD).predict_sales
+            futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
+            futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
+            order.matched_sales_end_date = dateRowList(futureD).date_key
+            futureD = futureD + 1
+          }
+
+          if (futureStock < 0) {
+            futureStock = 0.0
+          }
+
           // expected stock on delivery day of next order
           while (dateRowList(futureD).date_key < deliveryDay) {
             futureStock = futureStock - dateRowList(futureD).predict_sales
@@ -189,15 +136,39 @@ object OrderUtil {
 
           order.future_stock = futureStock
 
-          if (futureStock < 0) {
-            futureStock = 0.0
-          }
+          var orderQty: Double = 0
 
+          if (modelRun.isDcFlow) {
+            val maxStockLevel = nextOderDeliver.average_sales * 24
+            val minStockLevel = nextOderDeliver.average_sales * 12
+            orderQty = order.order_qty.doubleValue()
 
-          if (futureStock < nextOderDeliver.minimum_stock_required) {
-            var orderQty = nextOderDeliver.minimum_stock_required - futureStock
+            order.minStock = minStockLevel
+            order.maxStock = maxStockLevel
+
+            if (futureStock + order.order_qty.doubleValue() > maxStockLevel) {
+
+              if (futureStock > minStockLevel) {
+                orderQty = 0
+              } else {
+                orderQty = maxStockLevel - futureStock
+              }
+
+            } else if (futureStock + order.order_qty.doubleValue() < minStockLevel) {
+              orderQty = minStockLevel - futureStock
+            }
+
             order.order_without_pcb = orderQty
 
+          } else {
+            if (futureStock < nextOderDeliver.minimum_stock_required) {
+              orderQty = nextOderDeliver.minimum_stock_required - futureStock
+              order.order_without_pcb = orderQty
+
+            }
+          }
+
+          if (orderQty > 0) {
             var pcb = order.pcb
             if (order.supplier_code.equalsIgnoreCase("KSSE")
               || order.supplier_code.equalsIgnoreCase("KXS1")) {
@@ -269,6 +240,65 @@ object OrderUtil {
     dateRowList
   }
 
+  private def getEmptyOrder(runDateStr: String, ist: ItemEntity, isDcFlow: Boolean): DateRow = {
+
+    if (isDcFlow) {
+      DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
+        , ist.entity_code, "", "", "", 0.0, "", "", "", 0.0
+      )
+    } else {
+      DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
+        , "", ist.entity_code, "", "", 0.0, "", "", "", 0.0
+      )
+    }
+  }
+
+  private def mapDateRow(runDateStr: String, ist: ItemEntity, row: Row, isSimulation: Boolean,
+                         isDcFlow: Boolean): DateRow = {
+
+    val dateRow = DateRow(
+      runDateStr,
+      row.getAs[String]("date_key"),
+
+      ist.item_id,
+      ist.sub_id,
+      row.getAs[String]("dept_code"),
+      row.getAs[String]("item_code"),
+      row.getAs[String]("sub_code"),
+
+      row.getAs[String]("con_holding"),
+      row.getAs[String]("store_code"),
+      row.getAs[String]("supplier_code"),
+      row.getAs[String]("rotation"),
+
+      row.getAs[Double]("pcb"),
+      row.getAs[String]("delivery_time"),
+
+      row.getAs[String]("order_date"),
+      row.getAs[String]("delivery_date"),
+
+      row.getAs[Double]("predict_sales")
+    )
+
+    if (null != dateRow.order_day) {
+      dateRow.is_order_day = true
+      if (isDcFlow) {
+        dateRow.average_sales = row.getAs[Double]("average_sales")
+      } else {
+        dateRow.minimum_stock_required = getMinimumStock(row, ist.is_dc_flow)
+        dateRow.ittreplentyp = row.getAs[Integer]("ittreplentyp")
+        dateRow.ittminunit = row.getAs[Integer]("ittminunit")
+        dateRow.shelf_capacity = row.getAs[String]("shelf_capacity")
+      }
+    }
+
+    if (isSimulation) {
+      dateRow.actual_sales = row.getAs[Double]("actual_sales")
+    }
+
+    dateRow
+  }
+
   private def getMinimumStock(row: Row, isDcFlow: Boolean): Double = {
 
     if (isDcFlow) {
@@ -311,5 +341,59 @@ object OrderUtil {
     minumumStock
   }
 
+
+  private def getDmDeliveryMap(ist: ItemEntity,
+                               dmOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
+    var dmDeliveryMap: Map[String, Double] = Map()
+    var deliveryMap: Map[String, Double] = Map()
+
+    if (dmOrdersMap.contains(ist)) {
+
+      for (dmOrder <- dmOrdersMap(ist)) {
+        var deliveryQty = dmOrder._2
+
+        if (dmDeliveryMap.contains(dmOrder._1)) {
+          deliveryQty = deliveryQty + dmDeliveryMap(dmOrder._1)
+        }
+
+        dmDeliveryMap = dmDeliveryMap + (dmOrder._1 -> deliveryQty)
+      }
+    }
+
+    dmDeliveryMap
+  }
+
+  private def getDeliveryMap(ist: ItemEntity,
+                             onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
+    var deliveryMap: Map[String, Double] = Map()
+
+    if (onTheWayStockMap.contains(ist)) {
+      for (onTheWayStock <- onTheWayStockMap(ist)) {
+        var deliveryQty = onTheWayStock._2
+
+        if (deliveryMap.contains(onTheWayStock._1)) {
+          deliveryQty = deliveryQty + deliveryMap(onTheWayStock._1)
+        }
+
+        deliveryMap = deliveryMap + (onTheWayStock._1 -> deliveryQty)
+      }
+    }
+    deliveryMap
+  }
+
+
+  private def processPastDcOrders(ist: ItemEntity, dateRowList: List[DateRow],
+                                  onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Unit = {
+    var orderMap: Map[String, Double] = Map()
+
+    if (onTheWayStockMap.contains(ist)) {
+      orderMap = onTheWayStockMap(ist).toMap
+    }
+    for (dateRow <- dateRowList) {
+      if (dateRow.is_order_day && orderMap.contains(dateRow.order_day)) {
+        dateRow.order_qty = orderMap(dateRow.order_day).intValue()
+      }
+    }
+  }
 
 }

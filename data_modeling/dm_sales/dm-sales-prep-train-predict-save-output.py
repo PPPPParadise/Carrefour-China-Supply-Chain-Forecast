@@ -2,7 +2,7 @@ import datetime
 
 from download_data import download_data
 from promo_model_preprocessing import preprocess_promo
-from promo_model_train_with_confidence import train, prediction
+from promo_model_train_with_confidence import train, predict
 
 proc_root = os.path.dirname(os.path.realpath(__file__))
 

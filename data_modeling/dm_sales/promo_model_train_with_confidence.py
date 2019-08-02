@@ -17,9 +17,6 @@ from utils_v2 import Model
 from utils_v2 import read_features
 
 warnings.filterwarnings('ignore')
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', 50)
-pd.set_option('max_colwidth', 200)
 pd.set_option('mode.use_inf_as_na', True)
 
 sys.path.append(os.getcwd())
@@ -54,8 +51,8 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     #### Load and preprocess
     features_folder = folder + 'features'
 
-    features, dummies_features, flat_features, \
-    time_features, identification = read_features(features_folder)
+    features, dummy_features, flat_features, \
+    time_features, identification_features = read_features(features_folder)
 
     with open(dataset_name, 'rb') as input_file:
         df = pickle.load(input_file)
@@ -176,7 +173,7 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     return folder_name
 
 
-def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_train):
+def predict(desc, folder, data_name, target_value, learning_rate, date_stop_train):
     """[Create a prediction]
 
     Arguments:
@@ -267,8 +264,6 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
         'order_prediction'
     ]]
 
-    now = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
-
     final_results_item_store_dm \
         .to_csv(folder + running_name + '/promo_sales_order_prediction_by_item_store_dm.csv', index=False)
 
@@ -287,5 +282,5 @@ if __name__ == '__main__':
     folder_name = train(desc=desc, folder=folder, data_name=data_name, target_value=target_value,
                         learning_rate=learning_rate, date_stop_train=date_stop_train)
 
-    prediction(folder_name, folder, data_name,
-               target_value, learning_rate, date_stop_train)
+    predict(folder_name, folder, data_name,
+            target_value, learning_rate, date_stop_train)

@@ -13,32 +13,19 @@
 #     name: python3
 # ---
 
+import datetime
 import glob
-from datetime import timedelta
-from utils_v2 import read_data
-import utils_v2
-from importlib import reload
-import sys
-import pandas as pd
 import os
 import pickle
-import numpy as np
-import pyspark
-import csv
-import matplotlib.pyplot as plt
+import sys
 import warnings
-import datetime
-import xgboost as xgb
-from os.path import expanduser, join, abspath
-from sklearn import preprocessing
-from sklearn import ensemble
-from sklearn import model_selection
-from sklearn.model_selection import GridSearchCV
-from sklearn import tree
-from sklearn.metrics import r2_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
-from sklearn.multioutput import MultiOutputRegressor
+from importlib import reload
+
+import numpy as np
+import pandas as pd
+import utils_v2
+from utils_v2 import read_data
+
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', 100)
@@ -89,7 +76,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     df = df2
 
-
     try:
         len(df.loc[df['active_flag'] == 1])
     except:
@@ -106,7 +92,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
         len(df.loc[df['bp_flag'] == 1])
     except:
         print('NO BP FLAG')
-
 
     try:
         len(df.loc[(df['bp_flag'] == 0) | (df['planned_bp_flag'] == 0)])
@@ -135,11 +120,8 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
         subset=['current_dm_psp_start_date', 'current_dm_psp_end_date'], how='any')
     # -
 
-
     df = df_droped
 
- 
- 
     df.loc[df.current_dm_psp_start_date.notnull(), 'current_dm_busday'] = np.busday_count(
         df.current_dm_psp_start_date.dropna().values.astype('datetime64[D]'),
         df.current_dm_psp_end_date.dropna().values.astype('datetime64[D]'))
@@ -150,7 +132,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     df['current_dm_weekend_days'] = df.curr_psp_days - df.current_dm_busday
 
-  
     # ## Adding uplift as feature
 
     df['uplift_value'] = df['4w_sales_4w_bef'] * df['uplift']
@@ -165,7 +146,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
         # DELETED on 12/07 Sprint4: 95
         # 'dm_start_week',
-
 
         'dm_sales_qty',
         'current_dm_theme_id',
@@ -190,7 +170,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
         'psp_start_month',
         'psp_end_week',
 
-
         'full_item',
         'item_store',
 
@@ -212,7 +191,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
         # ADDED on 12/07 Sprint4: 95
         'current_dm_psp_nsp_ratio',
-
 
         'last_year_dm_sales',
         'last_year_dm_psp_nsp_ratio',
@@ -263,12 +241,10 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
         # ADDED on 12/07 Sprint4: 95
         'nl',
 
-
         'current_dm_slot_type_code',
 
         # ADDED Sprint 4 v1:
         'festival_type',
-
 
     ]
     # -
@@ -318,17 +294,17 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
     used_cols_df = pd.Series(used_cols)
     error_do_not_exist = used_cols_df[~used_cols_df.isin(df.columns)]
 
-    if not(error_do_not_exist.to_list() == []):
+    if not (error_do_not_exist.to_list() == []):
         print(error_do_not_exist)
         raise Exception('Some features do not exist. Check the names!')
 
-    if not(len(used_cols) == len(set(used_cols))):
+    if not (len(used_cols) == len(set(used_cols))):
         print(used_cols_df[used_cols_df.duplicated()])
         raise Exception('Duplicated features!!!')
 
     def create_dummies(dummies_names, df):
         for i in dummies_names:
-            df = pd.concat([df, pd.get_dummies(df[i], prefix=i+"_")], axis=1)
+            df = pd.concat([df, pd.get_dummies(df[i], prefix=i + "_")], axis=1)
 
         return df
 
@@ -347,7 +323,7 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     sample.columns[sample.columns.duplicated()]
 
-    if not(sample.columns[sample.columns.duplicated()].to_list() == []):
+    if not (sample.columns[sample.columns.duplicated()].to_list() == []):
         print(sample.columns[sample.columns.duplicated()])
         raise Exception('Some features are duplicated. Check the names!')
 
@@ -378,7 +354,7 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
     # +
 
     csv = []
-    for file in glob.glob(folder+"features/*.csv"):
+    for file in glob.glob(folder + "features/*.csv"):
         csv.append(file)
     # -
 
@@ -388,7 +364,7 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     dummies_features = pd.read_csv(dumm, squeeze=True).tolist()
     flat_features = pd.read_csv(flat, squeeze=True).tolist()
-    #time_features = pd.read_csv(names_features[2], squeeze=True).tolist()
+    # time_features = pd.read_csv(names_features[2], squeeze=True).tolist()
     identification = pd.read_csv(iden, squeeze=True).tolist()
 
     try:
@@ -431,7 +407,6 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     calendar['week_end_date'] = calendar['date_value']
 
-
     df = df.merge(calendar[['week_end_date', 'week_key']], how='left')
 
     # ## Filter weeks with negative sales
@@ -443,10 +418,9 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     df_no_neg['dm_sales_qty'].describe()
 
-    with open(folder + dataset_name +'.pkl', 'wb') as output_file:
+    with open(folder + dataset_name + '.pkl', 'wb') as output_file:
         pickle.dump(
             df_no_neg, output_file)
-
 
 
 if __name__ == '__main__':

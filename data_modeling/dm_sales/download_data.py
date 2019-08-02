@@ -13,19 +13,11 @@
 #     name: python3
 # ---
 
-import pandas as pd
 import os
-import pickle
-import numpy as np
-import pyspark
-import matplotlib.pyplot as plt
-import warnings
-import datetime
-import csv
-from os.path import expanduser, join, abspath
-from pyspark.sql.types import *
+from os.path import abspath
+
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
+from pyspark.sql.types import *
 
 
 def download_data(folder, big_table_name, file_name, spark_session_name='download_data_forecast'):
@@ -73,7 +65,7 @@ def download_data(folder, big_table_name, file_name, spark_session_name='downloa
     os.system(f'hadoop fs -rm -r {file_name}.csv')
     print('started')
     df_trxn_all = spark.sql(sql_query)
-    df_trxn_all.coalesce(1).write.mode('overwrite')\
+    df_trxn_all.coalesce(1).write.mode('overwrite') \
         .format('com.databricks.spark.csv').option("header", "true").save(file_name)
     print('ended')
     spark.stop()
@@ -94,7 +86,7 @@ def download_data(folder, big_table_name, file_name, spark_session_name='downloa
     print(file_name)
 
     try:
-        os.rename(file_name+'.csv', folder+file_name+'.csv')
+        os.rename(file_name + '.csv', folder + file_name + '.csv')
         print('Dataset moved to directory')
     except:
         print('no downloaded file to move')

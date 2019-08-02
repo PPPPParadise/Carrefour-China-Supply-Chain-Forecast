@@ -1,15 +1,17 @@
+import datetime
+
 from download_data import *
 from promo_model_preprocessing import *
 from promo_model_train_with_confidence import *
-import datetime
+
 proc_root = os.path.dirname(os.path.realpath(__file__))
 
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import lpad
 from impala.dbapi import connect
 import argparse
+
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
 warehouse_location = abspath('spark-warehouse')
 
@@ -32,13 +34,15 @@ print(config)
 if (args.database_name is None) or (args.local_folder is None) or (args.date_stop_train is None):
     print('config needed ')
     sys.exit()
-    
-def impalaexec(sql,create_table=False):
+
+
+def impalaexec(sql, create_table=False):
     """
     execute sql using impala
     """
     print(sql)
-    with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019', database=config['database']) as conn:
+    with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019',
+                 database=config['database']) as conn:
         curr = conn.cursor()
         curr.execute(sql)
 
@@ -50,7 +54,6 @@ def main():
     os.system(f"rm -r {folder}")
     # Daily dataset
     ##big_table_name = 'vartefact.forecast_sprint4_add_dm_to_daily'
-
 
     # Promo dataset
     big_table_name = f"{config['database']}.forecast_sprint4_promo_mecha_v4"
@@ -103,11 +106,12 @@ def main():
 
     sqlContext = SQLContext(spark)
 
-    spark_df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load(f"promo_sales_order_prediction_by_item_store_dm.csv")
+    spark_df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load(
+        f"promo_sales_order_prediction_by_item_store_dm.csv")
     spark_df = spark_df.withColumn("item_id", spark_df["item_id"].cast(IntegerType()))
     spark_df = spark_df.withColumn("sub_id", spark_df["sub_id"].cast(IntegerType()))
     spark_df = spark_df.withColumn("current_dm_theme_id", spark_df["current_dm_theme_id"].cast(IntegerType()))
-    spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'],3,'0'))
+    spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'], 3, '0'))
     spark_df = spark_df.withColumn("sales", spark_df["sales"].cast(FloatType()))
     spark_df = spark_df.withColumn("sales_prediction", spark_df["sales_prediction"].cast(FloatType()))
     spark_df = spark_df.withColumn("squared_error_predicted", spark_df["squared_error_predicted"].cast(FloatType()))
@@ -120,6 +124,7 @@ def main():
     sql = f""" invalidate metadata {config['database']}.promo_sales_order_prediction_by_item_store_dm """
     impalaexec(sql)
     print('csv saved in the table')
+
 
 if __name__ == '__main__':
     main()

@@ -1,40 +1,26 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from utils_v2 import Model
-from utils_v2 import read_features
-import utils_v2
-from importlib import reload
-import sys
-from sklearn.model_selection import KFold
-import click
-import pandas as pd
 import datetime
 import os
 import pickle
-import numpy as np
-import pyspark
-import csv
-import matplotlib.pyplot as plt
+import sys
 import warnings
-import datetime
+from importlib import reload
+
+import numpy as np
+import pandas as pd
+import utils_v2
 import xgboost as xgb
-from os.path import expanduser, join, abspath
-from sklearn import preprocessing
-from sklearn import ensemble
-from sklearn import model_selection
-from sklearn.model_selection import GridSearchCV
-from sklearn import tree
-from sklearn.metrics import r2_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
-from sklearn.multioutput import MultiOutputRegressor
+from sklearn.model_selection import KFold
+from utils_v2 import Model
+from utils_v2 import read_features
+
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', 50)
 pd.set_option('max_colwidth', 200)
 pd.set_option('mode.use_inf_as_na', True)
-
 
 sys.path.append(os.getcwd())
 reload(utils_v2)
@@ -69,7 +55,7 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     features_folder = folder + 'features'
 
     features, dummies_features, flat_features, \
-        time_features, identification = read_features(features_folder)
+    time_features, identification = read_features(features_folder)
 
     with open(dataset_name, 'rb') as input_file:
         df = pickle.load(input_file)
@@ -133,7 +119,6 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     results = np.zeros(len(X_train))
 
     for train_index, test_index in kf.split(X_train):
-
         # Train forecast model
         X_tr, X_te = X_train.iloc[train_index], X_train.iloc[test_index]
         y_tr, y_te = y_train.iloc[train_index], y_train.iloc[test_index]
@@ -152,7 +137,7 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
 
         # Train the error squared predictor
         results[test_index] = sales_prediction_model.predict(X_te)
-        error_y_test = (results[test_index] - y_te)**2
+        error_y_test = (results[test_index] - y_te) ** 2
         sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
                                                  eval_metric="mae")
 
@@ -161,26 +146,26 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
 
     # Saving results
     now = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
-    saving_folder = folder+running_name+'_created_on_' + now
-    folder_name = running_name+'_created_on_' + now
+    saving_folder = folder + running_name + '_created_on_' + now
+    folder_name = running_name + '_created_on_' + now
 
     try:
         os.mkdir(saving_folder)
-        print("Directory ", saving_folder,  " Created ")
+        print("Directory ", saving_folder, " Created ")
     except FileExistsError:
-        print("Directory ", saving_folder,  " already exists")
+        print("Directory ", saving_folder, " already exists")
 
     # Save sales forecast model
     sales_prediction_model.save_model(saving_folder + '/model_' + running_name +
                                       '_' + str(now) + '_.model'
                                       )
 
-    with open(saving_folder+'/model_' + running_name +
+    with open(saving_folder + '/model_' + running_name +
               '_' + str(now) + '_.pkl', 'wb') as output_file:
         pickle.dump(sales_prediction_model, output_file)
 
     # Save error squared predictor model
-    with open(saving_folder+'/model_error.pkl2', 'wb') as output_file:
+    with open(saving_folder + '/model_error.pkl2', 'wb') as output_file:
         pickle.dump(sales_prediction_squared_error_model, output_file)
 
     # Save hyperparameters
@@ -218,7 +203,6 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
     # Filter negative forecasts and remove unlikely forecasts
     model_class.df_forecast['forecast'][model_class.df_forecast['forecast'] < 0] = 0
     model_class.check_forecast()
-    
 
     try:
         os.mkdir(folder + running_name + '/analyses')
@@ -241,7 +225,7 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
                                               '/forecast_dump.pkl', 'wb'))
 
     # Load the error squared predictor model
-    with open(folder + running_name+'/model_error.pkl2', 'rb') as input_file:
+    with open(folder + running_name + '/model_error.pkl2', 'rb') as input_file:
         sales_prediction_squared_error_model = pickle.load(input_file)
 
     features_predictions_df = model_class.df_forecast
@@ -253,16 +237,16 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
 
     # Calculate std
     features_predictions_df.loc[:,
-                                'std_dev_predicted'] = features_predictions_df.squared_error_predicted ** 0.5
+    'std_dev_predicted'] = features_predictions_df.squared_error_predicted ** 0.5
 
     # Evaluate 80% confidence interval
     features_predictions_df.loc[:, 'confidence_interval_80_max'] = (
-        features_predictions_df['forecast'] + 1.28*features_predictions_df.std_dev_predicted)
+            features_predictions_df['forecast'] + 1.28 * features_predictions_df.std_dev_predicted)
 
     features_predictions_df.loc[:,
-                                'confidence_interval_max'] = features_predictions_df.confidence_interval_80_max
+    'confidence_interval_max'] = features_predictions_df.confidence_interval_80_max
     features_predictions_df.loc[:,
-                                'order_prediction'] = features_predictions_df.confidence_interval_80_max
+    'order_prediction'] = features_predictions_df.confidence_interval_80_max
 
     features_predictions_df['sales'] = features_predictions_df['dm_sales_qty']
     features_predictions_df['sales_prediction'] = features_predictions_df['forecast']
@@ -285,7 +269,7 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
 
     now = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
 
-    final_results_item_store_dm\
+    final_results_item_store_dm \
         .to_csv(folder + running_name + '/promo_sales_order_prediction_by_item_store_dm.csv', index=False)
 
 

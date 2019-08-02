@@ -1,25 +1,18 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
 import datetime
-import numpy as np
-import pandas as pd
+import glob
 import os
 import pickle
-import numpy as np
-import pyspark
+import warnings
+from os.path import abspath
+
 import matplotlib.pyplot as plt
-import warnings
-import datetime
-import csv
-from os.path import expanduser, join, abspath
-from pyspark.sql.types import *
+import numpy as np
+import pandas as pd
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
-import glob
-import pickle
+from pyspark.sql.types import *
 from xgboost import plot_importance
-import sys
-import warnings
+
 warnings.filterwarnings('ignore')
 
 
@@ -102,7 +95,7 @@ def read_data(df, table_name):
     df = df[np.isfinite(df['item_id'])]
     df = df[np.isfinite(df['sub_id'])]
 
-    print(1/4)
+    print(1 / 4)
 
     for i in int_list + string_list:
         try:
@@ -112,11 +105,11 @@ def read_data(df, table_name):
             except:
                 continue
         except:
-            #print('type int, error on ', i)
+            # print('type int, error on ', i)
             float_list.append(i)
             continue
 
-    print(2/4)
+    print(2 / 4)
 
     for i in float_list + string_list:
         try:
@@ -126,7 +119,7 @@ def read_data(df, table_name):
             except:
                 continue
         except:
-            #print('type float, error on ', i)
+            # print('type float, error on ', i)
             string_list.append(i)
             continue
 
@@ -134,10 +127,10 @@ def read_data(df, table_name):
         try:
             df[i] = pd.to_datetime(df[i])
         except:
-            #print('type datetime, error on ', i)
+            # print('type datetime, error on ', i)
             string_list.append(i)
             continue
-    print(3/4)
+    print(3 / 4)
     errors = []
     for i in string_list:
         try:
@@ -147,7 +140,7 @@ def read_data(df, table_name):
             errors.append(i)
             continue
 
-    print(4/4)
+    print(4 / 4)
     df['full_item'] = df['item_id'].astype(str) + '_' + df['sub_id'].astype(str)
     df['item_store'] = df['full_item'] + '_' + df['store_code'].astype(str)
 
@@ -302,8 +295,8 @@ class Model():
         self.df['week_end_date'] = pd.to_datetime(self.df['week_end_date'])
 
         self.features, self.dummies_features, self.flat_features, \
-            self.time_features, self.identification = read_features(
-                self.folder + self.feature_folder)
+        self.time_features, self.identification = read_features(
+            self.folder + self.feature_folder)
 
         self.now = str(datetime.datetime.now())
 
@@ -359,7 +352,7 @@ class Model():
         plt.show()
 
         graph_name = 'performance_graph_' + self.running_name + '_' + self.now + '_.png'
-        #plt.savefig(self.folder + graph_name)
+        # plt.savefig(self.folder + graph_name)
 
         return plt
 
@@ -379,7 +372,7 @@ class Model():
         fig.set_size_inches(15, 20)
 
         graph_name = 'importance_graph_' + self.running_name + '_' + self.now + '_.png'
-        #plt.savefig(self.folder + graph_name)
+        # plt.savefig(self.folder + graph_name)
 
         # return fig
 
@@ -395,7 +388,7 @@ class Model():
         features_xg = pd.DataFrame(
             self.boost.feature_importances_, columns=['value'])
         features_xg['features_names'] = self.features
-        #features_xg.sort_values('value', ascending=False).to_csv(file_name, index=False)
+        # features_xg.sort_values('value', ascending=False).to_csv(file_name, index=False)
         return features_xg
 
     def _weeks_to_pred(self):
@@ -406,7 +399,7 @@ class Model():
         """
         self.weeks_to_pred = self.df.loc[self.df['week_end_date'] >
                                          self.date_starting_test, 'week_key'].sort_values().unique()
-        #print('weeks to pred = ', self.weeks_to_pred)
+        # print('weeks to pred = ', self.weeks_to_pred)
         return self.weeks_to_pred
 
     def predict(self, week_max=9):
@@ -418,7 +411,7 @@ class Model():
         print('date starting test: ', self.date_starting_test)
 
         df_forecast = self.df.loc[(
-            self.df['week_end_date'] >= self.date_starting_test)]
+                self.df['week_end_date'] >= self.date_starting_test)]
         week_starting_test = self.df.loc[(self.df['week_end_date'] >= self.date_starting_test),
                                          'week_key']
         week_starting_test = week_starting_test.min()
@@ -543,7 +536,7 @@ class Model():
         ax.set_ylabel(self.error)
         if ylim is not None:
             ax.set_ylim(ylim)
-        #fig.savefig('Sprint_2/abs_err_' + '.png')
+        # fig.savefig('Sprint_2/abs_err_' + '.png')
         return fig, ax
 
     def error_for_volume(self, value):

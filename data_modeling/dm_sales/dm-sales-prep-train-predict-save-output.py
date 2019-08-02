@@ -1,8 +1,8 @@
 import datetime
 
-from download_data import *
-from promo_model_preprocessing import *
-from promo_model_train_with_confidence import *
+from download_data import download_data
+from promo_model_preprocessing import preprocess_promo
+from promo_model_train_with_confidence import train, prediction
 
 proc_root = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,11 +21,6 @@ parser.add_argument("-f", "--local_folder", help="local folder")
 parser.add_argument("-s", "--date_stop_train", help="date stop train")
 args = parser.parse_args()
 
-# config = {}
-# config['database'] = 'temp'
-# config['local_folder'] = 'test_3_folder_weekly/'
-# config['date_stop_train'] = '2019-07-01'
-# python3 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_promo.py -d temp -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/test_p_folder_weekly/' -s '2019-07-01'
 config = {}
 config['database'] = args.database_name
 config['local_folder'] = args.local_folder
@@ -52,8 +47,6 @@ def main():
     now = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
     folder = config['local_folder']
     os.system(f"rm -r {folder}")
-    # Daily dataset
-    ##big_table_name = 'vartefact.forecast_sprint4_add_dm_to_daily'
 
     # Promo dataset
     big_table_name = f"{config['database']}.forecast_sprint4_promo_mecha_v4"

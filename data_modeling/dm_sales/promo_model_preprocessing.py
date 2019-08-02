@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.1.6
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
-
 import datetime
 import glob
 import os
@@ -53,94 +38,88 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     table_path = folder + big_table
 
-    df_test = pd.read_csv(table_path)
+    table_df = pd.read_csv(table_path)
 
-    df = df_test
-
-    df['current_dm_slot_type_code'].value_counts()
+    table_df['current_dm_slot_type_code'].value_counts()
 
     try:
-        print(len(df[df['ind_out_of_stock'] == 1]))
-        print(len(df[df['ind_out_of_stock'] == 1]) / len(df))
+        print(len(table_df[table_df['ind_out_of_stock'] == 1]))
+        print(len(table_df[table_df['ind_out_of_stock'] == 1]) / len(table_df))
     except:
         print('NO OOS flag')
 
-    len(df)
+    len(table_df)
 
     # ### Load and preprocess
 
     sys.path.append(os.getcwd())
     reload(utils_v2)
 
-    df2, errors, liste = read_data(df, sql_table)
-
-    df = df2
+    table_df, errors, liste = read_data(table_df, sql_table)
 
     try:
-        len(df.loc[df['active_flag'] == 1])
+        len(table_df.loc[table_df['active_flag'] == 1])
     except:
         print('NO ACTIVE FLAG')
 
     try:
-        print(len(df.loc[df['planned_bp_flag'] == 1]))
-        len(df[df['planned_bp_flag'] == 0])
+        print(len(table_df.loc[table_df['planned_bp_flag'] == 1]))
+        len(table_df[table_df['planned_bp_flag'] == 0])
     except:
         print('NO PLANNED BP FLAG')
 
     # +
     try:
-        len(df.loc[df['bp_flag'] == 1])
+        len(table_df.loc[table_df['bp_flag'] == 1])
     except:
         print('NO BP FLAG')
 
     try:
-        len(df.loc[(df['bp_flag'] == 0) | (df['planned_bp_flag'] == 0)])
+        len(table_df.loc[(table_df['bp_flag'] == 0) | (table_df['planned_bp_flag'] == 0)])
     except:
         print('NO BP FLAG or PLANNED BP FLAG')
 
-    len(df.loc[:, 'full_item'].unique())
+    len(table_df.loc[:, 'full_item'].unique())
 
     try:
-        df['ind_out_of_stock_flag'].unique()
+        table_df['ind_out_of_stock_flag'].unique()
     except:
         print('NO ind_out_of_stock_flag FLAG')
 
     try:
-        len(df.loc[df['assortment_active_flag'] == 1])
+        len(table_df.loc[table_df['assortment_active_flag'] == 1])
     except:
         print('NO assortment_active_flag FLAG')
 
     # ### Need to drop lines with no dm end or start date infos
 
-    # +
-    df.current_dm_psp_start_date = pd.to_datetime(df.current_dm_psp_start_date)
-    df.current_dm_psp_end_date = pd.to_datetime(df.current_dm_psp_end_date)
+    table_df.current_dm_psp_start_date = pd.to_datetime(table_df.current_dm_psp_start_date)
+    table_df.current_dm_psp_end_date = pd.to_datetime(table_df.current_dm_psp_end_date)
 
-    df_droped = df.dropna(
+    df_dropped = table_df.dropna(
         subset=['current_dm_psp_start_date', 'current_dm_psp_end_date'], how='any')
-    # -
 
-    df = df_droped
+    table_df = df_dropped
 
-    df.loc[df.current_dm_psp_start_date.notnull(), 'current_dm_busday'] = np.busday_count(
-        df.current_dm_psp_start_date.dropna().values.astype('datetime64[D]'),
-        df.current_dm_psp_end_date.dropna().values.astype('datetime64[D]'))
+    table_df.loc[table_df.current_dm_psp_start_date.notnull(), 'current_dm_busday'] = np.busday_count(
+        table_df.current_dm_psp_start_date.dropna().values.astype('datetime64[D]'),
+        table_df.current_dm_psp_end_date.dropna().values.astype('datetime64[D]'))
 
     # number weekend in current DM
-    df['curr_psp_days'] = (df.current_dm_psp_end_date
-                           - df.current_dm_psp_start_date).dt.days
+    table_df['curr_psp_days'] = (table_df.current_dm_psp_end_date
+                           - table_df.current_dm_psp_start_date).dt.days
 
-    df['current_dm_weekend_days'] = df.curr_psp_days - df.current_dm_busday
+    table_df['current_dm_weekend_days'] = table_df.curr_psp_days - table_df.current_dm_busday
 
     # ## Adding uplift as feature
 
-    df['uplift_value'] = df['4w_sales_4w_bef'] * df['uplift']
+    table_df['uplift_value'] = table_df['4w_sales_4w_bef'] * table_df['uplift']
 
-    df['uplift_value'].describe()
+    table_df['uplift_value'].describe()
 
     # ### Preparing data for xgboost
 
-    identification = [
+    identification_features = [
         'item_id',
         'sub_id',
 
@@ -225,12 +204,11 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     ]
 
-    # +
     time_features = [
 
     ]
 
-    dummies_names = [
+    dummy_features = [
         'store_code',
         'item_seasonal_code',
         'sub_family_code',
@@ -249,7 +227,7 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
     ]
     # -
 
-    df[[
+    table_df[[
         'nl',
         'current_dm_psp_nsp_ratio',
         'current_dm_slot_type_name',
@@ -261,38 +239,13 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
     # # Check features missing
 
-    used_cols = dummies_names + time_features + flat_features + identification
+    used_cols = dummy_features + time_features + flat_features + identification_features
 
-    ok = df.columns[df.columns.isin(used_cols)]
-    not_used = df.columns[~df.columns.isin(used_cols)]
+    not_used = table_df.columns[~table_df.columns.isin(used_cols)]
     not_used.to_list()
 
-    # + {"active": ""}
-    # type id: 3 types
-    #     01, 02, 04
-    #     80% is 01, direct discount, dd
-    #     17% 02, next purchase coupon, np
-    #     04, changing coupon, cp
-    #     --> we dont have 03, AC advertising coupon in our scope
-    #
-    # type code: 14 different
-    #     7 in our table
-    #     CP: customer purchase, 94%
-    #     MPM: promotion for carrefour members, 2%
-    #     MP: member price, 2%
-    #     CC: customer changing coupon, less than 1%
-    #     MPCM: member point used for items, 0.3%
-    #     MSG: member point, less 0.2
-    #     EX: exchange coupon, less 0.2
-    #
-    # NDV: Number of distinct value
-    #   ndv_coupon_activity_type_id
-    #   ndv_coupon_typecode
-    #
-    # -
-
     used_cols_df = pd.Series(used_cols)
-    error_do_not_exist = used_cols_df[~used_cols_df.isin(df.columns)]
+    error_do_not_exist = used_cols_df[~used_cols_df.isin(table_df.columns)]
 
     if not (error_do_not_exist.to_list() == []):
         print(error_do_not_exist)
@@ -308,18 +261,18 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
 
         return df
 
-    df = create_dummies(dummies_names, df)
+    table_df = create_dummies(dummy_features, table_df)
 
     dummies_features = []
-    for i in df.columns:
-        if any([i.startswith(s + '__') for s in dummies_names]):
+    for i in table_df.columns:
+        if any([i.startswith(s + '__') for s in dummy_features]):
             dummies_features.append(i)
 
-    dummies_names
+    dummy_features
 
     features = dummies_features + flat_features + time_features
 
-    sample = df.loc[:50, features]
+    sample = table_df.loc[:50, features]
 
     sample.columns[sample.columns.duplicated()]
 
@@ -346,75 +299,61 @@ def preprocess_promo(folder, big_table, sql_table, target_value, dataset_name):
             names_features[1], index=False, header=False)
         pd.Series(time_features).to_csv(
             names_features[2], index=False, header=False)
-        pd.Series(identification).to_csv(
+        pd.Series(identification_features).to_csv(
             names_features[3], index=False, header=False)
     except FileExistsError:
         print("Directory already exists")
 
-    # +
-
     csv = []
     for file in glob.glob(folder + "features/*.csv"):
         csv.append(file)
-    # -
-
-    iden = [s for s in csv if 'identification' in s][0]
-    flat = [s for s in csv if 'flat' in s][0]
-    dumm = [s for s in csv if 'dummies' in s][0]
-
-    dummies_features = pd.read_csv(dumm, squeeze=True).tolist()
-    flat_features = pd.read_csv(flat, squeeze=True).tolist()
-    # time_features = pd.read_csv(names_features[2], squeeze=True).tolist()
-    identification = pd.read_csv(iden, squeeze=True).tolist()
 
     try:
-        df['current_theme_start_date'] = pd.to_datetime(
-            df['current_theme_start_date'])
+        table_df['current_theme_start_date'] = pd.to_datetime(
+            table_df['current_theme_start_date'])
     except:
         print('REPLACE THEME START BY PSP START')
-        df['current_theme_start_date'] = pd.to_datetime(
-            df['current_dm_psp_start_date'])
+        table_df['current_theme_start_date'] = pd.to_datetime(
+            table_df['current_dm_psp_start_date'])
 
-    df['week_end_date'] = df['current_theme_start_date']
+    table_df['week_end_date'] = table_df['current_theme_start_date']
 
     try:
-        df['planned_bp_flag']
+        table_df['planned_bp_flag']
     except:
         print('FILLED planned_bp_flag with 0')
-        df['planned_bp_flag'] = 0
+        table_df['planned_bp_flag'] = 0
 
     try:
-        df['active_flag']
+        table_df['active_flag']
     except:
         print('FILLED active_flag with 0')
-        df['active_flag'] = 1
+        table_df['active_flag'] = 1
 
-    # +
     try:
-        df['out_stock_flag']
+        table_df['out_stock_flag']
     except:
         try:
-            df['out_stock_flag'] = df['ind_out_of_stock']
+            table_df['out_stock_flag'] = table_df['ind_out_of_stock']
             print('FILLED out_stock_flag with ind_out_of_stock')
         except:
             print('FILLED out_stock_flag with 0')
-            df['out_stock_flag'] = 0
+            table_df['out_stock_flag'] = 0
 
-    # -
 
     with open(f'{folder}calendar.pkl', 'rb') as input_file:
         calendar = pickle.load(input_file)
 
     calendar['week_end_date'] = calendar['date_value']
 
-    df = df.merge(calendar[['week_end_date', 'week_key']], how='left')
+    table_df = table_df.merge(calendar[['week_end_date', 'week_key']], how='left')
 
     # ## Filter weeks with negative sales
 
-    df[df['dm_sales_qty'] < 0].head()
+    table_df[table_df['dm_sales_qty'] < 0].head()
 
-    df_no_neg = df[(df['dm_sales_qty'] >= 0)
-                   | (df['dm_sales_qty'].isna())]
+    df_no_neg = table_df[(table_df['dm_sales_qty'] >= 0)
+                   | (table_df['dm_sales_qty'].isna())]
 
     df_no_neg['dm_sales_qty'].describe()
 

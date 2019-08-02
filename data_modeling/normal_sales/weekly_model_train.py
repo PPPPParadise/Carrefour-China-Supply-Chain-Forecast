@@ -270,8 +270,8 @@ def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
 
                 num_folds = 2
 
-                # The item needs to have at least 3 rows of data
-                if len(X_train > num_folds):
+                # The item needs to have at least 2 rows of data
+                if len(X_train) > num_folds:
                     pass
                 else:
                     error_file.write("".join([str(datetime.datetime.now()), ', index ', str(counter),

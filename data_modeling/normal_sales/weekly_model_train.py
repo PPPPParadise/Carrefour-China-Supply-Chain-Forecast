@@ -32,13 +32,13 @@ def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
         folder {[string]} -- [Name of the folder containing data]
         data_set1 {[string]} -- [Name of the 1st part of the dataset (pickle file)]
         data_set2 {[string]} -- [Name of the 2nd part of the dataset (pickle file)]
-        futur_prediction {[bool]} -- [If the prediction is on futur unknown values,
+        future_prediction {[bool]} -- [If the prediction is on futur unknown values,
                                         we delete some useless columns from the result file,
                                         ]
         date_stop_train {[string]} -- [Date to stop the training, format YYYY-MM-DD]
     """
 
-    calendar_file = folder + 'calendar.pkl'
+    calendar_file = folder + 'calendar.pkl' # Review: check dependency from Carrefour's file
     date_stop_train = datetime.datetime.strptime(date_stop_train, '%Y-%m-%d')
 
     print(datetime.datetime.now(), "Start")
@@ -268,7 +268,7 @@ def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
                     n_jobs=30
                 )
 
-                num_folds = 3
+                num_folds = 2
 
                 # The item needs to have at least 3 rows of data
                 if len(X_train > num_folds):
@@ -282,6 +282,7 @@ def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
 
                 kf = KFold(n_splits=num_folds, shuffle=False, random_state=7)
 
+                # REVIEW: do we need kfold for training and analysing ?
                 # KFold training
                 for train_index, test_index in kf.split(X_train):
                     X_tr, X_te = X_train.iloc[train_index], X_train.iloc[test_index]
@@ -360,17 +361,11 @@ def run_model(folder, data_set1, data_set2, future_prediction, date_stop_train):
                     test.loc[:, 'forecast'] = forecast
                     test.loc[:, 'error_squared_forecast'] = error_squared_forecast
 
-                    predict_sales_error_squared = list(
-                        test.error_squared_forecast)
-
                     # Change the value here to modify the desired confidence interval
                     # As reference: 3* = 90% interval, 1.28* = 80% interval... Cf normal distribution
 
                     test.loc[:, 'predict_sales_max_confidence_interval'] = (
                             test.forecast + 3 * (test.error_squared_forecast ** 0.5))
-
-                    predict_sales_max_confidence_interval = list(
-                        test.predict_sales_max_confidence_interval)
 
                     # We compute the week's order by subtracting the overstock of
                     # the last week (max CI - estimated sales) from this week's max CI

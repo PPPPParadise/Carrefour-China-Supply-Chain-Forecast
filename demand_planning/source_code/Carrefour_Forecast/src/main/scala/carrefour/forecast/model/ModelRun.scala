@@ -8,7 +8,6 @@ case class ModelRun (
                       orderHistTableName: String,
                       viewName: String,
                       defaultStockLevel: Double,
-                      safetyStockDay: Double,
                       defaultDeliveryTime: String,
                       itemId: Integer,
                       subId: Integer,

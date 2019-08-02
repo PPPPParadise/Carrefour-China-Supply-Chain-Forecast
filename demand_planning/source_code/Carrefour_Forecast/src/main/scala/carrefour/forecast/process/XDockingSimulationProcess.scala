@@ -10,7 +10,6 @@ object XDockingSimulationProcess {
     val runDate = args(0)
     val flowType = FlowType.XDocking
     val defaultStockLevel = 0.0
-    val defaultSafetyStockLevel = 2.0
     val defaultDeliveryTime = "AfterStoreOpen"
 
     var item_id = 0
@@ -51,7 +50,6 @@ object XDockingSimulationProcess {
       "vartefact.forecast_xdock_orders_hist",
       "in_scope_xdock_item_store",
       defaultStockLevel,
-      defaultSafetyStockLevel,
       defaultDeliveryTime,
       item_id,
       sub_id,

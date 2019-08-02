@@ -170,8 +170,8 @@ object OrderUtil {
 
           if (orderQty > 0) {
             var pcb = order.pcb
-            if (order.supplier_code.equalsIgnoreCase("KSSE")
-              || order.supplier_code.equalsIgnoreCase("KXS1")) {
+            if (!ist.is_dc_flow && (order.supplier_code.equalsIgnoreCase("KSSE")
+              || order.supplier_code.equalsIgnoreCase("KXS1"))) {
               pcb = 1
             }
 

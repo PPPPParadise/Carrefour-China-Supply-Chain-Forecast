@@ -6,7 +6,7 @@ SELECT tmp.dept_code,
 	tmp.flow_type,
 	tmp.rotation,
 	tmp.pcb,
-	tmp.dc_supplier_code,
+	tmp.ds_supplier_code,
 	tmp.max_date_key,
 	cast(ord2.avg_sales_qty AS DOUBLE) avg_sales_qty,
 	'{0}' AS date_key
@@ -18,7 +18,7 @@ FROM (
 		id.flow_type,
 		id.rotation,
 		id.pcb,
-		id.dc_supplier_code,
+		id.ds_supplier_code,
 		max(ord.date_key) AS max_date_key
 	FROM vartefact.forecast_item_details id
 	JOIN lfms_ord ord ON id.item_code = ord.item_code
@@ -34,7 +34,7 @@ FROM (
 		id.flow_type,
 		id.rotation,
 		id.pcb,
-		id.dc_supplier_code
+		id.ds_supplier_code
 	) tmp
 JOIN lfms_ord ord2 ON ord2.date_key = tmp.max_date_key
 	AND tmp.item_code = ord2.item_code

@@ -225,8 +225,7 @@ object CoreProcess {
         startDateStr, endDateStr, modelRun.viewName)
       case FlowType.OnStockStore => CoreQueries.getOnStockStoreInScopeOrderDaysSql(stockDateStr,
         startDateStr, endDateStr, modelRun.viewName)
-      case FlowType.DC => CoreQueries.getOnStockDcInScopeOrderDaysSql(modelRun.safetyStockDay,
-        startDateStr, endDateStr, modelRun.viewName)
+      case FlowType.DC => CoreQueries.getOnStockDcInScopeOrderDaysSql(startDateStr, endDateStr, modelRun.viewName)
     }
 
     orderDeliverySql

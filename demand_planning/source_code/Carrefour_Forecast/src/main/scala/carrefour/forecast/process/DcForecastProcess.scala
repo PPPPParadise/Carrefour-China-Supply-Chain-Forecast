@@ -9,7 +9,6 @@ object DcForecastProcess {
     val runDate = args(0)
     val flowType = FlowType.DC
     val defaultStockLevel = 0.0
-    val safetyStockDay = 20.0
     val defaultDeliveryTime = "AfterStoreOpen"
 
     var item_id = 0
@@ -50,7 +49,6 @@ object DcForecastProcess {
       "vartefact.forecast_dc_orders_hist",
       "in_scope_dc_item_store",
       defaultStockLevel,
-      safetyStockDay,
       defaultDeliveryTime,
       item_id,
       sub_id,

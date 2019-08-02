@@ -9,7 +9,6 @@ object OnStockForecastProcess {
     val runDate = args(0)
     val flowType = FlowType.OnStockStore
     val defaultStockLevel = 0.0
-    val defaultSafetyStockLevel = 8.0
     val defaultDeliveryTime = "AfterStoreOpen"
 
     var item_id = 0
@@ -50,7 +49,6 @@ object OnStockForecastProcess {
       "vartefact.forecast_onstock_orders_hist",
       "in_scope_onstock_item_store",
       defaultStockLevel,
-      defaultSafetyStockLevel,
       defaultDeliveryTime,
       item_id,
       sub_id,

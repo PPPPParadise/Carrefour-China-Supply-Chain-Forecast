@@ -9,7 +9,6 @@ object OnStockSimulationProcess {
     val runDate = args(0)
     val flowType = FlowType.OnStockStore
     val defaultStockLevel = 0.0
-    var defaultSafetyStockLevel = 8.0
     val defaultDeliveryTime = "AfterStoreOpen"
 
     var item_id = 0
@@ -31,12 +30,8 @@ object OnStockSimulationProcess {
         store_code = argPair(1)
       }
 
-      if (argPair(0).equalsIgnoreCase("safetyStockLevel")) {
-        defaultSafetyStockLevel = argPair(1).toDouble
-      }
-
       if (argPair(0).equalsIgnoreCase("help")) {
-        throw new IllegalArgumentException("Sample input:  item_id=6690 sub_id=5324 store_code=101 safetyStockLevel=3")
+        throw new IllegalArgumentException("Sample input:  item_id=6690 sub_id=5324 store_code=101 ")
       }
     }
 
@@ -46,7 +41,6 @@ object OnStockSimulationProcess {
       "vartefact.forecast_onstock_orders_hist",
       "in_scope_onstock_item_store",
       defaultStockLevel,
-      defaultSafetyStockLevel,
       defaultDeliveryTime,
       item_id,
       sub_id,

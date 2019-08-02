@@ -265,7 +265,7 @@ object CoreQueries {
         fdls.flow_type,
         fdls.rotation,
         cast(fdls.pcb AS DOUBLE) pcb,
-        fdls.dc_supplier_code AS supplier_code,
+        fdls.ds_supplier_code AS supplier_code,
         dodm.order_date AS run_date,
         'AfterStoreOpen' AS delivery_time,
         fdls.avg_sales_qty AS average_sales
@@ -281,8 +281,7 @@ object CoreQueries {
   """
   }
 
-  def getOnStockDcInScopeOrderDaysSql(defaultMinimumStock: Double,
-                                      startDateStr: String, endDateStr: String, viewName: String): String = {
+  def getOnStockDcInScopeOrderDaysSql(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
     SELECT
         itmd.item_id,

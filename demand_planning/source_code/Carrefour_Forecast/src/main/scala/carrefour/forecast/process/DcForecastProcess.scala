@@ -1,5 +1,6 @@
 package carrefour.forecast.process
 
+import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
@@ -13,7 +14,6 @@ object DcForecastProcess {
 
     var item_id = 0
     var sub_id = 0
-    var store_code = ""
     var isDebug = false
     var debugTable = ""
 
@@ -28,10 +28,6 @@ object DcForecastProcess {
         sub_id = Integer.valueOf(argPair(1))
       }
 
-      if (argPair(0).equalsIgnoreCase("con_holding")) {
-        store_code = argPair(1)
-      }
-
       if (argPair(0).equalsIgnoreCase("debug_table")) {
         isDebug = true
         debugTable = argPair(1)
@@ -43,7 +39,7 @@ object DcForecastProcess {
       }
     }
 
-    val onstockRun = ModelRun(runDate,
+    val dcRun = ModelRun(runDate,
       flowType,
       "vartefact.forecast_dc_orders",
       "vartefact.forecast_dc_orders_hist",
@@ -52,12 +48,12 @@ object DcForecastProcess {
       defaultDeliveryTime,
       item_id,
       sub_id,
-      store_code,
+      "",
       true,
       isDebug,
       debugTable)
 
-    CoreProcess.process(onstockRun)
+    ProcessLogic.process(dcRun)
   }
 
 }

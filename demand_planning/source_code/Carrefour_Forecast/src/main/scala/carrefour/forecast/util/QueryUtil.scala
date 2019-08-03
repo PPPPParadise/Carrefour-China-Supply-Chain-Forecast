@@ -1,7 +1,7 @@
 package carrefour.forecast.util
 
 import carrefour.forecast.model.ItemEntity
-import carrefour.forecast.queries.{CoreQueries, SimulationQueries}
+import carrefour.forecast.queries.{DcQueries, SimulationQueries, StoreQueries}
 import org.apache.spark.sql.functions.{col, lit, when}
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
@@ -11,9 +11,11 @@ object QueryUtil {
                         spark: SparkSession, isSimulation: Boolean): Map[ItemEntity, Double] = {
     import spark.implicits._
 
-    var stockSql = CoreQueries.getActualStockLevelSql(stockDateStr, viewName)
+    var stockSql = StoreQueries.getActualStockLevelSql(stockDateStr, viewName)
 
-    if (isSimulation) {
+    if (isSimulation && isDcFlow) {
+      stockSql = SimulationQueries.getSimulationDcActualStockLevelSql(stockDateStr, viewName)
+    } else if (isSimulation) {
       stockSql = SimulationQueries.getSimulationActualStockLevelSql(stockDateStr, viewName)
     }
 
@@ -32,10 +34,10 @@ object QueryUtil {
   }
 
   def getDCActualStockMap(stockDateStr: String, isDcFlow: Boolean, viewName: String,
-                        spark: SparkSession): Map[ItemEntity, Double] = {
+                          spark: SparkSession): Map[ItemEntity, Double] = {
     import spark.implicits._
 
-    val stockSql = CoreQueries.getDcActualStockLevelSql(stockDateStr, viewName)
+    val stockSql = DcQueries.getDcActualStockLevelSql(stockDateStr, viewName)
     val stockDf = spark.sqlContext.sql(stockSql)
 
     val stockLevelMap = stockDf.distinct().map(row => {
@@ -54,7 +56,7 @@ object QueryUtil {
                     spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val dmOrderSql = CoreQueries.getDmOrdersSql(startDateStr, endDateStr, viewName)
+    val dmOrderSql = StoreQueries.getDmOrdersSql(startDateStr, endDateStr, viewName)
     val dmOrderDf = spark.sqlContext.sql(dmOrderSql)
 
     val grouppedDmDf = dmOrderDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),
@@ -80,7 +82,7 @@ object QueryUtil {
                           orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val onTheWayStockSql = CoreQueries.getOnTheWayStockSql(startDateStr, endDateStr, viewName, orderTableName)
+    val onTheWayStockSql = StoreQueries.getOnTheWayStockSql(startDateStr, endDateStr, viewName, orderTableName)
     val onTheWayStockDf = spark.sqlContext.sql(onTheWayStockSql)
 
     val grouppedDf = onTheWayStockDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),
@@ -106,7 +108,7 @@ object QueryUtil {
                          sqlc: SQLContext): DataFrame = {
 
     // Get sales prediction
-    val salesPredictionSql = CoreQueries.getSalesPredictionSql(startDateStr, endDateStr, viewName)
+    val salesPredictionSql = StoreQueries.getSalesPredictionSql(startDateStr, endDateStr, viewName)
     var salesPredictionDf = sqlc.sql(salesPredictionSql)
 
     salesPredictionDf = dateMapDf.join(salesPredictionDf, Seq("item_id", "sub_id", "entity_code", "date_key"), "left")
@@ -118,10 +120,10 @@ object QueryUtil {
   }
 
   def getStoreOrderToDc(dateMapDf: DataFrame, startDateStr: String, endDateStr: String, viewName: String,
-                         sqlc: SQLContext): DataFrame = {
+                        sqlc: SQLContext): DataFrame = {
 
     // Get sales prediction
-    val storeOrderToDcSql = CoreQueries.getStoreOrderToDcSql(startDateStr, endDateStr, viewName)
+    val storeOrderToDcSql = DcQueries.getStoreOrderToDcSql(startDateStr, endDateStr, viewName)
     var storeOrderToDcDf = sqlc.sql(storeOrderToDcSql)
 
     storeOrderToDcDf = dateMapDf.join(storeOrderToDcDf, Seq("item_id", "sub_id", "entity_code", "date_key"), "left")
@@ -133,10 +135,10 @@ object QueryUtil {
   }
 
   def getDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
-                          orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+                         orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val pastOrdersSql = CoreQueries.getDcPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
+    val pastOrdersSql = DcQueries.getDcPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
     val pastOrdersDf = spark.sqlContext.sql(pastOrdersSql)
 
     val grouppedDf = pastOrdersDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),

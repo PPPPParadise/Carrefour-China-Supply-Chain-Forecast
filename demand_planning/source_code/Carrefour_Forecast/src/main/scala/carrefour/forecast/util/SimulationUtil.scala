@@ -156,7 +156,7 @@ object SimulationUtil {
     import spark.implicits._
 
     val onTheWayStockSql = SimulationQueries.getSimulationOnTheWayStockSql(startDateStr, endDateStr,
-      viewName, SimulationTables.simulationOrdersTable)
+      viewName, SimulationTables.simulationOrdersTable, isDcFlow)
 
     val onTheWayStockDf = spark.sqlContext.sql(onTheWayStockSql)
 
@@ -225,7 +225,7 @@ object SimulationUtil {
   }
 
   def getSimulationDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
-                         spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+                                   spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
     val pastOrdersSql = SimulationQueries.getSimulationDcPastOrdersSql(startDateStr, endDateStr, viewName)

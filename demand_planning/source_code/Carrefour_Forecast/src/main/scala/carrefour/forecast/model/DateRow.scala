@@ -43,8 +43,8 @@ case class DateRow(
                     var ittreplentyp: Integer = 0,
                     var shelf_capacity: String = "",
                     var ittminunit: Integer = 0,
-                    var minStock: Double =0,
-                    var maxStock: Double =0,
+                    var minStock: Double = 0,
+                    var maxStock: Double = 0,
 
 
                     // For Simulation

@@ -1,15 +1,15 @@
-package carrefour.forecast.process
+package carrefour.forecast.core
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.{ItemEntity, ModelRun}
-import carrefour.forecast.queries.CoreQueries
-import carrefour.forecast.util.{DataUtil, _}
+import carrefour.forecast.queries.{DcQueries, StoreQueries}
+import carrefour.forecast.util._
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
-object CoreProcess {
+object ProcessLogic {
 
   def process(modelRun: ModelRun): Unit = {
     try {
@@ -95,9 +95,9 @@ object CoreProcess {
       activeItemEntities.cache()
       activeItemEntities.createOrReplaceTempView(modelRun.viewName)
       /**
-      activeItemEntities.write.format("parquet")
-        .mode("overwrite")
-        .saveAsTable("vartefact." + modelRun.viewName)**/
+        *activeItemEntities.write.format("parquet")
+        * .mode("overwrite")
+        * .saveAsTable("vartefact." + modelRun.viewName)**/
 
       // Find the actual stock level in each store for each item
       val stockLevelMap = QueryUtil.
@@ -116,7 +116,7 @@ object CoreProcess {
         .distinct()
 
       // Get all days between logic start and end date
-      val calendarDf = sqlc.sql(CoreQueries.getCalendarSql(startDateStr, endDateStr))
+      val calendarDf = sqlc.sql(StoreQueries.getCalendarSql(startDateStr, endDateStr))
       val dateMapDf = calendarDf.crossJoin(orderItemStore)
 
       // Find the sales prediction
@@ -151,7 +151,7 @@ object CoreProcess {
 
       // Perform logic for every item store combination
       val resDf = grouppedDf.flatMapGroups((ist, rows) => {
-        OrderUtil.generateOrder(ist, rows, runDateStr,
+        OrderLogic.generateOrder(ist, rows, runDateStr,
           modelRun, stockLevelMap, dmOrdersMap, onTheWayStockMap)
       })
 
@@ -210,9 +210,9 @@ object CoreProcess {
   private def getInScopeItemEntitySql(modelRun: ModelRun, startDateStr: String,
                                       stockDateStr: String): String = {
     val inScopeItemEntitySql = modelRun.flowType match {
-      case FlowType.XDocking => CoreQueries.getXdockInScopeItemsSql(startDateStr, stockDateStr)
-      case FlowType.OnStockStore => CoreQueries.getOnStockStoreInScopeItemsSql(startDateStr, stockDateStr)
-      case FlowType.DC => CoreQueries.getOnStockDcItemsSql(startDateStr, stockDateStr)
+      case FlowType.XDocking => StoreQueries.getXdockInScopeItemsSql(startDateStr, stockDateStr)
+      case FlowType.OnStockStore => StoreQueries.getOnStockStoreInScopeItemsSql(startDateStr, stockDateStr)
+      case FlowType.DC => DcQueries.getOnStockDcItemsSql(startDateStr, stockDateStr)
     }
 
     inScopeItemEntitySql
@@ -221,11 +221,11 @@ object CoreProcess {
   private def getOrderDeliverySql(modelRun: ModelRun, stockDateStr: String, startDateStr: String,
                                   endDateStr: String): String = {
     val orderDeliverySql = modelRun.flowType match {
-      case FlowType.XDocking => CoreQueries.getXDockingInScopeOrderDaysSql(stockDateStr,
+      case FlowType.XDocking => StoreQueries.getXDockingInScopeOrderDaysSql(stockDateStr,
         startDateStr, endDateStr, modelRun.viewName)
-      case FlowType.OnStockStore => CoreQueries.getOnStockStoreInScopeOrderDaysSql(stockDateStr,
+      case FlowType.OnStockStore => StoreQueries.getOnStockStoreInScopeOrderDaysSql(stockDateStr,
         startDateStr, endDateStr, modelRun.viewName)
-      case FlowType.DC => CoreQueries.getOnStockDcInScopeOrderDaysSql(startDateStr, endDateStr, modelRun.viewName)
+      case FlowType.DC => DcQueries.getOnStockDcInScopeOrderDaysSql(startDateStr, endDateStr, modelRun.viewName)
     }
 
     orderDeliverySql

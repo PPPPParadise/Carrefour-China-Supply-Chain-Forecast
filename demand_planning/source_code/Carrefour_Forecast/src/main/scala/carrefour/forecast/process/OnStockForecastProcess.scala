@@ -1,5 +1,6 @@
 package carrefour.forecast.process
 
+import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
@@ -57,7 +58,7 @@ object OnStockForecastProcess {
       isDebug,
       debugTable)
 
-    CoreProcess.process(onstockRun)
+    ProcessLogic.process(onstockRun)
   }
 
 }

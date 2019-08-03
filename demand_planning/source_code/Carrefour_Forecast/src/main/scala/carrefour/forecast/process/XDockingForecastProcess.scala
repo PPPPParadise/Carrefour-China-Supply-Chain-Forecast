@@ -1,5 +1,6 @@
 package carrefour.forecast.process
 
+import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
@@ -44,7 +45,7 @@ object XDockingForecastProcess {
       }
     }
 
-    val onstockRun = ModelRun(runDate,
+    val xdockRun = ModelRun(runDate,
       flowType,
       "vartefact.forecast_xdock_orders",
       "vartefact.forecast_xdock_orders_hist",
@@ -58,6 +59,6 @@ object XDockingForecastProcess {
       isDebug,
       debugTable)
 
-    CoreProcess.process(onstockRun)
+    ProcessLogic.process(xdockRun)
   }
 }

@@ -1,12 +1,13 @@
-package carrefour.forecast.util
+package carrefour.forecast.core
 
-import carrefour.forecast.model._
+import carrefour.forecast.model.{DateRow, ItemEntity, ModelRun}
+import carrefour.forecast.util.LogUtil
 import org.apache.spark.sql.Row
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
-object OrderUtil {
+object OrderLogic {
 
   def generateOrder(ist: ItemEntity, rows: Iterator[Row], runDateStr: String,
                     modelRun: ModelRun,

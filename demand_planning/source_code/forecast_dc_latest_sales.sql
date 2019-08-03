@@ -21,7 +21,7 @@ FROM (
 		id.ds_supplier_code,
 		max(ord.date_key) AS max_date_key
 	FROM vartefact.forecast_item_details id
-	JOIN lfms_ord ord ON id.item_code = ord.item_code
+	JOIN lfms.ord ord ON id.item_code = ord.item_code
 		AND id.sub_code = ord.sub_code
 		AND id.dept_code = ord.department_code
 	WHERE id.rotation != 'X'
@@ -36,7 +36,7 @@ FROM (
 		id.pcb,
 		id.ds_supplier_code
 	) tmp
-JOIN lfms_ord ord2 ON ord2.date_key = tmp.max_date_key
+JOIN lfms.ord ord2 ON ord2.date_key = tmp.max_date_key
 	AND tmp.item_code = ord2.item_code
 	AND tmp.sub_code = ord2.sub_code
 	AND tmp.dept_code = ord2.department_code

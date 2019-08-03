@@ -42,7 +42,7 @@ object OrderLogic {
 
       var deliveryMap: Map[String, Double] = Map()
       if (modelRun.isDcFlow) {
-        processPastDcOrders(ist, dateRowList, onTheWayStockMap)
+        dateRowList = processPastDcOrders(dateRowList, ist , onTheWayStockMap)
       } else {
         deliveryMap = getDeliveryMap(ist, onTheWayStockMap)
       }
@@ -383,18 +383,24 @@ object OrderLogic {
   }
 
 
-  private def processPastDcOrders(ist: ItemEntity, dateRowList: List[DateRow],
-                                  onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Unit = {
+  private def processPastDcOrders(dateRowList: List[DateRow], ist: ItemEntity,
+                                  pastDcOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): List[DateRow] = {
     var orderMap: Map[String, Double] = Map()
 
-    if (onTheWayStockMap.contains(ist)) {
-      orderMap = onTheWayStockMap(ist).toMap
+    if (pastDcOrdersMap.contains(ist)) {
+      for (pastDcOrder <- pastDcOrdersMap(ist)) {
+        orderMap = orderMap + (pastDcOrder._1 -> pastDcOrder._2)
+      }
     }
     for (dateRow <- dateRowList) {
       if (dateRow.is_order_day && orderMap.contains(dateRow.order_day)) {
         dateRow.order_qty = orderMap(dateRow.order_day).intValue()
       }
     }
+
+    dateRowList
   }
+
+
 
 }

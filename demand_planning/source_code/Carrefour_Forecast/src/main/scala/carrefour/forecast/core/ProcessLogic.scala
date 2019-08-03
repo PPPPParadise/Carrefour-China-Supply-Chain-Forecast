@@ -94,10 +94,10 @@ object ProcessLogic {
 
       activeItemEntities.cache()
       activeItemEntities.createOrReplaceTempView(modelRun.viewName)
-      /**
-        *activeItemEntities.write.format("parquet")
-        * .mode("overwrite")
-        * .saveAsTable("vartefact." + modelRun.viewName)**/
+
+      activeItemEntities.write.format("parquet")
+        .mode("overwrite")
+        .saveAsTable("vartefact." + modelRun.viewName)
 
       // Find the actual stock level in each store for each item
       val stockLevelMap = QueryUtil.
@@ -291,11 +291,21 @@ object ProcessLogic {
       }
 
       case FlowType.DC => {
+
+        val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
+        val cal = Calendar.getInstance()
+        val startDate = dateKeyFormat.parse(startDateStr)
+
+        cal.setTime(startDate)
+        cal.add(Calendar.DATE, 15)
+        val endDate = cal.getTime
+        val newEndDateStr = dateKeyFormat.format(endDate)
+
         if (modelRun.isSimulation) {
-          SimulationUtil.getSimulationDcPastOrdersMap(startDateStr, endDateStr,
+          SimulationUtil.getSimulationDcPastOrdersMap(startDateStr, newEndDateStr,
             modelRun.isDcFlow, modelRun.viewName, spark)
         } else {
-          QueryUtil.getDcPastOrdersMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName,
+          QueryUtil.getDcPastOrdersMap(startDateStr, newEndDateStr, modelRun.isDcFlow, modelRun.viewName,
             modelRun.orderTableName, spark)
         }
       }

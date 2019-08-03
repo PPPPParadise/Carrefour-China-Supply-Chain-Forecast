@@ -1,6 +1,7 @@
 package carrefour.forecast.queries
 
 import carrefour.forecast.config.SimulationTables
+import carrefour.forecast.model.EnumFlowType.FlowType
 
 object SimulationQueries {
 
@@ -59,7 +60,7 @@ object SimulationQueries {
         on ord.item_id = itmd.item_id
         and ord.sub_id = itmd.sub_id
         and ord.store_code = itmd.store_code
-    WHERE ord.flow_type = 'DC'
+    WHERE ord.flow_type = '${FlowType.DC}'
         AND ord.delivery_day >= '${startDateStr}'
         AND ord.delivery_day <= '${endDateStr}'
         AND ord.order_day < '${startDateStr}'
@@ -77,7 +78,7 @@ object SimulationQueries {
         on ord.item_id = itmd.item_id
         and ord.sub_id = itmd.sub_id
         and ord.store_code = itmd.store_code
-    WHERE ord.flow_type != 'DC'
+    WHERE ord.flow_type != '${FlowType.DC}'
         AND ord.delivery_day >= '${startDateStr}'
         AND ord.delivery_day <= '${endDateStr}'
         AND ord.order_day < '${startDateStr}'
@@ -104,7 +105,7 @@ object SimulationQueries {
 			AND ldd.sub_id = fss.sub_id
 			AND ldd.holding_code = fss.store_code
 			AND fss.date_key = '${stockDateStr}'
-      AND fss.flow_type='DC'
+      AND fss.flow_type = '${FlowType.DC}'
 		JOIN ${viewName} itmd ON ldd.item_id = itmd.item_id
 			AND ldd.sub_id = itmd.sub_id
 			AND ldd.holding_code = itmd.con_holding
@@ -130,7 +131,7 @@ object SimulationQueries {
         FROM ${SimulationTables.simulationOrdersHistTable} fcst
         JOIN ${viewName} itmd ON fcst.item_id = itmd.item_id
           AND fcst.sub_id = itmd.sub_id
-        WHERE fcst.flow_type = 'OnStock'
+        WHERE fcst.flow_type = '${FlowType.OnStockStore}'
           AND fcst.order_day >= '${startDateStr}'
           AND fcst.order_day <= '${endDateStr}'
           AND fcst.run_date = '${startDateStr}'
@@ -172,7 +173,7 @@ object SimulationQueries {
         FROM ${SimulationTables.simulationOrdersTable} fcst
         JOIN ${viewName} itmd ON fcst.item_id = itmd.item_id
           AND fcst.sub_id = itmd.sub_id
-        WHERE fcst.flow_type = 'OnStock'
+        WHERE fcst.flow_type = '${FlowType.OnStockStore}'
           AND fcst.order_day >= '${startDateStr}'
           AND fcst.order_day <= '${endDateStr}'
 
@@ -209,7 +210,7 @@ object SimulationQueries {
         on ord.item_id = itmd.item_id
         and ord.sub_id = itmd.sub_id
         and ord.con_holding = itmd.con_holding
-    WHERE  ord.flow_type ='DC'
+    WHERE  ord.flow_type = '${FlowType.DC}'
         AND ord.order_day >= '${startDateStr}'
         AND ord.order_day <= '${endDateStr}'
     """

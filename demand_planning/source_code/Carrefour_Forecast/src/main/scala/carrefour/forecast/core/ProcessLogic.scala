@@ -11,6 +11,11 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 object ProcessLogic {
 
+  /**
+    * Job run logic
+    * 脚本运行逻辑
+    * @param modelRun Job run information 脚本运行信息
+    */
   def process(modelRun: ModelRun): Unit = {
     try {
       LogUtil.info("\n\n\n" + modelRun.toString)
@@ -128,7 +133,7 @@ object ProcessLogic {
 
       if (modelRun.isSimulation) {
         // Find the actual sales
-        val actualSalesDf = getActualSales(dateMapDf, modelRun, startDateStr, endDateStr, sqlc)
+        val actualSalesDf = SimulationUtil.getActualSales(dateMapDf, modelRun, startDateStr, endDateStr, sqlc)
         // For simulation process add actual sales in past
         predictionWithSalesDf = salesPredictionDf.join(actualSalesDf,
           Seq("item_id", "sub_id", "entity_code", "date_key"))
@@ -165,7 +170,7 @@ object ProcessLogic {
         LogUtil.info(s"Number of simulation order lines: ${orderDf.count()}")
 
       } else if (modelRun.isDebug) {
-        DataUtil.insertDebugInfoToDatalake(resDf, modelRun, sqlc)
+        DataUtil.insertDebugInfoToDatalake(resDf, modelRun.debugTableName, sqlc)
 
       } else if (modelRun.flowType == FlowType.DC) {
         val orderDf = resDf.filter(row => row.is_order_day)
@@ -207,17 +212,37 @@ object ProcessLogic {
 
   }
 
-  private def getInScopeItemEntitySql(modelRun: ModelRun, startDateStr: String,
+  /**
+    * SQL query to get in scope items for this job run
+    * 生成查询运行中应包括的商品的SQL
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param orderDateStr Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @return SQL query
+    */
+  private def getInScopeItemEntitySql(modelRun: ModelRun, orderDateStr: String,
                                       stockDateStr: String): String = {
     val inScopeItemEntitySql = modelRun.flowType match {
-      case FlowType.XDocking => StoreQueries.getXdockInScopeItemsSql(startDateStr, stockDateStr)
-      case FlowType.OnStockStore => StoreQueries.getOnStockStoreInScopeItemsSql(startDateStr, stockDateStr)
-      case FlowType.DC => DcQueries.getOnStockDcItemsSql(startDateStr, stockDateStr)
+      case FlowType.XDocking => StoreQueries.getXdockInScopeItemsSql(orderDateStr, stockDateStr)
+      case FlowType.OnStockStore => StoreQueries.getOnStockStoreInScopeItemsSql(orderDateStr, stockDateStr)
+      case FlowType.DC => DcQueries.getOnStockDcItemsSql(orderDateStr, stockDateStr)
     }
 
     inScopeItemEntitySql
   }
 
+
+  /**
+    * SQL query to get all order days for this job run
+    * 生成查询周期中包括的全部订单日的SQL
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @return SQL query
+    */
   private def getOrderDeliverySql(modelRun: ModelRun, stockDateStr: String, startDateStr: String,
                                   endDateStr: String): String = {
     val orderDeliverySql = modelRun.flowType match {
@@ -231,10 +256,19 @@ object ProcessLogic {
     orderDeliverySql
   }
 
+  /**
+    * Get order days that not in stop period
+    * 获取不在停止订货日期内的订单日
+    *
+    * @param df All order days 全部订单日期
+    * @param modelRun Job run information 脚本运行信息
+    * @param sqlc Spark SQL context
+    * @return Order days that not in stop period 不在停止订货日期内的订单日
+    */
   private def extractActiveOrderOpportunities(df: DataFrame, modelRun: ModelRun, sqlc: SQLContext): DataFrame = {
 
     if (modelRun.isSimulation && modelRun.flowType != FlowType.DC) {
-      SimulationUtil.insertSimulationItemStatusToDatalake(df, modelRun, sqlc)
+      SimulationUtil.insertSimulationItemInfoToDatalake(df, modelRun, sqlc)
     }
 
     val newDf = df.where("(item_stop_start_date='' and item_stop_start_date='') " +
@@ -244,12 +278,30 @@ object ProcessLogic {
     newDf
   }
 
+  /**
+    * Get information for items that can be ordered
+    * 获取可以订货的商品的信息
+    *
+    * @param df Order days 订单日期
+    * @return Item information 商品信息
+    */
   private def extractActiveItem(df: DataFrame): DataFrame = {
     df.select("item_id", "sub_id", "dept_code", "item_code",
       "sub_code", "con_holding", "store_code", "entity_code",
       "supplier_code", "rotation", "pcb", "delivery_time").distinct()
   }
 
+  /**
+    * Get sales predictions
+    * 获取销量预测
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param dateMapDf Item information and date 商品及日期信息
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param sqlc Spark SQL context
+    * @return Sales prediction 销量预测
+    */
   private def getSalesPrediction(modelRun: ModelRun, dateMapDf: DataFrame, startDateStr: String, endDateStr: String,
                                  sqlc: SQLContext): DataFrame = {
 
@@ -267,6 +319,16 @@ object ProcessLogic {
     }
   }
 
+  /**
+    * Get orders from DM process
+    * 获取DM订单系统生成的DM订单
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param spark Spark session
+    * @return DM orders DM 订单
+    */
   private def getDmOrderMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
                             spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     modelRun.flowType match {
@@ -277,6 +339,16 @@ object ProcessLogic {
     }
   }
 
+  /**
+    * Get on the way order quantity and delivery date
+    * 获取在途订单订货量及其抵达日期
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param spark Spark session
+    * @return On the way order 在途订单
+    */
   private def getOnTheWayStockMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
                                   spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     modelRun.flowType match {
@@ -312,21 +384,6 @@ object ProcessLogic {
     }
   }
 
-  private def getActualSales(dateMapDf: DataFrame, modelRun: ModelRun, startDateStr: String, endDateStr: String,
-                             sqlc: SQLContext): DataFrame = {
 
-    modelRun.flowType match {
-      case FlowType.XDocking | FlowType.OnStockStore => {
-        SimulationUtil
-          .getActualSales(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
-      }
-
-      case FlowType.DC => {
-        SimulationUtil
-          .getDCActualSales(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
-      }
-    }
-
-  }
 
 }

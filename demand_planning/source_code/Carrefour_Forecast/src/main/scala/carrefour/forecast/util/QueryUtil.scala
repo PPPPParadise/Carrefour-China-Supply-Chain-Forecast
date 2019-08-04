@@ -5,17 +5,29 @@ import carrefour.forecast.queries.{DcQueries, SimulationQueries, StoreQueries}
 import org.apache.spark.sql.functions.{col, lit, when}
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
+/**
+  * Utility used to query data
+  */
 object QueryUtil {
 
+  /**
+    * Get current store stock level
+    * 获取当前门店库存
+    *
+    * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param spark Spark session
+    * @param isSimulation Whether it is simulation process 是否为模拟运行
+    * @return Current store stock level 当前门店库存
+    */
   def getActualStockMap(stockDateStr: String, isDcFlow: Boolean, viewName: String,
                         spark: SparkSession, isSimulation: Boolean): Map[ItemEntity, Double] = {
     import spark.implicits._
 
     var stockSql = StoreQueries.getActualStockLevelSql(stockDateStr, viewName)
 
-    if (isSimulation && isDcFlow) {
-      stockSql = SimulationQueries.getSimulationDcActualStockLevelSql(stockDateStr, viewName)
-    } else if (isSimulation) {
+    if (isSimulation) {
       stockSql = SimulationQueries.getSimulationActualStockLevelSql(stockDateStr, viewName)
     }
 
@@ -33,11 +45,26 @@ object QueryUtil {
     return stockLevelMap
   }
 
+  /**
+    * Get current DC stock level
+    * 获取当前DC/货仓库存
+    *
+    * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param spark Spark session
+    * @return Current DC stock level 当前DC/货仓库存
+    */
   def getDCActualStockMap(stockDateStr: String, isDcFlow: Boolean, viewName: String,
-                          spark: SparkSession): Map[ItemEntity, Double] = {
+                          spark: SparkSession , isSimulation: Boolean): Map[ItemEntity, Double] = {
     import spark.implicits._
 
-    val stockSql = DcQueries.getDcActualStockLevelSql(stockDateStr, viewName)
+
+    var stockSql = DcQueries.getDcActualStockLevelSql(stockDateStr, viewName)
+    if (isSimulation) {
+      stockSql = SimulationQueries.getSimulationDcActualStockLevelSql(stockDateStr, viewName)
+    }
+
     val stockDf = spark.sqlContext.sql(stockSql)
 
     val stockLevelMap = stockDf.distinct().map(row => {
@@ -52,6 +79,17 @@ object QueryUtil {
     return stockLevelMap
   }
 
+  /**
+    * Get DM orders
+    * 获取DM订单
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param spark Spark session
+    * @return DM orders. DM订单
+    */
   def getDmOrderMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
                     spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
@@ -78,6 +116,18 @@ object QueryUtil {
     return dmOrderMap
   }
 
+  /**
+    * Get store on the way order quantity and delivery date
+    * 获取门店在途订单订货量及其抵达日期
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param orderTableName Database and name for order table 订单表的数据库名及表名
+    * @param spark Spark session
+    * @return On the way order 在途订单
+    */
   def getOnTheWayStockMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
                           orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
@@ -104,6 +154,17 @@ object QueryUtil {
     return onTheWayStockMap
   }
 
+  /**
+    * Get sales predictions
+    * 获取销量预测
+    *
+    * @param dateMapDf All combinations of item, store, and dates 全部商品，门店，及日期的组合
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param sqlc Spark SQLContext
+    * @return Sales predictions 销量预测
+    */
   def getSalesPrediction(dateMapDf: DataFrame, startDateStr: String, endDateStr: String, viewName: String,
                          sqlc: SQLContext): DataFrame = {
 
@@ -119,6 +180,17 @@ object QueryUtil {
     return salesPredictionDf
   }
 
+  /**
+    * Get future store orders to DC
+    * 获取门店向DC/货仓未来订货量
+    *
+    * @param dateMapDf All combinations of item, store, and dates 全部商品，门店，及日期的组合
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param sqlc Spark SQLContext
+    * @return Future store orders to DC 门店向DC/货仓未来订货量
+    */
   def getStoreOrderToDc(dateMapDf: DataFrame, startDateStr: String, endDateStr: String, viewName: String,
                         sqlc: SQLContext): DataFrame = {
 
@@ -134,6 +206,18 @@ object QueryUtil {
     return storeOrderToDcDf
   }
 
+  /**
+    * Get past generated orders for DC
+    * 获取过去生成的DC订单规划
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param orderTableName Database and name for order table 订单表的数据库名及表名
+    * @param spark Spark session
+    * @return Past generated orders for DC过去生成的DC订单规划
+    */
   def getDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
                          orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._

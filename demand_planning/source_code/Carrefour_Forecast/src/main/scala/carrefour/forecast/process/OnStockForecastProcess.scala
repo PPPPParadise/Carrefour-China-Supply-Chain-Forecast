@@ -4,6 +4,10 @@ import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
+/**
+  * Generate store order for on stock flow
+  * 生成On Stock 商品门店订单
+  */
 object OnStockForecastProcess {
 
   def main(args: Array[String]): Unit = {

@@ -4,6 +4,10 @@ import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
+/**
+  * Generate cross docking order
+  * 生成 cross docking 商品订单
+  */
 object XDockingForecastProcess {
 
   def main(args: Array[String]): Unit = {

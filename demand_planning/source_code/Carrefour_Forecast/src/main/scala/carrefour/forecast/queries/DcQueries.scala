@@ -1,8 +1,19 @@
 package carrefour.forecast.queries
 
+/**
+  * SQL queries for DC order
+  */
 object DcQueries {
 
-  def getOnStockDcItemsSql(startDateStr: String, stockDateStr: String): String = {
+  /**
+    * SQL query to get in scope items for this job run for DC flow
+    * 查询货仓订单流程中应包括的商品的SQL
+    *
+    * @param orderDateStr Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @return SQL with variables filled 拼装好的SQL
+    */
+  def getOnStockDcItemsSql(orderDateStr: String, stockDateStr: String): String = {
     s"""
       SELECT DISTINCT icis.item_id,
         icis.sub_id,
@@ -21,7 +32,7 @@ object DcQueries {
         fdls.avg_sales_qty AS average_sales
       FROM vartefact.forecast_dc_latest_sales fdls
       JOIN vartefact.forecast_dc_order_deliver_mapping dodm ON dodm.con_holding = fdls.con_holding
-        AND dodm.order_date = '${startDateStr}'
+        AND dodm.order_date = '${orderDateStr}'
       JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${stockDateStr}'
         AND fdls.item_code = icis.item_code
         AND fdls.sub_code = icis.sub_code
@@ -31,6 +42,15 @@ object DcQueries {
   """
   }
 
+  /**
+    * SQL query to get all order days for DC job run
+    * DC/货仓脚本查询周期中包括的全部订单日的SQL
+    *
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getOnStockDcInScopeOrderDaysSql(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
     SELECT
@@ -65,6 +85,15 @@ object DcQueries {
     """
   }
 
+  /**
+    * SQL query to get future store orders to DC
+    * 查询门店向DC/货仓未来订货量的SQL
+    *
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getStoreOrderToDcSql(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
       SELECT t.item_id,
@@ -105,6 +134,14 @@ object DcQueries {
     """
   }
 
+  /**
+    * SQL query to get current stock level for DC
+    * 查询DC/货仓当前库存的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getDcActualStockLevelSql(stockDateStr: String, viewName: String): String = {
     s"""
     SELECT ldd.item_id,
@@ -123,6 +160,16 @@ object DcQueries {
     """
   }
 
+  /**
+    * SQL query to get past generated orders for DC
+    * 查询过去生成的DC订单规划的SQL
+    *
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param orderTableName
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getDcPastOrdersSql(startDateStr: String, endDateStr: String, viewName: String, orderTableName: String): String = {
     s"""
     SELECT ord.item_id,

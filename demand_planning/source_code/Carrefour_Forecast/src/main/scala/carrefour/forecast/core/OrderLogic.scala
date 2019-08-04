@@ -7,8 +7,25 @@ import org.apache.spark.sql.Row
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
+/**
+  * Logic to calculate order quantity for each order day
+  * 计算每个订单日订货量的逻辑
+  */
 object OrderLogic {
 
+  /**
+    * Generate orders
+    * 生成订单
+    *
+    * @param ist Item and store information 商品及门店信息
+    * @param rows Input data rows. One row per day. 输入数据列。每个自然日对应一行
+    * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param modelRun Job run information 脚本运行信息
+    * @param stockLevelMap Day end stock level 门店盘点库存量
+    * @param dmOrdersMap DM order quantity and delivery date / DM 订单订货量及其抵达日期
+    * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
+    * @return Order information 订单信息
+    */
   def generateOrder(ist: ItemEntity, rows: Iterator[Row], runDateStr: String,
                     modelRun: ModelRun,
                     stockLevelMap: Map[ItemEntity, Double],
@@ -241,6 +258,15 @@ object OrderLogic {
     dateRowList
   }
 
+
+  /**
+    * Generate empty orer
+    * 生成空订单
+    * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param ist Item and store information 商品及门店信息
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @return Empty order 空订单
+    */
   private def getEmptyOrder(runDateStr: String, ist: ItemEntity, isDcFlow: Boolean): DateRow = {
 
     if (isDcFlow) {
@@ -254,6 +280,17 @@ object OrderLogic {
     }
   }
 
+  /**
+    * Read information from input data row
+    * 从输入数据列中读取数据
+    *
+    * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param ist Item and store information 商品及门店信息
+    * @param row Input data row  输入数据列
+    * @param isSimulation Whether it is simulation run 是否为模拟运行
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @return Daily information for order logic 用于订单逻辑的每日数据
+    */
   private def mapDateRow(runDateStr: String, ist: ItemEntity, row: Row, isSimulation: Boolean,
                          isDcFlow: Boolean): DateRow = {
 
@@ -300,6 +337,14 @@ object OrderLogic {
     dateRow
   }
 
+  /**
+    * Get minimum required stock level
+    * 获取最低库存要求
+    *
+    * @param row Input data row.  输入数据列
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @return Minimum required stock level 最低库存要求
+    */
   private def getMinimumStock(row: Row, isDcFlow: Boolean): Double = {
 
     if (isDcFlow) {
@@ -343,6 +388,14 @@ object OrderLogic {
   }
 
 
+  /**
+    * Get DM orders for this item and store
+    * 获取当前商品和门店的DM订单
+    *
+    * @param ist Item and store information 商品及门店信息
+    * @param dmOrdersMap DM order quantity and delivery date / DM 订单订货量及其抵达日期
+    * @return DM order quantity and delivery date / DM 订单订货量及其抵达日期
+    */
   private def getDmDeliveryMap(ist: ItemEntity,
                                dmOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var dmDeliveryMap: Map[String, Double] = Map()
@@ -364,6 +417,14 @@ object OrderLogic {
     dmDeliveryMap
   }
 
+  /**
+    * Get on the way order for this item and store
+    * 获取当前商品和门店的在途订单
+    *
+    * @param ist Item and store information 商品及门店信息
+    * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
+    * @return On the way order quantity and delivery date 在途订单订货量及其抵达日期
+    */
   private def getDeliveryMap(ist: ItemEntity,
                              onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var deliveryMap: Map[String, Double] = Map()
@@ -382,7 +443,14 @@ object OrderLogic {
     deliveryMap
   }
 
-
+  /**
+    * Get past DC order for this item and con holding
+    * 获取当前商品及供应商的过去生成的订单
+    *
+    * @param ist Item and con holding information 商品及供应商信息
+    * @param pastDcOrdersMap Past DC order results 过去生成的货仓订单
+    * @return Past DC order information 过去生成的货仓订单信息
+    */
   private def processPastDcOrders(dateRowList: List[DateRow], ist: ItemEntity,
                                   pastDcOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): List[DateRow] = {
     var orderMap: Map[String, Double] = Map()

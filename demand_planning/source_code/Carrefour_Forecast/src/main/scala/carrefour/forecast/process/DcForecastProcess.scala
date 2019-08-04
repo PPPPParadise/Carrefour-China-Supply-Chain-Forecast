@@ -4,6 +4,10 @@ import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
 
+/**
+  * Generate DC order
+  * 生成DC/货仓订单
+  */
 object DcForecastProcess {
 
   def main(args: Array[String]): Unit = {

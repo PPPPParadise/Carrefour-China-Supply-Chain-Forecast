@@ -2,6 +2,14 @@ package carrefour.forecast.queries
 
 object StoreQueries {
 
+  /**
+    * SQL query to get in scope items for this job run for on stock items store flow
+    * 查询on stock商品门店订单流程中应包括的商品的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getOnStockStoreInScopeItemsSql(startDateStr: String, stockDateStr: String): String = {
     s"""
    SELECT distinct
@@ -40,6 +48,16 @@ object StoreQueries {
   """
   }
 
+  /**
+    * SQL query to get in scope items for on stock items store flow
+    * 查询on stock商品门店订单脚本中应包括的商品的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getOnStockStoreInScopeOrderDaysSql(stockDateStr: String,
                                          startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
@@ -88,6 +106,14 @@ object StoreQueries {
       """
   }
 
+  /**
+    * SQL query to get in scope items for this job run for cross docking flow
+    * 查询cross docking商品订单流程中应包括的商品的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getXdockInScopeItemsSql(startDateStr: String, stockDateStr: String): String = {
     s"""
      SELECT distinct
@@ -127,6 +153,16 @@ object StoreQueries {
     """
   }
 
+  /**
+    * SQL query to get in scope items for cross docking flow
+    * 查询cross docking商品订单脚本中应包括的商品的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getXDockingInScopeOrderDaysSql(stockDateStr: String,
                                      startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
@@ -176,6 +212,14 @@ object StoreQueries {
   }
 
 
+  /**
+    * SQL query to get current stock level for store
+    * 查询门店当前库存的SQL
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getActualStockLevelSql(stockDateStr: String, viewName: String): String = {
     s"""
     SELECT icis.item_id,
@@ -192,10 +236,26 @@ object StoreQueries {
     """
   }
 
+  /**
+    * SQL query to get all dates in current job
+    * 查询当前脚本对应的全部日期的SQL
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getCalendarSql(startDateStr: String, endDateStr: String): String = {
     s"select date_key from ods.dim_calendar where date_key >='${startDateStr}' and date_key <='${endDateStr}'"
   }
 
+  /**
+    * SQL query to get sales predictions
+    * 查询销量预测的SQL
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getSalesPredictionSql(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
     SELECT fcst.item_id,
@@ -213,6 +273,15 @@ object StoreQueries {
     """
   }
 
+  /**
+    * SQL query to get orders from DM process
+    * 查询DM订单系统生成的DM订单的SQL
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getDmOrdersSql(startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
     SELECT dm.item_id,
@@ -234,6 +303,16 @@ object StoreQueries {
     """
   }
 
+  /**
+    * SQL query to get on the way order quantity and delivery date
+    * 查询在途订单订货量及其抵达日期的SQL
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param orderTableName Database and name for order table 订单表的数据库名及表名
+    * @return SQL with variables filled 拼装好的SQL
+    */
   def getOnTheWayStockSql(startDateStr: String, endDateStr: String, viewName: String, orderTableName: String): String = {
     s"""
     SELECT ord.item_id,

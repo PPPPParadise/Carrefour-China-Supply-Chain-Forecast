@@ -116,7 +116,7 @@ concat_old_and_upcoming as (
             on a.item_id = b.item_id
             and a.sub_id = b.sub_id
             and a.store_code = b.store_code
-            and a.current_dm_theme_id = b.current_dm_theme_id
+            -- and a.current_dm_theme_id = b.current_dm_theme_id -- maybe a wrong line 
         where b.item_id is null)   
 ),
 

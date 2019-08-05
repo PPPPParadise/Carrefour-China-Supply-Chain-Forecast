@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 from os.path import expanduser, join, abspath
@@ -222,7 +223,7 @@ run_this = PythonOperator(
 step1 = PythonOperator(task_id="step1",
                               python_callable=execute_impala_by_sql_file,
                               op_kwargs={'table_name': "forecast_store_code_scope_sprint4",
-                                 'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/1.forecast_store_code_scope_sprint4.sql'},
+                                 'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/1.forecast_store_code_scope_sprint4.sql'},
                               dag=dag)
 step1.set_upstream(run_this)
 
@@ -233,7 +234,7 @@ step2 = PythonOperator(task_id="step2",
                               python_callable=execute_impala_by_sql_file,
                               provide_context=True,
                               op_kwargs={'table_name': "forecast_itemid_list_threebrands_sprint4",
-                                 'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/2.forecast_itemid_list_threebrands_sprint4.sql',
+                                 'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/2.forecast_itemid_list_threebrands_sprint4.sql',
                                  'set_timeperiod':True},
                               dag=dag)
 step2.set_upstream(step1)
@@ -244,7 +245,7 @@ step2.set_upstream(step1)
 step3 = PythonOperator(task_id="step3",
                         python_callable=execute_impala_by_sql_file,
                         op_kwargs={'table_name': "forecast_item_id_family_codes_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/3.vartefact.forecast_item_id_family_codes_sprint4.sql'},
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/3.vartefact.forecast_item_id_family_codes_sprint4.sql'},
                         dag=dag)
 step3.set_upstream(step2)
 
@@ -255,7 +256,7 @@ step4 = PythonOperator(task_id="step4",
                         python_callable=execute_impala_by_sql_file,
                         provide_context=True,
                         op_kwargs={'table_name': "lastest_active_status",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/4.lastest_active_status.sql',
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/4.lastest_active_status.sql',
                            'set_timeperiod':True},
                         dag=dag)
 step4.set_upstream(step3)
@@ -267,7 +268,7 @@ step5 = PythonOperator(task_id="step5",
                         python_callable=execute_impala_by_sql_file,
                         provide_context=True,
                         op_kwargs={'table_name': "forecast_dm_plans_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/5.forecast_dm_plans_sprint4.sql',
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/5.forecast_dm_plans_sprint4.sql',
                            'set_timeperiod':True},
                         dag=dag)
 step5.set_upstream(step4)
@@ -279,7 +280,7 @@ step6 = PythonOperator(task_id="step6",
                         python_callable=execute_impala_by_sql_file,
                         provide_context=True,
                         op_kwargs={'table_name': "forecast_add_future_dms_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/6.forecast_add_future_dms_sprint4.sql',
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/6.forecast_add_future_dms_sprint4.sql',
                            'set_timeperiod':True},
                         dag=dag)
 step6.set_upstream(step5)
@@ -290,7 +291,7 @@ step6.set_upstream(step5)
 step7 = PythonOperator(task_id="step7",
                         python_callable=execute_impala_by_sql_file,
                         op_kwargs={'table_name': "forecast_next_dm_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/7.forecast_next_dm_sprint4.sql'},
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/7.forecast_next_dm_sprint4.sql'},
                         dag=dag)
 step7.set_upstream(step6)
 
@@ -301,7 +302,7 @@ step8 = PythonOperator(task_id="step8",
                         python_callable=execute_impala_by_sql_file,
                         provide_context=True,
                         op_kwargs={'table_name': "forecast_trxn_v7_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/8.forecast_trxn_v7_sprint4.sql',
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/8.forecast_trxn_v7_sprint4.sql',
                            'set_timeperiod':True},
                         dag=dag)
 step8.set_upstream(step7)
@@ -312,7 +313,7 @@ step8.set_upstream(step7)
 step9 = PythonOperator(task_id="step9",
                         python_callable=execute_impala_by_sql_file,
                         op_kwargs={'table_name': "forecast_trxn_v7_full_item_id_sprint4",
-                           'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.0forecast_trxn_v7_full_item_id_sprint4.sql'},
+                           'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.0forecast_trxn_v7_full_item_id_sprint4.sql'},
                         dag=dag)
 step9.set_upstream(step8)
 
@@ -336,7 +337,7 @@ step9_1.set_upstream(step9)
 step9_2 = PythonOperator(task_id="step9_2",
                            python_callable=execute_hive_by_sql_file,
                            op_kwargs={'table_name': "art_filter_non_promo",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.2art_filter_non_promo.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.2art_filter_non_promo.sql'},
                            dag=dag)
 step9_2.set_upstream(step9_1)
 
@@ -346,7 +347,7 @@ step9_2.set_upstream(step9_1)
 step9_3 = PythonOperator(task_id="step9_3",
                            python_callable=execute_hive_by_sql_file,
                            op_kwargs={'table_name': "art_filter_promo",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.3art_filter_promo.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.3art_filter_promo.sql'},
                            dag=dag)
 step9_3.set_upstream(step9_2)
 
@@ -356,7 +357,7 @@ step9_3.set_upstream(step9_2)
 step9_4 = PythonOperator(task_id="step9_4",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "grouped_to_be_shipment",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.4grouped_to_be_shipment.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.4grouped_to_be_shipment.sql'},
                            dag=dag)
 step9_4.set_upstream(step9_3)
 
@@ -367,7 +368,7 @@ step9_5 = PythonOperator(task_id="step9_5",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "p4cm_item_map_complete",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.5p4cm_item_map_complete.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.5p4cm_item_map_complete.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step9_5.set_upstream(step9_4)
@@ -379,7 +380,7 @@ step9_6 = PythonOperator(task_id="step9_6",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "shipment_scope_map_corrected",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.6shipment_scope_map_corrected.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.6shipment_scope_map_corrected.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step9_6.set_upstream(step9_5)
@@ -400,7 +401,7 @@ step9_7.set_upstream(step9_6)
 step9_8 = PythonOperator(task_id="step9_8",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_item_store_perc_flagged",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.8forecast_item_store_perc_flagged.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.8forecast_item_store_perc_flagged.sql'},
                            dag=dag)
 step9_8.set_upstream(step9_7)
                            
@@ -410,7 +411,7 @@ step9_8.set_upstream(step9_7)
 step9_9 = PythonOperator(task_id="step9_9",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_trxn_flag_v1_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/9.9forecast_trxn_flag_v1_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/9.9forecast_trxn_flag_v1_sprint4.sql'},
                            dag=dag)
 step9_9.set_upstream(step9_8)
 
@@ -421,7 +422,7 @@ step10 = PythonOperator(task_id="step10",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_full_date_daily_sales",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/10.forecast_sprint4_full_date_daily_sales.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/10.forecast_sprint4_full_date_daily_sales.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step10.set_upstream(step9_9)
@@ -433,7 +434,7 @@ step11 = PythonOperator(task_id="step11",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_out_of_stock_median",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/11.out_of_stock_median_final.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/11.out_of_stock_median_final.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step11.set_upstream(step10)
@@ -444,7 +445,7 @@ step11.set_upstream(step10)
 step12_1 = PythonOperator(task_id="step12_1",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint4_trxn_to_day",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.1forecast_sprint4_trxn_to_day.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.1forecast_sprint4_trxn_to_day.sql'},
                            dag=dag)
 step12_1.set_upstream(step11)
 
@@ -454,7 +455,7 @@ step12_1.set_upstream(step11)
 step12_2 = PythonOperator(task_id="step12_2",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint4_daily_future_dms",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.2forecast_sprint4_daily_future_dms.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.2forecast_sprint4_daily_future_dms.sql'},
                            dag=dag)
 step12_2.set_upstream(step12_1)
 
@@ -464,7 +465,7 @@ step12_2.set_upstream(step12_1)
 step12_3 = PythonOperator(task_id="step12_3",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint4_daily_next_dm",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.3forecast_sprint4_daily_next_dms.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.3forecast_sprint4_daily_next_dms.sql'},
                            dag=dag)
 step12_3.set_upstream(step12_2)
 
@@ -474,7 +475,7 @@ step12_3.set_upstream(step12_2)
 step12_4 = PythonOperator(task_id="step12_4",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint4_add_dm_to_daily",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.4forecast_sprint4_add_dm_to_daily.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.4forecast_sprint4_add_dm_to_daily.sql'},
                            dag=dag)
 step12_4.set_upstream(step12_3)
 
@@ -485,7 +486,7 @@ step12_5 = PythonOperator(task_id="step12_5",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_day_to_week",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.5forecast_sprint4_day_to_week.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.5forecast_sprint4_day_to_week.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step12_5.set_upstream(step12_4)
@@ -496,7 +497,7 @@ step12_5.set_upstream(step12_4)
 step12_6 = PythonOperator(task_id="step12_6",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint4_day_to_week_test",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/12.6forecast_sprint4_day_to_week_test.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/12.6forecast_sprint4_day_to_week_test.sql'},
                            dag=dag)
 step12_6.set_upstream(step12_5)
 
@@ -506,7 +507,7 @@ step12_6.set_upstream(step12_5)
 step14 = PythonOperator(task_id="step14",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint2_festival_ticket_count_flag",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/14.forecast_sprint2_festival_ticket_count.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/14.forecast_sprint2_festival_ticket_count.sql'},
                            dag=dag)
 step14.set_upstream(step12_6)
 
@@ -517,7 +518,7 @@ step15 = PythonOperator(task_id="step15",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint2_trxn_week_features_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/15.forecast_sprint2_trxn_week_features_flag_sprint4.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/15.forecast_sprint2_trxn_week_features_flag_sprint4.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step15.set_upstream(step14)
@@ -528,7 +529,7 @@ step15.set_upstream(step14)
 step16 = PythonOperator(task_id="step16",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint2_final_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/16.forecast_sprint2_final_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/16.forecast_sprint2_final_flag_sprint4.sql'},
                            dag=dag)
 step16.set_upstream(step15)
 
@@ -539,7 +540,7 @@ step17 = PythonOperator(task_id="step17",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_assortment_full",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/17.forecast_assortment_full.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/17.forecast_assortment_full.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step17.set_upstream(step16)
@@ -550,7 +551,7 @@ step17.set_upstream(step16)
 step18 = PythonOperator(task_id="step18",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "coupon_mapping",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/18.coupon_mapping.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/18.coupon_mapping.sql'},
                            dag=dag)
 step18.set_upstream(step17)
 
@@ -560,7 +561,7 @@ step18.set_upstream(step17)
 step19 = PythonOperator(task_id="step19",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint3_v3_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/19.forecast_sprint3_v3_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/19.forecast_sprint3_v3_flag_sprint4.sql'},
                            dag=dag)
 step19.set_upstream(step18)
 
@@ -571,7 +572,7 @@ step20 = PythonOperator(task_id="step20",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint3_coupon_item_link_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/20.forecast_sprint3_coupon_item_link_flag_sprint4.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/20.forecast_sprint3_coupon_item_link_flag_sprint4.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step20.set_upstream(step19)
@@ -582,7 +583,7 @@ step20.set_upstream(step19)
 step21 = PythonOperator(task_id="step21",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "coupon_city_store_union_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/21.coupon_city_store_union_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/21.coupon_city_store_union_flag_sprint4.sql'},
                            dag=dag)
 step21.set_upstream(step20)
 
@@ -592,7 +593,7 @@ step21.set_upstream(step20)
 step22 = PythonOperator(task_id="step22",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint3_v5_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/22.forecast_sprint3_v5_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/22.forecast_sprint3_v5_flag_sprint4.sql'},
                            dag=dag)
 step22.set_upstream(step21)
 
@@ -602,7 +603,7 @@ step22.set_upstream(step21)
 step23 = PythonOperator(task_id="step23",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint3_v6_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/23.forecast_sprint3_v6_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/23.forecast_sprint3_v6_flag_sprint4.sql'},
                            dag=dag)
 step23.set_upstream(step22)
 
@@ -612,7 +613,7 @@ step23.set_upstream(step22)
 step24 = PythonOperator(task_id="step24",
                            python_callable=execute_impala_by_sql_file,
                            op_kwargs={'table_name': "forecast_sprint3_v9_flag_sprint4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/24.forecast_sprint3_v9_flag_sprint4.sql'},
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/24.forecast_sprint3_v9_flag_sprint4.sql'},
                            dag=dag)
 step24.set_upstream(step23)
 
@@ -623,7 +624,7 @@ step25 = PythonOperator(task_id="step25",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_out_of_stock_temp",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/25.forecast_out_of_stock_temp.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/25.forecast_out_of_stock_temp.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step25.set_upstream(step24)
@@ -663,7 +664,7 @@ def normal_final_output_table():
    #                                  './sqls/26.incremental_forecast_sprint3_v10_flag_sprin4.sql',set_timeperiod=False,database='config',dropfirst=False)
    #    else:
    execute_impala_by_sql_file('forecast_sprint3_v10_flag_sprint4',\
-                              f'{config['parent_path']}/data_preperation/data_aggregation/regular_item/26.forecast_sprint3_v10_flag_sprin4.sql')
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/26.forecast_sprint3_v10_flag_sprin4.sql')
       # spark.stop()
 step26 = PythonOperator(task_id="step26",
                            python_callable=normal_final_output_table,
@@ -737,7 +738,7 @@ step_promo_1 = PythonOperator(task_id="step_promo_1",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_dm_agg_v2",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/1_forecast_sprint4_dm_agg_v2.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/1_forecast_sprint4_dm_agg_v2.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_1.set_upstream(step_promo_0)
@@ -749,7 +750,7 @@ step_promo_2 = PythonOperator(task_id="step_promo_2",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_promo_past_features",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/2_forecast_sprint4_promo_past_features.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/2_forecast_sprint4_promo_past_features.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_2.set_upstream(step_promo_1)
@@ -761,7 +762,7 @@ step_promo_3 = PythonOperator(task_id="step_promo_3",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_festival_lunar_feat",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/3_forecast_sprint4_festival_lunar_feat.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/3_forecast_sprint4_festival_lunar_feat.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_3.set_upstream(step_promo_2)
@@ -773,7 +774,7 @@ step_promo_4 = PythonOperator(task_id="step_promo_4",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "last_year_dm_sales_vrai_exact",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/4_last_year_dm_sales_vrai_exact.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/4_last_year_dm_sales_vrai_exact.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_4.set_upstream(step_promo_3)
@@ -788,7 +789,7 @@ step_promo_5 = PythonOperator(task_id="step_promo_5",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "promo_dataset_feat_combine_exact_vrai",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/5_promo_dataset_feat_combine_exact_vrai.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/5_promo_dataset_feat_combine_exact_vrai.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_5.set_upstream(step_promo_4)
@@ -800,7 +801,7 @@ step_promo_6 = PythonOperator(task_id="step_promo_6",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "uplift_promo",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/6_uplift_promo.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/6_uplift_promo.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_6.set_upstream(step_promo_5)
@@ -812,7 +813,7 @@ step_promo_7 = PythonOperator(task_id="step_promo_7",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_promo_uplift",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/7_forecast_sprint4_promo_uplift.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/7_forecast_sprint4_promo_uplift.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_7.set_upstream(step_promo_6)
@@ -824,7 +825,7 @@ step_promo_8 = PythonOperator(task_id="step_promo_8",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_promo_with_baseline",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/8_forecast_sprint4_promo_with_baseline.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/8_forecast_sprint4_promo_with_baseline.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_8.set_upstream(step_promo_7)
@@ -836,7 +837,7 @@ step_promo_9 = PythonOperator(task_id="step_promo_9",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_promo_with_coupon",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/9_forecast_sprint4_promo_with_coupon.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/9_forecast_sprint4_promo_with_coupon.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_9.set_upstream(step_promo_8)
@@ -848,7 +849,7 @@ step_promo_10 = PythonOperator(task_id="step_promo_10",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_promo_mecha_v4",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/promo_item/10_forecast_sprint4_promo_mecha_v4.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/10_forecast_sprint4_promo_mecha_v4.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_10.set_upstream(step_promo_9)
@@ -887,7 +888,7 @@ step_normal_to_day_2 = PythonOperator(task_id="step_normal_to_day_2",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_regular_day",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/2_1forecast_regular_day.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_1forecast_regular_day.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_normal_to_day_2.set_upstream(step_normal_to_day_1)
@@ -899,7 +900,7 @@ step_normal_to_day_3 = PythonOperator(task_id="step_normal_to_day_3",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_w2d_good_regular_days",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/2_2forecast_w2d_good_regular_days.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_2forecast_w2d_good_regular_days.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_normal_to_day_3.set_upstream(step_normal_to_day_2)
@@ -911,7 +912,7 @@ step_normal_to_day_4 = PythonOperator(task_id="step_normal_to_day_4",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_regular_dayofweek_percentage",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/2_3forecast_regular_dayofweek_percentage.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_3forecast_regular_dayofweek_percentage.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_normal_to_day_4.set_upstream(step_normal_to_day_3)
@@ -923,7 +924,7 @@ step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_normal_to_day_5.set_upstream(step_normal_to_day_4)
@@ -940,7 +941,7 @@ step_promo_to_day_1 = PythonOperator(task_id="step_promo_to_day_1",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "dm_week_to_day_intermediate",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/3_1dm_week_to_day_intermediate.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_1dm_week_to_day_intermediate.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_to_day_1.set_upstream(step_promo_11_model)
@@ -952,7 +953,7 @@ step_promo_to_day_2 = PythonOperator(task_id="step_promo_to_day_2",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "dm_daily_sales",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/3_2dm_daily_sales.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_2dm_daily_sales.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_to_day_2.set_upstream(step_promo_to_day_1)
@@ -964,7 +965,7 @@ step_promo_to_day_3 = PythonOperator(task_id="step_promo_to_day_3",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "dm_pattern_percentage",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/3_3dm_pattern_percentage.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_3dm_pattern_percentage.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_to_day_3.set_upstream(step_promo_to_day_2)
@@ -977,7 +978,7 @@ step_promo_to_day_4 = PythonOperator(task_id="step_promo_to_day_4",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "subfamily_store_weekday_percentage",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/3_4subfamily_store_weekday_percentage.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_4subfamily_store_weekday_percentage.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_to_day_4.set_upstream(step_promo_to_day_3)
@@ -990,7 +991,7 @@ step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=execute_impala_by_sql_file,
                            provide_context=True,
                            op_kwargs={'table_name': "forecast_DM_results_to_day",
-                              'file_path':f'{config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day.sql',
+                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day.sql',
                               'set_timeperiod':True},
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)

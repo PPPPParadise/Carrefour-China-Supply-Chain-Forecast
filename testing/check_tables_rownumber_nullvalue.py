@@ -1,8 +1,13 @@
+
+import traceback
+
 import pandas as pd
 import os
 import json
 import sys
+
 proc_root = os.path.dirname(os.path.realpath(__file__))
+# proc_root = "/data/jupyter/ws_vincent/Forecast3/dongxue_forecast_dataflow/script/"
 os.chdir(proc_root)
 sys.path.append(proc_root)
 
@@ -19,6 +24,8 @@ from pyspark.sql.types import *
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
 
 os.environ["SPARK_HOME"] = '/opt/cloudera/parcels/CDH-6.1.0-1.cdh6.1.0.p0.770702/lib/spark'
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
@@ -49,7 +56,7 @@ def record_in_txt(file_name,title,sql,df1):
     record_result.write(f'\n{str(df1)}')
     record_result.close()
 
-def check_table(table_name,database='vartefact'):
+def check_table(table_name,database='temp',count=0):
     print(f"checking table: {database}.{table_name}")
     sql = f"""describe {database}.{table_name}"""
     sdf = spark.sql(sql)
@@ -73,14 +80,28 @@ def check_table(table_name,database='vartefact'):
     new_df['proportion'] = new_df['counts']/df.iloc[0]['total_num']
     new_df.sort_values(by=['counts'],inplace=True)
     record_in_txt(file_name,table_name,sql,new_df)
-    new_df.to_csv(f"{proc_root}/Test/data/row_number_and_null_value_in_{database}_{table_name}.csv",index=False)
+    new_df.to_csv(f"{proc_root}/check_results/row_null_checks_{count}_{database}_{table_name}.csv",index=False)
     print(f"{database}.{table_name} checked result: {new_df} ")
     print(f"{database}.{table_name} checked result more detail in Test/data folder")
     return new_df
 
-if __name__ == '__main__':
-    df = check_table('m2_item_info',config['database'])
-    df = check_table('m2_trxns',config['database'])
-    df = check_table('m2_dm_info_per_item_day',config['database'])
-    df = check_table('m2_item_sales_info_daily_step1',config['database'])
+
+import re
+with open('../workflow_integration/forecast_airflow.py', 'r') as f:
+    text = f.read()
     
+content = text
+rr = re.compile(r"""op_kwargs={'table_name': "([^"]+)",""", re.I) # 不区分大小写
+print(type(rr))
+tables = rr.findall(content)
+print(type(tables))
+print(len(list(set(tables))))
+
+for i in range(len(tables)):
+    try:
+        print(check_table(tables[i],'temp',i))
+    except Exception as e:
+        record_result = open(f'{proc_root}/{file_name}', 'a')
+        record_result.write(f'{traceback.format_exc()}')
+        record_result.close()
+        print(traceback.format_exc())

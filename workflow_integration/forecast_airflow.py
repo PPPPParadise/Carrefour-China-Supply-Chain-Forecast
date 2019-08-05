@@ -86,7 +86,7 @@ config['parent_path'] = "/data/jupyter/ws_dongxue/dongxue_forecast_dataflow"
 config['incremental'] = True
 config['starting_date'] = 20170101
 config['ending_date'] = 20170107
-###############################  End  ###########################
+###############################  End  ##########################
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])
 
@@ -318,7 +318,7 @@ step9.set_upstream(step8)
 
 #9.1
 # 9.1  Scala script
-# 
+# op_kwargs={'table_name': "forecast_trxn_v7_full_item_id_sprint4_group_id_new",
 def step9_1_execute_scala():
    #  os.system(f"""spark-submit --class --master yarn --num-executors 8 {config['parent_path']}/sqls/BpTrxnGroup-assembly-1.0.jar""")
    os.system(f"""spark-submit --class "carrefour.forecast.process.BpTrxnGroup" --master yarn --num-executors 8 --executor-memory 8G {config['parent_path']}/sqls/bptrxngroup_2.11-1.0.jar {config['database']} forecast_trxn_v7_full_item_id_sprint4 forecast_trxn_v7_full_item_id_sprint4_group_id_new""")
@@ -385,7 +385,7 @@ step9_6 = PythonOperator(task_id="step9_6",
 step9_6.set_upstream(step9_5)
 
 #9.7 是一个python文件 
-#
+# op_kwargs={'table_name': "grouped_to_be_shipment_groupped",
 def step9_7_execute_python():
    os.system(f"""python3.6 ./sqls/9.7grouped_to_be_shipment_groupped_0729.py -d {config['database']}""")
 
@@ -431,8 +431,10 @@ step10.set_upstream(step9_9)
 #                            './sqls/11.out_of_stock_median_final.sql')
 step11 = PythonOperator(task_id="step11",
                            python_callable=execute_impala_by_sql_file,
+                           provide_context=True,
                            op_kwargs={'table_name': "forecast_sprint4_out_of_stock_median",
-                              'file_path':'./sqls/11.out_of_stock_median_final.sql'},
+                              'file_path':'./sqls/11.out_of_stock_median_final.sql',
+                              'set_timeperiod':True},
                            dag=dag)
 step11.set_upstream(step10)
 
@@ -626,7 +628,7 @@ step25 = PythonOperator(task_id="step25",
                            dag=dag)
 step25.set_upstream(step24)
 
-#26
+#26 
 # step26 = PythonOperator(task_id="step26",
 #                            python_callable=execute_impala_by_sql_file,
 #                            op_kwargs={'table_name': "forecast_sprint3_v10_flag_sprint4", 
@@ -670,9 +672,11 @@ step26.set_upstream(step25)
 
 
 # train normal item by python
-#
+# op_kwargs={'table_name': "result_forecast_10w_on_the_fututre",  
 def step27_model_execute_python(**kwargs):
-   os.system(f"""python3.6 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_weekly.py -d {config['database']} -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/normal_folder_weekly/' -s '{kwargs.get('ds')}'""")
+   delta = datetime.timedelta(days = 1)
+   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   os.system(f"""python3.6 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_weekly.py -d {config['database']} -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/normal_folder_weekly/' -s '{starting_date}'""")
 step27_model = PythonOperator(task_id="step27_model",
                            provide_context=True,
                            python_callable=step27_model_execute_python,
@@ -718,6 +722,8 @@ step27_model.set_upstream(step26)
 # 在做着部分之前 一些excel是要先传进去的 
 # temp.dm_mapping_1719_dates_last_version
 # temp.chinese_festival
+# op_kwargs={'table_name': "chinese_festivals",  
+# op_kwargs={'table_name': "dm_mapping_1719_dates_last_version",  
 def save_DM_csv_as_table():
    print('Trying to get spark connection...')
    warehouse_location = os.path.abspath('spark-warehouse')
@@ -882,9 +888,11 @@ step_promo_10 = PythonOperator(task_id="step_promo_10",
 step_promo_10.set_upstream(step_promo_9)
 
 # train promo model by python
-#
+# op_kwargs={'table_name': "promo_sales_order_prediction_by_item_store_dm",  
 def step_promo_11_model_execute_python(**kwargs):
-   os.system(f"""python3.6 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_promo.py -d {config['database']} -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/promo_folder_weekly/' -s '{kwargs.get('ds')}' """)
+   delta = datetime.timedelta(days = 1)
+   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   os.system(f"""python3.6 /data/jupyter/ws_vincent/Forecast3/roger_handover/all_included_promo.py -d {config['database']} -f '/data/jupyter/ws_vincent/Forecast3/roger_handover/promo_folder_weekly/' -s '{starting_date}' """)
 step_promo_11_model = PythonOperator(task_id="step_promo_11_model",
                            provide_context=True,
                            python_callable=step_promo_11_model_execute_python,
@@ -895,7 +903,9 @@ step_promo_11_model.set_upstream(step_promo_10)
 # After getting the results: Split week to day 
 # #1 
 # # 1_2018_big_event_impact.ipynb 
-#
+# op_kwargs={'table_name': "2018_big_event_impact",  
+# op_kwargs={'table_name': "forecast_big_events",  
+# op_kwargs={'table_name': "forecast_dm_pattern",  
 def step_normal_to_day_1_execute_python(**kwargs):
    os.system(f""" python3.6 /data/jupyter/ws_dongxue/dongxue_forecast_dataflow/sqls/PRED_TO_DAY/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' """)
    

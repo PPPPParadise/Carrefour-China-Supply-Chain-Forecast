@@ -44,7 +44,7 @@ upcoming_dm as (
     -- 
     and dm_theme_id in (select dm_theme_id from ods.nsa_dm_theme where theme_status <> '-1')
     group by item_id, sub_code, city_code, dm_theme_id
-    having max(psp_start_date) > '{ending_date}' 
+    having max(psp_start_date) > '{ending_date_withline}' 
 ),
 
 store_code_added as (
@@ -116,7 +116,7 @@ concat_old_and_upcoming as (
             on a.item_id = b.item_id
             and a.sub_id = b.sub_id
             and a.store_code = b.store_code
-            -- and a.current_dm_theme_id = b.current_dm_theme_id -- maybe a wrong line 
+            and a.current_dm_theme_id = b.current_dm_theme_id -- maybe a wrong line 
         where b.item_id is null)   
 ),
 

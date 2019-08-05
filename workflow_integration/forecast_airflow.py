@@ -161,8 +161,9 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
       ending_date = kwargs.get('ds').replace('-','')
+      ending_date_withline = kwargs.get('ds')
       print(f"get ending_date {ending_date}") 
-      sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date)
+      sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
       sql = sql.format(database=database)
    # execute the SQL
@@ -195,8 +196,9 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
       ending_date = kwargs.get('ds').replace('-','')
+      ending_date_withline = kwargs.get('ds')
       print(f"get ending_date {ending_date}") 
-      sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date)
+      sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
       sql = sql.format(database=database)
    # execute the SQL

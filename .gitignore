@@ -2,4 +2,4 @@
 *.pkl
 *.csv
 *.ipynb_checkpoints*
-*.patch*.patch
+*.patch

@@ -84,6 +84,7 @@ dag = DAG('forecast_dataflow',
 config = {}
 config['database'] = 'temp'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
+config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
 # config['incremental'] = True
 config['starting_date'] = 20170101
 # config['ending_date'] = 20170107
@@ -109,7 +110,7 @@ def impalaexec(sql,create_table=False):
                sql_drop = f'''
                drop table if exists {create_table}
                '''
-               re = impalaexec(sql_drop)
+               impalaexec(sql_drop)
             time.sleep(300)
 
 
@@ -134,7 +135,7 @@ def hiveexec(sql,create_table=False):
                sql_drop = f'''
                drop table if exists {create_table}
                '''
-               re = impalaexec(sql_drop)
+               impalaexec(sql_drop)
             time.sleep(300)
 
 
@@ -165,7 +166,8 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
    else:
       sql = sql.format(database=database)
    # execute the SQL
-   impalaexec(sql,table_name)
+   database_table_name = f"{database}.{table_name}"
+   impalaexec(sql,database_table_name)
    # update the table
    sql = f""" INVALIDATE METADATA {database}.{table_name} """
    impalaexec(sql)
@@ -198,7 +200,8 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
    else:
       sql = sql.format(database=database)
    # execute the SQL
-   hiveexec(sql,table_name)
+   database_table_name = f"{database}.{table_name}"
+   hiveexec(sql,database_table_name)
    # update the table
    sql = f""" INVALIDATE METADATA {database}.{table_name} """
    impalaexec(sql)
@@ -677,7 +680,7 @@ step26.set_upstream(step25)
 def step27_model_execute_python(**kwargs):
    delta = datetime.timedelta(days = 1)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
-   os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}'""")
+   os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
 step27_model = PythonOperator(task_id="step27_model",
                            provide_context=True,
                            python_callable=step27_model_execute_python,
@@ -859,7 +862,7 @@ step_promo_10.set_upstream(step_promo_9)
 def step_promo_11_model_execute_python(**kwargs):
    delta = datetime.timedelta(days = 1)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
-   os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' """)
+   os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
 step_promo_11_model = PythonOperator(task_id="step_promo_11_model",
                            provide_context=True,
                            python_callable=step_promo_11_model_execute_python,

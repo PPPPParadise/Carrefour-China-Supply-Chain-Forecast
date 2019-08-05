@@ -84,7 +84,7 @@ config = {}
 config['database'] = 'temp'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 # config['incremental'] = True
-config['starting_date'] = 20190715
+config['starting_date'] = 20170101
 # config['ending_date'] = 20170107
 ###############################  End  ##########################
 os.chdir(config['parent_path'])

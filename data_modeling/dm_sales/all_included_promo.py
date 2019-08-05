@@ -55,7 +55,7 @@ def main():
 
 
     # Promo dataset
-    big_table_name = f"vartefact.forecast_sprint4_promo_mecha_v4"
+    big_table_name = f"{config['database']}.forecast_sprint4_promo_mecha_v4"
     file_name = 'test_to_delete_' + now
     download_data(folder=folder, big_table_name=big_table_name, file_name=file_name)
 

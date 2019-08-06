@@ -2,7 +2,7 @@
 Input:
     ods.dim_calendar
     ods.nsa_dm_theme
-    {database}.DM_pred_results_simple
+    {database}.promo_sales_order_prediction_by_item_store_dm
 Output: 
     {database}.dm_week_to_day_intermediate
 */
@@ -48,7 +48,7 @@ SELECT
     b.theme_start_dayofweek,
     b.theme_end_dayofweek
 
-from {database}.DM_pred_results_simple a
+from {database}.promo_sales_order_prediction_by_item_store_dm a
 left join dm_info b
 on cast(a.current_dm_theme_id as int) = b.dm_theme_id
 ),

@@ -43,6 +43,41 @@ object DataUtil {
   }
 
   /**
+    * Insert job run information to datalake
+    * 将脚本运行信息写入datalake
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param output Job run output 脚本运行输出
+    * @param info Job run other information 脚本运行其它信息
+    * @param sqlc Spark SQLContext
+    */
+  def insertJobRunInfoToDatalake(modelRun: ModelRun, status: String,
+                                 output: String, info: String, error: String, sqlc: SQLContext): Unit = {
+
+    var scriptName = "Forecast process for " + modelRun.flowType
+    if (modelRun.isSimulation) {
+      scriptName = "Forecast simulation process for " + modelRun.flowType
+    }
+
+    var scriptType = "Order run"
+
+    if (modelRun.isSimulation) {
+      scriptType = "Order simulation run"
+    }
+
+    if (modelRun.isDebug) {
+      scriptType = "Order Debug run"
+    }
+
+    var encodeError = error.replace("\'", "").replace("\"", "")
+
+    sqlc.sql(s"insert into vartefact.forecast_script_runs values (now(), " +
+      s"'${modelRun.runDateStr}', '${status}' , '${scriptName}', '${scriptType}'," +
+      s"'${modelRun.getScriptParameter}', '${output}', '${info}', '${encodeError}')")
+
+  }
+
+  /**
     * Insert debug result to datalake
     * 将debug运行结果写入datalake
     *
@@ -55,8 +90,6 @@ object DataUtil {
     debugDf.write.format("parquet").mode("overwrite").saveAsTable(debugTableName)
 
     sqlc.sql(s"refresh ${debugTableName}")
-
-    LogUtil.info(s"Number of debug lines: ${debugDf.count()}")
   }
 
 
@@ -67,8 +100,9 @@ object DataUtil {
     * @param orderDf
     * @param modelRun Job run information 脚本运行信息
     * @param sqlc Spark SQLContext
+    * @return Number of orders 订单的数量
     */
-  def insertOrderToDatalake(orderDf: Dataset[DateRow], modelRun: ModelRun, sqlc: SQLContext): Unit = {
+  def insertOrderToDatalake(orderDf: Dataset[DateRow], modelRun: ModelRun, sqlc: SQLContext): Long = {
 
     val finalOrderDf = orderDf.filter("error_info == ''")
 
@@ -102,7 +136,7 @@ object DataUtil {
 
     sqlc.sql(s"refresh ${modelRun.orderHistTableName} ")
 
-    LogUtil.info(s"Number of order lines: ${finalOrderDf.count()}")
+    orderDf.count()
   }
 
   /**
@@ -112,8 +146,9 @@ object DataUtil {
     * @param resDf
     * @param modelRun Job run information 脚本运行信息
     * @param sqlc Spark SQLContext
+    * @return Number of orders 订单的数量
     */
-  def insertDcOrderToDatalake(resDf: Dataset[DateRow], modelRun: ModelRun, sqlc: SQLContext): Unit = {
+  def insertDcOrderToDatalake(resDf: Dataset[DateRow], modelRun: ModelRun, sqlc: SQLContext): Long = {
 
     val orderDf = resDf.filter("error_info == ''")
 
@@ -147,7 +182,7 @@ object DataUtil {
 
     sqlc.sql(s"refresh ${modelRun.orderHistTableName} ")
 
-    LogUtil.info(s"Number of order lines: ${orderDf.count()}")
+    orderDf.count()
   }
 
 }

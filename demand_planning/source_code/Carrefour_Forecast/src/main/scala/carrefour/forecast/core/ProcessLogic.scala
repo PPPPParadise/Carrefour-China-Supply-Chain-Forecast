@@ -1,7 +1,7 @@
 package carrefour.forecast.core
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.{ItemEntity, ModelRun}
@@ -17,8 +17,23 @@ object ProcessLogic {
     * @param modelRun Job run information 脚本运行信息
     */
   def process(modelRun: ModelRun): Unit = {
+    val outputSb = new StringBuilder
+    val infoSb = new StringBuilder
+
+    val spark = SparkSession
+      .builder
+      .appName("Forecast process for " + modelRun.flowType)
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
+
+    val sqlc = spark.sqlContext
+
     try {
-      LogUtil.info("\n\n\n" + modelRun.toString)
+      LogUtil.info("\n\n\n" + modelRun.getScriptParameter)
+      infoSb.append("Job Start:")
+        .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
+        .append(",")
 
       // initialize run
       val item_id = modelRun.itemId
@@ -42,23 +57,6 @@ object ProcessLogic {
       cal.add(Calendar.DATE, -1)
       val stockDateStr = dateKeyFormat.format(cal.getTime)
 
-      LogUtil.info(s"Flow type is:${modelRun.flowType}, " +
-        s"Run date is: ${runDateStr}, " +
-        s"Forecast start date: ${startDateStr}, " +
-        s"Forecast end date: ${endDateStr}, " +
-        s"Stock level date: ${stockDateStr}, " +
-        s"is simulation run: ${modelRun.isSimulation}")
-
-      val spark = SparkSession
-        .builder
-        .appName("Forecast process for " + modelRun.flowType)
-        .enableHiveSupport()
-        .getOrCreate()
-      import spark.implicits._
-
-      val sc = spark.sparkContext
-      val sqlc = spark.sqlContext
-
       sqlc.setConf("hive.support.concurrency", "true")
       sqlc.setConf("hive.exec.parallel", "true")
       sqlc.setConf("hive.exec.dynamic.partition", "true")
@@ -71,9 +69,16 @@ object ProcessLogic {
       var inScopeItemEntityDf = sqlc.sql(inScopeItemEntitySql)
       inScopeItemEntityDf = DataUtil.filterDateFrame(inScopeItemEntityDf, item_id, sub_id, entity_code)
       val itemEntityCnt = inScopeItemEntityDf.count
-      LogUtil.info(s"Number of item store/holding combinations in scope: ${itemEntityCnt}")
+      var outputLine = s"Number of item store/holding combinations in scope: ${itemEntityCnt}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
       if (itemEntityCnt == 0) {
-        LogUtil.info(s"skip date ${runDateStr} ca fuse no in scope item for today")
+        LogUtil.info(s"skip date ${runDateStr} cause no in scope item for today")
+        infoSb.append(s"skip date ${runDateStr} cause no in scope item for today")
+        infoSb.append("Job Finish:")
+          .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
+        DataUtil.insertJobRunInfoToDatalake(modelRun, "Success",
+          outputSb.toString(), infoSb.toString(), "" ,sqlc)
         return
       }
 
@@ -83,19 +88,33 @@ object ProcessLogic {
       val orderDeliverySql = getOrderDeliverySql(modelRun, stockDateStr, startDateStr, endDateStr)
       val orderDeliveryDf = sqlc.sql(orderDeliverySql)
 
-      LogUtil.info(s"Number of total order opportunities: ${orderDeliveryDf.count()}")
+      outputLine = s"Number of total order opportunities: ${orderDeliveryDf.count()}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
 
       val activeOrderDeliveryDf = extractActiveOrderOpportunities(orderDeliveryDf, modelRun, sqlc)
 
       val activeOrderOpportunitiesCnt = activeOrderDeliveryDf.count()
-      LogUtil.info(s"Number of active order opportunities: ${activeOrderOpportunitiesCnt}")
+
+      outputLine = s"Number of active order opportunities: ${activeOrderOpportunitiesCnt}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
+
       if (activeOrderOpportunitiesCnt == 0) {
         LogUtil.info(s"skip date ${runDateStr} cause no active order opportunity for today")
+        infoSb.append(s"skip date ${runDateStr} cause no active order opportunity for today")
+        infoSb.append("Job Finish:")
+          .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
+        DataUtil.insertJobRunInfoToDatalake(modelRun, "Success",
+          outputSb.toString(), infoSb.toString(), "", sqlc)
         return
       }
 
       val activeItemEntities = extractActiveItem(activeOrderDeliveryDf)
-      LogUtil.info(s"Number of active items store/holding combinations: ${activeItemEntities.count()}")
+
+      outputLine = s"Number of active items store/holding combinations: ${activeItemEntities.count()}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
 
       activeItemEntities.cache()
       activeItemEntities.createOrReplaceTempView(modelRun.viewName)
@@ -107,7 +126,10 @@ object ProcessLogic {
       // Find the actual stock level in each store for each item
       val stockLevelMap = QueryUtil.
         getActualStockMap(stockDateStr, modelRun.isDcFlow, modelRun.viewName, spark, modelRun.isSimulation)
-      LogUtil.info(s"Number of stockLevelMap: ${stockLevelMap.size}")
+
+      outputLine = s"Number of current stock level found: ${stockLevelMap.size}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
 
       // Get DM orders to be delivered
       val dmOrdersMap = getDmOrderMap(modelRun, startDateStr, endDateStr, spark)
@@ -129,7 +151,9 @@ object ProcessLogic {
 
       var predictionWithSalesDf = salesPredictionDf
 
-      LogUtil.info(s"Number of sales predictions: ${predictionWithSalesDf.count()}")
+      outputLine = s"Number of sales predictions: ${predictionWithSalesDf.count()}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
 
       if (modelRun.isSimulation) {
         // Find the actual sales
@@ -145,7 +169,9 @@ object ProcessLogic {
 
       unionedDf.cache()
 
-      LogUtil.info(s"Count of unioned input dataframe: ${unionedDf.count()}")
+      outputLine = s"Count of unioned input dataframe: ${unionedDf.count()}"
+      LogUtil.info(outputLine)
+      outputSb.append(outputLine).append(",")
 
       val grouppedDf = unionedDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),
         row.getAs[Integer]("sub_id"),
@@ -161,24 +187,41 @@ object ProcessLogic {
       })
 
       if (modelRun.isSimulation) {
-        SimulationUtil.insertSimulationStockToDatalake(resDf, modelRun, sqlc)
         SimulationUtil.insertSimulationResultToDatalake(resDf, modelRun, sqlc)
-        LogUtil.info(s"Number of simulation lines: ${resDf.count()}")
+
+        outputLine = s"Number of simulation lines: ${resDf.count()}"
+        LogUtil.info(outputLine)
+        outputSb.append(outputLine).append(",")
 
         val orderDf = resDf.filter(row => row.is_order_day)
         SimulationUtil.insertSimulationOrderToDatalake(orderDf, modelRun, sqlc)
-        LogUtil.info(s"Number of simulation order lines: ${orderDf.count()}")
+
+        outputLine = s"Number of simulation order lines: ${orderDf.count()}"
+        LogUtil.info(outputLine)
+        outputSb.append(outputLine).append(",")
 
       } else if (modelRun.isDebug) {
         DataUtil.insertDebugInfoToDatalake(resDf, modelRun.debugTableName, sqlc)
 
+        outputLine = s"Number of debug lines: ${resDf.count()}"
+        LogUtil.info(outputLine)
+        outputSb.append(outputLine).append(",")
+
       } else if (modelRun.flowType == FlowType.DC) {
         val orderDf = resDf.filter(row => row.is_order_day)
-        DataUtil.insertDcOrderToDatalake(orderDf, modelRun, sqlc)
+        val orderDfCnt = DataUtil.insertDcOrderToDatalake(orderDf, modelRun, sqlc)
+
+        outputLine = s"Number of order lines: ${orderDfCnt}"
+        LogUtil.info(outputLine)
+        outputSb.append(outputLine).append(",")
 
       } else {
         val orderDf = resDf.filter(row => row.is_order_day)
-        DataUtil.insertOrderToDatalake(orderDf, modelRun, sqlc)
+        val orderDfCnt = DataUtil.insertOrderToDatalake(orderDf, modelRun, sqlc)
+
+        outputLine = s"Number of order lines: ${orderDfCnt}"
+        LogUtil.info(outputLine)
+        outputSb.append(outputLine).append(",")
       }
 
       errorDf = resDf.filter("error_info != ''").toDF()
@@ -201,11 +244,28 @@ object ProcessLogic {
 
         throw new RuntimeException(s"Not all items successfully processed")
       }
+
+      infoSb.append("Job Finish:")
+        .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
+
+      DataUtil.insertJobRunInfoToDatalake(modelRun, "Success",
+        outputSb.toString(), infoSb.toString() ,"", sqlc)
+
       LogUtil.info("Finish")
 
     } catch {
       case ex: Exception => {
         LogUtil.error(ex.getMessage, ex)
+        infoSb.append("Job Finish:")
+          .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
+
+        val errorSb = new StringBuilder
+
+        for (te <- ex.getStackTrace) {
+          errorSb.append(te).append("|")
+        }
+        DataUtil.insertJobRunInfoToDatalake(modelRun, "Fail", outputSb.toString(),
+          infoSb.toString(), errorSb.toString(), sqlc)
         throw ex
       }
     }
@@ -266,10 +326,6 @@ object ProcessLogic {
     * @return Order days that not in stop period 不在停止订货日期内的订单日
     */
   private def extractActiveOrderOpportunities(df: DataFrame, modelRun: ModelRun, sqlc: SQLContext): DataFrame = {
-
-    if (modelRun.isSimulation && modelRun.flowType != FlowType.DC) {
-      SimulationUtil.insertSimulationItemInfoToDatalake(df, modelRun, sqlc)
-    }
 
     val newDf = df.where("(item_stop_start_date='' and item_stop_start_date='') " +
       "or ( item_stop_start_date!='' and to_timestamp(delivery_date, 'yyyyMMdd') < to_timestamp(item_stop_start_date, 'dd/MM/yyyy')) " +

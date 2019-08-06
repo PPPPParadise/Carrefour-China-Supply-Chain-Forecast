@@ -34,6 +34,49 @@ case class ModelRun(
                      isDebug: Boolean,
                      debugTableName: String,
                      isSimulation: Boolean = false
-                   ) extends Serializable
+                   ) extends Serializable {
+
+  /**
+    *
+    * @return Script run parameters 脚本运行输入
+    */
+  def getScriptParameter(): AnyRef = {
+    val sb = new StringBuilder()
+
+    val flowTypeString = flowType match {
+      case FlowType.XDocking => "Cross docking store order"
+      case FlowType.OnStockStore => "On stock store order"
+      case FlowType.DC => "On stock DC order"
+    }
+
+    sb.append("Run date:").append(runDateStr).append(",")
+    sb.append("Flow type:").append(flowTypeString).append(",")
+    sb.append("Order table name:").append(orderTableName).append(",")
+    sb.append("Order history table name:").append(orderHistTableName).append(",")
+    sb.append("Default stock level:").append(defaultStockLevel).append(",")
+    sb.append("Default delivery time:").append(defaultDeliveryTime).append(",")
+
+    if (itemId != 0) {
+      sb.append("Item ID:").append(itemId).append(",")
+    }
+
+    if (subId != 0) {
+      sb.append("Sub ID:").append(subId).append(",")
+    }
+
+    if (!storeCode.equals("")) {
+      sb.append("Store code or con holding:").append(storeCode).append(",")
+    }
+
+    sb.append("Is debug run:").append(isDebug).append(",")
+    if (isDebug) {
+      sb.append("Debug Table Name:").append(debugTableName).append(",")
+    }
+
+    sb.append("Is simulation run:").append(isSimulation)
+
+    sb.toString()
+  }
+}
 
 

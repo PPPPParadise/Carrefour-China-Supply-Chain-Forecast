@@ -50,7 +50,7 @@ object SimulationQueries {
 				ELSE fss.day_end_stock_with_actual
 				END AS stock_level
 		FROM vartefact.forecast_item_code_id_stock icis
-		LEFT OUTER JOIN vartefact.forecast_simulation_stock fss
+		LEFT OUTER JOIN ${SimulationTables.simulationStockTable} fss
 		ON icis.item_id = fss.item_id
 			AND icis.sub_id = fss.sub_id
 			AND icis.store_code = fss.store_code
@@ -135,7 +135,7 @@ object SimulationQueries {
 				ELSE cast(fss.day_end_stock_with_actual AS DOUBLE)
 				END AS stock_level
 		FROM vartefact.forecast_lfms_daily_dcstock ldd
-		LEFT OUTER JOIN vartefact.forecast_simulation_stock fss
+		LEFT OUTER JOIN ${SimulationTables.simulationStockTable} fss
 		ON ldd.item_id = fss.item_id
 			AND ldd.sub_id = fss.sub_id
 			AND ldd.holding_code = fss.store_code

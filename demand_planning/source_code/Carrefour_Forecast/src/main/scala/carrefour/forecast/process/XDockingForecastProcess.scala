@@ -53,7 +53,7 @@ object XDockingForecastProcess {
       flowType,
       "vartefact.forecast_xdock_orders",
       "vartefact.forecast_xdock_orders_hist",
-      "in_scope_xdock_item_store",
+      "tmp_in_scope_xdock_item_store",
       defaultStockLevel,
       defaultDeliveryTime,
       item_id,

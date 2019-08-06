@@ -7,6 +7,7 @@ import java.util.Date
   * Utility for logging
   */
 object LogUtil {
+
   /**
     * Record error log
     * 将错误信息写入日志

@@ -6,7 +6,7 @@ Output:
 */
 
 -- 3. store_subfamily weekday-per on regular weeks
-create view {database}.subfamily_store_weekday_percentage as
+create table {database}.subfamily_store_weekday_percentage stored as parquet as
 with add_sub_family as (
 SELECT
     *,

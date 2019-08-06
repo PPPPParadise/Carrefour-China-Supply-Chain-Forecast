@@ -15,7 +15,7 @@ with week_day as (
         week_key
     from ods.dim_calendar
     where date_key >= '{starting_date}'
-    and date_key < '{ending_date}'
+    -- and date_key < '{ending_date}'
     group by
         date_key,
         week_key
@@ -76,5 +76,5 @@ select
 from week_to_regular_day
 where regular_flag is not null  
 and date_key >= '{starting_date}'
-and date_key < '{ending_date}'
+-- and date_key < '{ending_date}'
 ;

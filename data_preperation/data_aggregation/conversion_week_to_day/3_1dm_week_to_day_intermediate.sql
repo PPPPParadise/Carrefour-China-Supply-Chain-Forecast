@@ -14,7 +14,7 @@ select
     date_key
 from ods.dim_calendar
 where date_key >= '{starting_date}'
-and date_key < '{ending_date}'
+-- and date_key < '{ending_date}'
 group by
     date_key
 ),

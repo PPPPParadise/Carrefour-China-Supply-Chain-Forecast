@@ -6,7 +6,7 @@ Output:
 */
 
 -- 3. calculate regular-dayofweek sales percentage 
-create view {database}.forecast_regular_dayofweek_percentage as
+create table {database}.forecast_regular_dayofweek_percentage stored as parquet as
 with all_sales as (
 SELECT
     item_id,

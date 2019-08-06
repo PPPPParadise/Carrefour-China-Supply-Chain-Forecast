@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--database_name", help="database name")
 parser.add_argument("-f", "--local_folder", help="local folder")
 parser.add_argument("-s", "--date_stop_train", help="date stop train")
+parser.add_argument("-c", "--config_folder", help="config folder")
 args = parser.parse_args()
 
 # config = {}
@@ -28,6 +29,7 @@ config = {}
 config['database'] = args.database_name
 config['local_folder'] = args.local_folder
 config['date_stop_train'] = args.date_stop_train
+config['config_folder'] = args.config_folder
 print(config)
 if (args.database_name is None) or (args.local_folder is None) or (args.date_stop_train is None):
     print('config needed ')
@@ -57,7 +59,7 @@ def main():
     file_name = 'test_to_delete_' + now
     download_data(folder=folder, big_table_name=big_table_name, file_name=file_name)
 
-    os.system(f"cp {proc_root}/calendar.pkl {config['local_folder']}")
+    os.system(f"cp {config['config_folder']}/calendar.pkl {config['local_folder']}")
     # Preprocess the datase
     big_table = file_name + '.csv'
     sql_table = big_table_name

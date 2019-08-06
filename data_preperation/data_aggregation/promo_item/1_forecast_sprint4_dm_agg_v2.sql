@@ -38,13 +38,14 @@ upcoming_dm as (
         sub_code,
         city_code,
         dm_theme_id,
+        sub_id,
         concat(substring(max(psp_start_date),1,4),substring(max(psp_start_date),6,2),substring(max(psp_start_date),9,2)) as date_key
     from nsa.dm_extract_log
     where extract_order = 50 
     -- 
     and dm_theme_id in (select dm_theme_id from ods.nsa_dm_theme where theme_status <> '-1')
-    group by item_id, sub_code, city_code, dm_theme_id
-    having max(psp_start_date) > '{ending_date}' 
+    group by item_id, sub_code, city_code, dm_theme_id, sub_id
+    having max(psp_start_date) > '{ending_date_withline}' 
 ),
 
 store_code_added as (
@@ -66,8 +67,13 @@ store_code_added as (
 sub_id_added as (
     -- add sub_is
     select
-        a.*,
-        b.sub_id
+        a.item_id,
+        a.sub_code,
+        a.city_code,
+        a.dm_theme_id,
+        a.date_key,
+        a.store_code,
+        coalesce(b.sub_id,a.sub_id) as sub_id
     from store_code_added as a
     left join (
         select
@@ -76,7 +82,6 @@ sub_id_added as (
             date_key,
             max(sub_id) as sub_id
         from {database}.p4cm_item_map_complete 
-
         group by 
             item_id, 
             sub_code, 
@@ -116,7 +121,7 @@ concat_old_and_upcoming as (
             on a.item_id = b.item_id
             and a.sub_id = b.sub_id
             and a.store_code = b.store_code
-            and a.current_dm_theme_id = b.current_dm_theme_id
+            and a.current_dm_theme_id = b.current_dm_theme_id -- maybe a wrong line 
         where b.item_id is null)   
 ),
 

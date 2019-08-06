@@ -67,6 +67,7 @@ def download_data(folder, big_table_name, file_name, spark_session_name='downloa
     select *
     from {big_table_name}
     """
+    # where item_id in (select distinct item_id from {big_table_name} limit 100)
 
     # # Download script (no need to change)
     os.system(f'hadoop fs -rm -r {file_name}')

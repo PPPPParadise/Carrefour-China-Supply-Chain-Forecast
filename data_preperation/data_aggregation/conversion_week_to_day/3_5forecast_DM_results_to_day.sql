@@ -11,7 +11,7 @@ Output: {database}.forecast_DM_results_to_day
 -- 4. 
 -- drop view {database}.forecast_DM_results_to_day;
 
-create view {database}.forecast_DM_results_to_day as
+create table {database}.forecast_DM_results_to_day stored as parquet  as
 with add_date_key as (
 select
     *

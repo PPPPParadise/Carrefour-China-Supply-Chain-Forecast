@@ -28,7 +28,7 @@ left join ( select
                 store_code,
                 ticket_id,
                 max(group_id) as group_id
-            from {database}.forecast_trxn_v7_full_item_id_sprint4_group_id
+            from {database}.forecast_trxn_v7_full_item_id_sprint4_group_id_new
             group by item_id, sub_id, store_code, ticket_id
         ) as b
 on a.item_id = b.item_id

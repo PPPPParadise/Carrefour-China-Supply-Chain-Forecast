@@ -9,7 +9,7 @@ Input:
 Output: {database}.forecast_regular_results_week_to_day_original_pred
 */
 -- 4. Split weekly prediction to day for demand palnning 
-CREATE VIEW {database}.forecast_regular_results_week_to_day_original_pred AS 
+CREATE table {database}.forecast_regular_results_week_to_day_original_pred stored as parquet AS 
 WITH art_pred AS (
     SELECT 
         CAST(item_id AS INT) item_id, 

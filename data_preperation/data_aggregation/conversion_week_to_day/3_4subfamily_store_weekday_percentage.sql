@@ -44,7 +44,7 @@ group by
 select
     a.*,
     b.all_daily_sales,
-    a.daily_sales_sum_on_weekday / b.all_daily_sales as weekday_subfamily_sales_percentage
+    if(b.all_daily_sales = 0, 0, a.daily_sales_sum_on_weekday / b.all_daily_sales)  as weekday_subfamily_sales_percentage
 
 from weekday_sales a
 left join all_week_sales b

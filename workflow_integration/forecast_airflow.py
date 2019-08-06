@@ -879,7 +879,7 @@ step_promo_11_model.set_upstream(step_promo_10)
 # op_kwargs={'table_name': "forecast_big_events",  
 # op_kwargs={'table_name': "forecast_dm_pattern",  
 def step_normal_to_day_1_execute_python(**kwargs):
-   os.system(f""" python3.6 {config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' """)
+   os.system(f""" python3.6 {config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' -c '{config['config_data_path']}' """)
    
 step_normal_to_day_1 = PythonOperator(task_id="step_normal_to_day_1",
                            python_callable=step_normal_to_day_1_execute_python,

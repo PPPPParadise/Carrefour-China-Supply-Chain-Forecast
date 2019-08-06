@@ -10,8 +10,6 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import lit
 from impala.dbapi import connect
 import argparse
-proc_root = os.path.dirname(os.path.realpath(__file__))
-os.chdir(proc_root)
 
 
 ## example: python3.6 /data/jupyter/ws_dongxue/dongxue_forecast_dataflow/sqls/PRED_TO_DAY/1_2018_big_event_impact.py  -d temp -s 20170101 -e 20190715
@@ -19,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--database_name", help="database name")
 parser.add_argument("-s", "--start_date", help="start date")
 parser.add_argument("-e", "--end_date", help="end date")
+parser.add_argument("-c", "--config_folder", help="config folder")
 args = parser.parse_args()
 
 
@@ -28,6 +27,8 @@ if (args.database_name is None) or (args.start_date is None) or (args.end_date i
 database_name = args.database_name
 start_date = args.start_date
 end_date = args.end_date
+config_folder = args.config_folder
+os.chdir(config_folder)
 
 
 def impalaexec(sql,create_table=False):

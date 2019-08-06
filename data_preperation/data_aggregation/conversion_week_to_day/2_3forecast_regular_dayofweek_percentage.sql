@@ -38,7 +38,7 @@ group by
 select
     a.*,
     b.all_sales,
-    a.day_of_week_all_sales / b.all_sales as weekday_percentage
+    if(b.all_sales = 0, 0, a.day_of_week_all_sales / b.all_sales)  as weekday_percentage
 
 from day_of_week_sales a
 left join all_sales b

@@ -47,7 +47,7 @@ object DcSimulationProcess {
       flowType,
       "vartefact.forecast_dc_orders",
       "vartefact.forecast_dc_orders_hist",
-      "in_scope_dc_item_store",
+      "tmp_in_scope_dc_item_store",
       defaultStockLevel,
       defaultDeliveryTime,
       item_id,

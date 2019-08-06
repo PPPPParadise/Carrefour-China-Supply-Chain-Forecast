@@ -52,7 +52,7 @@ object OnStockForecastProcess {
       flowType,
       "vartefact.forecast_onstock_orders",
       "vartefact.forecast_onstock_orders_hist",
-      "in_scope_onstock_item_store",
+      "tmp_in_scope_onstock_item_store",
       defaultStockLevel,
       defaultDeliveryTime,
       item_id,

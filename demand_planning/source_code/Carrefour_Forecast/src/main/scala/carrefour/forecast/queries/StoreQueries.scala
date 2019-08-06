@@ -244,7 +244,7 @@ object StoreQueries {
     * @return SQL with variables filled 拼装好的SQL
     */
   def getCalendarSql(startDateStr: String, endDateStr: String): String = {
-    s"select date_key from ods.dim_calendar where date_key >='${startDateStr}' and date_key <='${endDateStr}'"
+    s"select date_key from vartefact.forecast_calendar where date_key >='${startDateStr}' and date_key <='${endDateStr}'"
   }
 
   /**

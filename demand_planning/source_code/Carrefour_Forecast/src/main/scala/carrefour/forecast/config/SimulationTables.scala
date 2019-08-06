@@ -10,7 +10,7 @@ object SimulationTables {
     * For latest orders from simulation process
     * 用于储存模拟运行生成的最新订单
     */
-  val simulationOrdersTable = "vartefact.forecast_simulation_orders"
+  val simulationOrdersTable = "vartefact.v_forecast_simulation_orders"
 
   /**
     * For all versions of orders for an order day
@@ -28,12 +28,6 @@ object SimulationTables {
     * For day end stock level calculated by simulation
     * 用于储存模拟运行过程中计算的每日门店盘点后库存
     */
-  val simulationStockTable = "vartefact.forecast_simulation_stock"
-
-  /**
-    * For tracking item start and stop period
-    * 用于储存商品停止订货日期
-    */
-  val simulationItemStatusTable = "vartefact.forecast_simulation_item_status"
+  val simulationStockTable = "vartefact.v_forecast_simulation_stock"
 
 }

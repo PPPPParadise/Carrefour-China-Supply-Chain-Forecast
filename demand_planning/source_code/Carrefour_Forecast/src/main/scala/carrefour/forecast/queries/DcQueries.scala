@@ -33,11 +33,10 @@ object DcQueries {
       FROM vartefact.forecast_dc_latest_sales fdls
       JOIN vartefact.forecast_dc_order_deliver_mapping dodm ON dodm.con_holding = fdls.con_holding
         AND dodm.order_date = '${orderDateStr}'
-      JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${orderDateStr}'
+      JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${stockDateStr}'
         AND fdls.item_code = icis.item_code
         AND fdls.sub_code = icis.sub_code
         AND fdls.dept_code = icis.dept_code
-        AND fdls.date_key = icis.date_key
       WHERE fdls.date_key = '${orderDateStr}'
   """
   }

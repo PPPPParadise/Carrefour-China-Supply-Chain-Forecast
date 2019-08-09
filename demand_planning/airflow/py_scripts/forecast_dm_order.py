@@ -30,7 +30,6 @@ def insert_script_run(date_str, status, parameter, output_str, info_str, error_s
 
 def dm_order_process(date_str):
     warehouse_location = abspath('spark-warehouse')
-    os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
 
     print_output(f'\n\n\n Forecast process for DM start with input date {date_str} \n\n\n')
 
@@ -41,10 +40,12 @@ def dm_order_process(date_str):
     spark = SparkSession.builder \
         .appName("Forecast process for DM") \
         .config("spark.sql.warehouse.dir", warehouse_location) \
-        .config("spark.driver.memory", '8g') \
-        .config("spark.executor.memory", '8g') \
-        .config("spark.num.executors", '8') \
+        .config("spark.driver.memory", '16g') \
+        .config("spark.executor.memory", '16g') \
+        .config("spark.num.executors", '12') \
         .config("hive.exec.compress.output", 'false') \
+        .config("spark.sql.broadcastTimeout", 7200)\
+        .config("spark.sql.autoBroadcastJoinThreshold", -1)\
         .enableHiveSupport() \
         .getOrCreate()
 
@@ -74,12 +75,6 @@ def dm_order_process(date_str):
                 + ", DM start date:" + start_date.strftime("%Y%m%d") \
                 + ", DM end date:" + end_date.strftime("%Y%m%d")
 
-    spark.read.format('org.apache.kudu.spark.kudu') \
-        .option('kudu.master', "dtla1apps11:7051,dtla1apps12:7051,dtla1apps13:7051") \
-        .option('kudu.table', "impala::nsa.dm_extract_log") \
-        .load() \
-        .registerTempTable('dm_extract_log')
-
     print_output(f"Load DM items and stores for range {start_date} to {end_date}")
 
     dm_item_store_sql = \
@@ -101,7 +96,7 @@ def dm_order_process(date_str):
             icis.sub_code,
             icis.date_key AS run_date,
             fdo.first_order_date AS past_result
-        FROM dm_extract_log del
+        FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
         JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
         JOIN vartefact.forecast_stores_dept fsd ON ps.stostocd = fsd.store_code
@@ -330,7 +325,7 @@ def dm_order_process(date_str):
             dp.store_code,
             dp.dm_theme_id,
             daily_sales_prediction AS sales_prediction
-        FROM temp.v_forecast_daily_sales_prediction fcst
+        FROM temp.t_forecast_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
@@ -403,7 +398,7 @@ def dm_order_process(date_str):
             dp.store_code,
             dp.dm_theme_id,
             daily_sales_prediction AS sales_prediction
-        FROM temp.v_forecast_daily_sales_prediction fcst
+        FROM temp.t_forecast_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
@@ -430,7 +425,7 @@ def dm_order_process(date_str):
             dp.dm_theme_id,
             fcst.daily_sales_prediction AS sales_prediction
         FROM dm_prediction dp
-        JOIN temp.v_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
+        JOIN temp.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
             AND to_timestamp(fcst.date_key, 'yyyyMMdd') > to_timestamp(dp.theme_end_date, 'yyyy-MM-dd')
@@ -475,9 +470,8 @@ def dm_order_process(date_str):
                                            - dm_with_fourweek.current_store_stock)
 
     dm_final = dm_final.withColumn("true_pcb",
-                                   F.when((dm_final.dc_supplier_code == 'KSSE') | (dm_final.dc_supplier_code == 'KXS1'),
-                                          1)
-                                   .otherwise(dm_final.pcb))
+                        F.when((dm_final.dc_supplier_code == 'KSSE') | (dm_final.dc_supplier_code == 'KXS1'), 1)
+                        .otherwise(dm_final.pcb))
 
     dm_final_pcb = dm_final \
         .withColumn("dm_order_qty",

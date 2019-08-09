@@ -131,7 +131,7 @@ object SimulationQueries {
     s"""
 		SELECT ldd.item_id,
 			ldd.sub_id,
-			ldd.holding_code AS entity_code,
+			fss.store_code AS entity_code,
 			CASE
 				WHEN fss.day_end_stock_with_actual IS NULL
 					THEN cast(ldd.stock_available_sku AS DOUBLE)
@@ -141,7 +141,6 @@ object SimulationQueries {
 		LEFT OUTER JOIN ${SimulationTables.simulationStockTable} fss
 		ON ldd.item_id = fss.item_id
 			AND ldd.sub_id = fss.sub_id
-			AND ldd.holding_code = fss.store_code
 			AND fss.date_key = '${stockDateStr}'
       AND fss.flow_type = '${FlowType.DC}'
 		JOIN ${viewName} itmd ON ldd.item_id = itmd.item_id

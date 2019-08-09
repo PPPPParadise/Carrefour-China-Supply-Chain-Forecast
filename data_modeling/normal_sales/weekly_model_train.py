@@ -103,7 +103,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
             datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 
     #week_shift = predict_week - 1
-    week_shift = [x - 1 for x in predict_week]
+    week_shift = [x  for x in predict_week]
 
     target_week_value = ['w{}_sales_qty'.format(x) for x in week_shift]
     target_week_value_copied = target_week_value
@@ -243,7 +243,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
         # Train/Test split
         train = df_oneFinal.loc[df_oneFinal['week_end_date'] < date_stop_train]
-        test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
+        # test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
 
        # Weekly loops : we train one model per week
 
@@ -257,8 +257,8 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
             X_train = train[features]
             y_train = train[target_week_value]
 
-            X_test = test[features]
-            y_test = test[target_week_value]
+            # X_test = test[features]
+            # y_test = test[target_week_value]
 
             score = 0.0
             # best_scores = []
@@ -366,7 +366,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                 # number_of_weeks = 1
                 # for i in range(0, number_of_weeks):
-
+                i = 0
                 # The week sales to predict
                 predict_week_end = date_stop_train + timedelta(days=7 * i)
                 predict_week_key = calendarDf[calendarDf['date_value']

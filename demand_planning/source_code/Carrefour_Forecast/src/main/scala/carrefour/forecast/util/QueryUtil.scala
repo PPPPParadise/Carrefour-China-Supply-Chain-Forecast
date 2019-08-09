@@ -55,18 +55,17 @@ object QueryUtil {
     * @param spark Spark session
     * @return Current DC stock level 当前DC/货仓库存
     */
-  def getDCActualStockMap(stockDateStr: String, isDcFlow: Boolean, viewName: String,
+  def getDCActualStockMap(startDateStr: String, stockDateStr: String, isDcFlow: Boolean, viewName: String,
                           spark: SparkSession , isSimulation: Boolean): Map[ItemEntity, Double] = {
     import spark.implicits._
 
 
     var stockSql = DcQueries.getDcActualStockLevelSql(stockDateStr, viewName)
     if (isSimulation) {
-      stockSql = SimulationQueries.getSimulationDcActualStockLevelSql(stockDateStr, viewName)
+      stockSql = SimulationQueries.getSimulationDcActualStockLevelSql(startDateStr, stockDateStr, viewName)
     }
 
     val stockDf = spark.sqlContext.sql(stockSql)
-
     val stockLevelMap = stockDf.distinct().map(row => {
       val itemStore = ItemEntity(row.getAs[Integer]("item_id"),
         row.getAs[Integer]("sub_id"),

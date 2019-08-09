@@ -54,7 +54,6 @@ object OrderLogic {
       dateRowList = dateRowListBuffer.toList.sortBy(_.date_key)(Ordering[String])
 
       var currentStock = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
-
       val dmDeliveryMap = getDmDeliveryMap(ist, dmOrdersMap)
 
       var deliveryMap: Map[String, Double] = Map()
@@ -101,6 +100,7 @@ object OrderLogic {
           dateRowList(orderD).con_holding = order.con_holding
           dateRowList(orderD).supplier_code = order.supplier_code
           dateRowList(orderD).rotation = order.rotation
+          dateRowList(orderD).ittreplentyp = order.ittreplentyp
 
           orderD = orderD + 1
         }
@@ -127,7 +127,6 @@ object OrderLogic {
             futureStock = futureStock - dateRowList(futureD).predict_sales
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
-            order.matched_sales_end_date = dateRowList(futureD).date_key
             futureD = futureD + 1
           }
 
@@ -322,11 +321,12 @@ object OrderLogic {
       dateRow.is_order_day = true
       if (isDcFlow) {
         dateRow.average_sales = row.getAs[Double]("average_sales")
+        dateRow.minimum_stock_required = dateRow.average_sales
       } else {
-        dateRow.minimum_stock_required = getMinimumStock(row, ist.is_dc_flow)
         dateRow.ittreplentyp = row.getAs[Integer]("ittreplentyp")
         dateRow.ittminunit = row.getAs[Integer]("ittminunit")
         dateRow.shelf_capacity = row.getAs[String]("shelf_capacity")
+        dateRow.minimum_stock_required = getMinimumStoreStock(row)
       }
     }
 
@@ -338,19 +338,13 @@ object OrderLogic {
   }
 
   /**
-    * Get minimum required stock level
-    * 获取最低库存要求
+    * Get minimum required store stock level
+    * 获取最低门店库存要求
     *
     * @param row Input data row.  输入数据列
-    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
-    * @return Minimum required stock level 最低库存要求
+    * @return Minimum required stock level 最低门店库存要求
     */
-  private def getMinimumStock(row: Row, isDcFlow: Boolean): Double = {
-
-    if (isDcFlow) {
-      return row.getAs[Double]("average_sales") * 15
-    }
-
+  private def getMinimumStoreStock(row: Row): Double = {
     var minumumStock: Double = 0
 
     try {
@@ -361,9 +355,7 @@ object OrderLogic {
 
       } else if (ittreplentyp == 2 || ittreplentyp == 4) {
         val shelf_capacity = row.getAs[String]("shelf_capacity")
-        if (null != shelf_capacity) {
-          minumumStock = shelf_capacity.toDouble
-        }
+          minumumStock = 2
       }
     } catch {
       case ex: Exception => LogUtil.error("Fallback to use default stock", ex)

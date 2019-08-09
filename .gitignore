@@ -3,3 +3,13 @@
 *.csv
 *.ipynb_checkpoints*
 *.patch
+*.class
+*.cache
+demand_planning/source_code/Carrefour_Forecast/project/target/*
+demand_planning/source_code/Carrefour_Forecast/target/*
+demand_planning/source_code/Carrefour_Forecast/.idea/*
+
+demand_planning/source_code/Carrefour_Forecast/.idea/codeStyles/Project.xml
+demand_planning/source_code/Carrefour_Forecast/.idea/modules.xml
+demand_planning/source_code/Carrefour_Forecast/.idea/scala_compiler.xml
+demand_planning/source_code/Carrefour_Forecast/.idea/vcs.xml

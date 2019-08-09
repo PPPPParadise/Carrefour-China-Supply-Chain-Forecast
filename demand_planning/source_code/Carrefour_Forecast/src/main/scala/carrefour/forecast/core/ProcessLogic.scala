@@ -30,7 +30,8 @@ object ProcessLogic {
     val sqlc = spark.sqlContext
 
     try {
-      LogUtil.info("\n\n\n" + modelRun.getScriptParameter)
+      LogUtil.info(s"\n\n\n Forecast process for ${modelRun.flowType} start with input parameter" +
+        s" \n ${modelRun.getScriptParameter} \n\n\n")
       infoSb.append("Job Start:")
         .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
         .append(",")
@@ -123,9 +124,8 @@ object ProcessLogic {
         .mode("overwrite")
         .saveAsTable("vartefact." + modelRun.viewName)
 
-      // Find the actual stock level in each store for each item
-      val stockLevelMap = QueryUtil.
-        getActualStockMap(stockDateStr, modelRun.isDcFlow, modelRun.viewName, spark, modelRun.isSimulation)
+      // Find the actual stock level
+      val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.isDcFlow, modelRun.viewName, spark, modelRun.isSimulation)
 
       outputLine = s"Number of current stock level found: ${stockLevelMap.size}"
       LogUtil.info(outputLine)
@@ -346,6 +346,29 @@ object ProcessLogic {
       "sub_code", "con_holding", "store_code", "entity_code",
       "supplier_code", "rotation", "pcb", "delivery_time").distinct()
   }
+
+  // Find the actual stock level
+  /**
+    * Get Actual stock level
+    * 获取当前库存
+    *
+    * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param spark Spark session
+    * @param isSimulation Whether it is simulation process 是否为模拟运行
+    * @return Current stock level 当前库存
+    */
+  def getActualStockMap(startDateStr: String, stockDateStr: String, isDcFlow: Boolean, viewName: String,
+                        spark: SparkSession, isSimulation: Boolean): Map[ItemEntity, Double] = {
+    if (isDcFlow) {
+      QueryUtil.getDCActualStockMap(startDateStr, stockDateStr, isDcFlow, viewName, spark, isSimulation)
+    } else {
+      QueryUtil.
+        getActualStockMap(stockDateStr, isDcFlow, viewName, spark, isSimulation)
+    }
+  }
+
 
   /**
     * Get sales predictions

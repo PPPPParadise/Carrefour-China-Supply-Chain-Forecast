@@ -96,12 +96,13 @@ object StoreQueries {
   join ods.p4md_itmsto opi
       on cast(opi.ittitmid as INT) = itmd.item_id
       and opi.ittstocd = itmd.store_code
+      and opi.ittreplentyp <> 1
   join vartefact.forecast_p4cm_store_item stp
       on itmd.item_code = stp.item_code
       and itmd.sub_code = stp.sub_code
       and itmd.store_code = stp.store_code
       and itmd.dept_code = stp.dept_code
-      and stp.date_key = '${stockDateStr}'
+      and stp.date_key = '${startDateStr}'
   where ord.date_key>='${startDateStr}' and dev.date_key <='${endDateStr}'
       """
   }
@@ -206,7 +207,7 @@ object StoreQueries {
         and itmd.sub_code = stp.sub_code
         and itmd.dept_code = stp.dept_code
         and itmd.store_code = stp.store_code
-        and stp.date_key = '${stockDateStr}'
+        and stp.date_key = '${startDateStr}'
     where ord.date_key>='${startDateStr}' and dev.date_key <='${endDateStr}'
     """
   }
@@ -263,7 +264,7 @@ object StoreQueries {
         fcst.store_code as entity_code,
         fcst.date_key,
         fcst.daily_sales_prediction
-    FROM vartefact.v_forecast_daily_sales_prediction fcst
+    FROM temp.v_forecast_daily_sales_prediction fcst
     join ${viewName} itmd
         on fcst.item_id = itmd.item_id
         and fcst.sub_id = itmd.sub_id
@@ -288,7 +289,7 @@ object StoreQueries {
         dm.sub_id,
         dm.store_code as entity_code,
         dm.first_delivery_date,
-        sum(dm.dm_order_qty_with_pcb) as dm_order_qty
+        cast(sum(dm.order_qty) as DOUBLE) as dm_order_qty
     FROM vartefact.forecast_dm_orders dm
     join ${viewName} itmd
         on dm.item_id = itmd.item_id
@@ -328,6 +329,7 @@ object StoreQueries {
     WHERE ord.delivery_day >= '${startDateStr}'
         AND ord.delivery_day <= '${endDateStr}'
         AND ord.order_day < '${startDateStr}'
+        AND ord.order_qty > 0
     """
   }
 }

@@ -2,7 +2,7 @@
 Input:
     ods.dim_calendar
     ods.nsa_dm_theme
-    {database}.DM_pred_results_simple
+    {database}.promo_sales_order_prediction_by_item_store_dm
 Output: 
     {database}.dm_week_to_day_intermediate
 */
@@ -14,7 +14,7 @@ select
     date_key
 from ods.dim_calendar
 where date_key >= '{starting_date}'
-and date_key < '{ending_date}'
+-- and date_key < '{ending_date}'
 group by
     date_key
 ),
@@ -48,7 +48,7 @@ SELECT
     b.theme_start_dayofweek,
     b.theme_end_dayofweek
 
-from {database}.DM_pred_results_simple a
+from {database}.promo_sales_order_prediction_by_item_store_dm a
 left join dm_info b
 on cast(a.current_dm_theme_id as int) = b.dm_theme_id
 ),
@@ -60,7 +60,7 @@ select
     sub_family_code,
     store_code,
     cast(sales_prediction as double) as prediction,
-    cast(max_confidence_interval as double) as prediction_max,
+    cast(confidence_interval_max as double) as prediction_max,
     cast(order_prediction as double) as order_prediction,
     dm_theme_id,
     theme_start_date,

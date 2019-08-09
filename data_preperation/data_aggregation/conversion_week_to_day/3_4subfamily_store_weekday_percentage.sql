@@ -6,7 +6,7 @@ Output:
 */
 
 -- 3. store_subfamily weekday-per on regular weeks
-create view {database}.subfamily_store_weekday_percentage as
+create table {database}.subfamily_store_weekday_percentage stored as parquet as
 with add_sub_family as (
 SELECT
     *,
@@ -44,7 +44,7 @@ group by
 select
     a.*,
     b.all_daily_sales,
-    a.daily_sales_sum_on_weekday / b.all_daily_sales as weekday_subfamily_sales_percentage
+    if(b.all_daily_sales = 0, 0, a.daily_sales_sum_on_weekday / b.all_daily_sales)  as weekday_subfamily_sales_percentage
 
 from weekday_sales a
 left join all_week_sales b

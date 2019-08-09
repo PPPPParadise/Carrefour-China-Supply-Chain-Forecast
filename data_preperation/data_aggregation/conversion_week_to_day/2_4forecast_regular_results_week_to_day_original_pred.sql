@@ -128,15 +128,15 @@ rebase AS (
 SELECT 
     a.*, 
     CAST(if(b.impacted_weekday_percentage_week is not null, 
-            if(b.impacted_weekday_percentage_week = 0, a.impacted_weekday_percentage * a.prediction_max / b.impacted_weekday_percentage_week, a.prediction_max/7),
+            if(b.impacted_weekday_percentage_week != 0, a.impacted_weekday_percentage * a.prediction_max / b.impacted_weekday_percentage_week, a.prediction_max/7),
             a.prediction_max/7) AS DOUBLE) daily_sales_pred, 
 
     CAST(if(b.impacted_weekday_percentage_week is not null, 
-        if(b.impacted_weekday_percentage_week = 0, a.impacted_weekday_percentage * a.prediction / b.impacted_weekday_percentage_week, a.prediction/7),
+        if(b.impacted_weekday_percentage_week != 0, a.impacted_weekday_percentage * a.prediction / b.impacted_weekday_percentage_week, a.prediction/7),
         a.prediction/7) AS DOUBLE) daily_sales_pred_original, 
 
     CAST(if(b.impacted_weekday_percentage_week is not null, 
-        if(b.impacted_weekday_percentage_week = 0, a.impacted_weekday_percentage * a.order_prediction / b.impacted_weekday_percentage_week, a.order_prediction/7),
+        if(b.impacted_weekday_percentage_week != 0, a.impacted_weekday_percentage * a.order_prediction / b.impacted_weekday_percentage_week, a.order_prediction/7),
         a.order_prediction/7) AS DOUBLE) daily_order_pred    
 
 FROM impacted_percentage a 

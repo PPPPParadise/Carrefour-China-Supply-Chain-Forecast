@@ -336,7 +336,7 @@ execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred',
 
 
 
-# 还要再改一改
+# 
 
 # After getting the results: Split DM to day 
 # #0  

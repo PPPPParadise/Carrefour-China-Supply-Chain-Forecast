@@ -281,8 +281,10 @@ CREATE TABLE vartefact.forecast_dm_orders (
 	four_weeks_after_dm DOUBLE,
 	dm_sales DOUBLE,
 	current_store_stock DOUBLE,
-	dm_order_qty_with_pcb DOUBLE
-	) partitioned by (	dm_theme_id INT)
+	order_qty INT,
+	order_without_pcb DOUBLE
+	) partitioned by (
+	dm_theme_id INT)
   stored as parquet;
   
 CREATE VIEW vartefact.v_forecast_daily_sales_prediction

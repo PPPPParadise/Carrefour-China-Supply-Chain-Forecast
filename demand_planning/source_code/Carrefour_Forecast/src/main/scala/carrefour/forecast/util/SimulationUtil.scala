@@ -105,7 +105,7 @@ object SimulationUtil {
     import spark.implicits._
 
     val onTheWayStockSql = SimulationQueries.getSimulationOnTheWayStockSql(startDateStr, endDateStr,
-      viewName, SimulationTables.simulationOrdersTable, isDcFlow)
+      viewName, isDcFlow)
 
     val onTheWayStockDf = spark.sqlContext.sql(onTheWayStockSql)
 

@@ -17,15 +17,15 @@ import math
 import warnings
 import pandas as pd
 
-# +
-warnings.filterwarnings('ignore')
+# # Info
 
-store_item = pd.read_excel('store_item.xlsx', 'ordinary', header=0, dtype=str).fillna("")
+# Use this file to load below content
+# 1. The list of all in scope items. Such as DS supplier and DC supplier
+# 2. Order and delivery schedule for cross docking items
+# 3. The list of all in scope DC items and their information. Such as order unit.
 
-store_item = store_item[store_item['CON_HOLDING'].isin(['002', '693', '700'])]
 
-x_rotation_mapping = store_item[store_item["ROTATION"] == "X"]
-
+# # Load config file
 
 # +
 def get_order_weekday(order_day):
@@ -58,6 +58,50 @@ def get_week_shift(order_day, lead_time):
     return 0
 
 
+def get_qty_per_unit(row):
+
+    if row['order_uint'] == 'box':
+        return int(row['qty_per_pack']) * int(row['pack_per_box'])
+
+    if row['order_uint'] == 'layer':
+        return int(row['qty_per_pack']) * int(row['pack_per_box']) * int(row['box_per_layer_ti'])
+
+    if row['order_uint'] == 'pallet':
+        return int(row['qty_per_pack']) * int(row['pack_per_box']) \
+               * int(row['box_per_layer_ti']) * int(row['layer_per_pallet_hi'])
+    
+    return int(row['qty_per_pack']) * int(row['pack_per_box'])                                            
+                                                                        
+    
+# -
+
+# # Load 3 supplier items
+
+# +
+warnings.filterwarnings('ignore')
+
+store_item = pd.read_excel('store_item.xlsx', 'ordinary', header=0, dtype=str).fillna("")
+
+store_item = store_item[store_item['CON_HOLDING'].isin(['002', '693', '700'])]
+
+# +
+item_details = store_item[['DEPT code', 'CON_HOLDING', 'HOLDING_NAME', 'HOLDING_CHN_NAME',
+       'ITEM_CODE', 'Sub Code', 'LOCAL_NAME', 'PCB', 'Flow type',
+       'ROTATION', 'DC Supplier', 'DS Supplier', 'Item status',
+       'Store need to stop when W stock=o', 'Cover Region']]
+
+item_details.columns = ['dept_code', 'con_holding', 'holding_name', 'holiding_chn_name',
+       'item_code', 'sub_code', 'local_name', 'pcb', 'flow_type',
+       'rotation', 'dc_supplier_code', 'ds_supplier_code', 'item_status',
+       'store_stop_when_stock_is_o', 'cover_region']
+
+item_details = item_details.drop_duplicates()
+# -
+
+# # Extract cross docking ordering schedule
+
+x_rotation_mapping = store_item[store_item["ROTATION"] == "X"]
+
 # +
 new_mapping = x_rotation_mapping[["DEPT code", "ITEM_CODE", "Sub Code",  "Flow type",
                                   "ROTATION", "X rotation orderday", "X rotation LT"]].drop_duplicates()
@@ -84,7 +128,32 @@ new_mapping["delivery_weekday"] = new_mapping.apply(
     lambda r: get_deliver_weekday(r.order_weekday, int(r.lead_time)), axis=1)
 
 new_mapping["week_shift"] = new_mapping.apply(lambda r: get_week_shift(r.order_weekday, int(r.lead_time)), axis=1)
+# -
 
+
+# # DC file
+
+dc_items = pd.read_excel('East_3Supps_DC_Item_list_20190805.xlsx', 'Item Detail', header=0, dtype=str).fillna('')
+
+dc_items = dc_items[dc_items['Holding Code'].isin(['002', '693', '700'])]
+
+dc_items.rename(columns={'Item code':'Full item code'}, inplace=True)
+
+dc_items["Dept code"] = dc_items["Full item code"].str.slice(0, 2)
+dc_items["Item code"] = dc_items["Full item code"].str.slice(2, 8)
+dc_items["Sub code"] = dc_items["Full item code"].str.slice(8)
+
+dc_items.columns = ['dc', 'dc_site', 'full_item_code', 'dc_status', 'item_name_english',
+'item_name_local', 'current_warehouse', 'primary_ds_supplier',
+'primary_ds_supplier_name', 'qty_per_box', 'primary_barcode',
+'rotation', 'box_per_layer_ti', 'layer_per_pallet_hi',
+'stop_start_date', 'stop_reason', 'qty_per_pack', 'pack_per_box',
+'holding_supplier_code', 'holding_code', 'risk_item_unilever',
+'order_uint', 'dept_code', 'item_code', 'sub_code']
+
+dc_items['qty_per_unit'] = dc_items.apply(get_qty_per_unit, axis = 1)
+
+# # Write to datalake
 
 # +
 from load_spark import load_spark
@@ -96,27 +165,12 @@ sqlc = HiveContext(sc)
 # -
 
 mapping_df = sqlc.createDataFrame(new_mapping)
-
 mapping_df.write.mode("overwrite").saveAsTable("vartefact.xdock_order_delivery_mapping")
 
-item_details = store_item[['DEPT code', 'CON_HOLDING', 'HOLDING_NAME', 'HOLDING_CHN_NAME',
-       'ITEM_CODE', 'Sub Code', 'LOCAL_NAME', 'PCB', 'Flow type',
-       'ROTATION', 'DC Supplier', 'DS Supplier', 'Item status',
-       'Store need to stop when W stock=o', 'Cover Region']]
-
-# +
-item_details.columns = ['dept_code', 'con_holding', 'holding_name', 'holiding_chn_name',
-       'item_code', 'sub_code', 'local_name', 'pcb', 'flow_type',
-       'rotation', 'dc_supplier_code', 'ds_supplier_code', 'item_status',
-       'store_stop_when_stock_is_o', 'cover_region']
-
-item_details = item_details.drop_duplicates()
-
 item_details_df = sqlc.createDataFrame(item_details)
-# -
-
 item_details_df.write.mode("overwrite").saveAsTable("vartefact.forecast_item_details")
 
+dc_items_df = sqlc.createDataFrame(dc_items)
+dc_items_df.write.mode("overwrite").saveAsTable("vartefact.forecast_dc_item_details")
+
 sc.stop()
-
-

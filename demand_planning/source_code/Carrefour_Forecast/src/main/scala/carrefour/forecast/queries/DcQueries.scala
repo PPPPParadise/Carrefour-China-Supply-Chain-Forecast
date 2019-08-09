@@ -33,12 +33,12 @@ object DcQueries {
       FROM vartefact.forecast_dc_latest_sales fdls
       JOIN vartefact.forecast_dc_order_deliver_mapping dodm ON dodm.con_holding = fdls.con_holding
         AND dodm.order_date = '${orderDateStr}'
-      JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${stockDateStr}'
+      JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${orderDateStr}'
         AND fdls.item_code = icis.item_code
         AND fdls.sub_code = icis.sub_code
         AND fdls.dept_code = icis.dept_code
         AND fdls.date_key = icis.date_key
-      WHERE fdls.date_key = '${stockDateStr}'
+      WHERE fdls.date_key = '${orderDateStr}'
   """
   }
 
@@ -119,7 +119,7 @@ object DcQueries {
           fdo.sub_id,
           itmd.con_holding AS entity_code,
           fdo.first_order_date AS date_key,
-          fdo.dm_order_qty_with_pcb AS order_qty
+          fdo.order_qty AS order_qty
         FROM vartefact.forecast_dm_orders fdo
         JOIN ${viewName} itmd ON fdo.item_id = itmd.item_id
           AND fdo.sub_id = itmd.sub_id

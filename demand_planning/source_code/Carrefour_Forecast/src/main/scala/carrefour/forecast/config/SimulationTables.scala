@@ -7,6 +7,12 @@ package carrefour.forecast.config
 object SimulationTables {
 
   /**
+    * For latest orders from simulation DM order process
+    * 用于储存模拟运行生成的DM订单
+    */
+  val simulationDmOrdersTable = "vartefact.forecast_simulation_dm_orders"
+
+  /**
     * For latest orders from simulation process
     * 用于储存模拟运行生成的最新订单
     */

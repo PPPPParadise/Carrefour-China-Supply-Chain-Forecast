@@ -12,10 +12,8 @@ object SimulationProcess {
 
   def main(args: Array[String]): Unit = {
     val runDate = args(0)
-    val flowType = FlowType.DC
     val defaultStockLevel = 0.0
     val defaultDeliveryTime = "AfterStoreOpen"
-
     var item_id = 0
     var sub_id = 0
     var store_code = ""
@@ -49,7 +47,7 @@ object SimulationProcess {
     }
 
     val onstockRun = ModelRun(runDate,
-      flowType,
+      FlowType.OnStockStore,
       "vartefact.forecast_onstock_orders",
       "vartefact.forecast_onstock_orders_hist",
       "tmp_in_scope_onstock_item_store",
@@ -66,7 +64,7 @@ object SimulationProcess {
     ProcessLogic.process(onstockRun)
 
     val xdockRun = ModelRun(runDate,
-      flowType,
+      FlowType.XDocking,
       "vartefact.forecast_xdock_orders",
       "vartefact.forecast_xdock_orders_hist",
       "tmp_in_scope_xdock_item_store",
@@ -83,7 +81,7 @@ object SimulationProcess {
     ProcessLogic.process(xdockRun)
 
     val dcRun = ModelRun(runDate,
-      flowType,
+      FlowType.DC,
       "vartefact.forecast_dc_orders",
       "vartefact.forecast_dc_orders_hist",
       "tmp_in_scope_dc_item_store",

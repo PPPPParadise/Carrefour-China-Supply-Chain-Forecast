@@ -145,13 +145,12 @@ object DcQueries {
     s"""
     SELECT ldd.item_id,
      ldd.sub_id,
-     ldd.holding_code as entity_code,
+     itmd.con_holding as entity_code,
      cast(ldd.stock_available_sku AS DOUBLE) as stock_level
     FROM vartefact.forecast_lfms_daily_dcstock ldd
     join ${viewName} itmd
        on ldd.item_id = itmd.item_id
        and ldd.sub_id = itmd.sub_id
-       and ldd.holding_code = itmd.con_holding
     WHERE
       ldd.date_key='${stockDateStr}'
       and ldd.dc_site='DC1'

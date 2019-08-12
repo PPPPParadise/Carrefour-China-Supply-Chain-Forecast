@@ -1,11 +1,21 @@
+import calendar
 import datetime
 import os
-from os.path import abspath
-
-import numpy as np
-from openpyxl import Workbook
+from datetime import timedelta
 from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
+from openpyxl import Workbook
+from os.path import abspath
+import numpy as np
+
+
+def get_store_dm_qty(first_dm_order_qty, supplier_code, pcb):
+    if supplier_code == 'KSSE':
+        pcb = 1
+    if supplier_code == 'KXS1':
+        pcb = 1
+
+    return np.ceil(first_dm_order_qty / pcb) * pcb
 
 
 def store_order_file_process(date_str, record_folder, output_path, store_order_filename):
@@ -81,8 +91,9 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         ord.order_qty,
         ord.order_without_pcb,
         ord.delivery_day,
-        cast(0.75 * dm.order_qty as DOUBLE) as dm_order_qty,
+        cast(0.75 * dm.order_qty as DOUBLE) as first_dm_order_qty,
         dm.order_without_pcb as dm_order_qty_without_pcb,
+        dm.pcb,
         dm.ppp,
         dm.npp,
         dm.four_weeks_after_dm,
@@ -116,7 +127,12 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     onstock_store['order_qty_without_pcb'] = onstock_store['order_without_pcb'].fillna(0)
 
-    onstock_store['dm_order_qty'] = onstock_store['dm_order_qty'].fillna(0)
+    onstock_store['first_dm_order_qty'] = onstock_store['first_dm_order_qty'].fillna(0)
+
+    onstock_store['pcb'] = onstock_store['pcb'].fillna(1)
+
+    onstock_store['dm_order_qty'] = onstock_store.apply(
+        lambda x: get_store_dm_qty(x.first_dm_order_qty, x.supplier_code, x.pcb), axis=1)
 
     onstock_store['dm_order_qty_without_pcb'] = onstock_store['dm_order_qty_without_pcb'].fillna(0)
 

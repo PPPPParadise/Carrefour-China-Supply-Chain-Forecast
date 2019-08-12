@@ -129,7 +129,7 @@ object StoreQueries {
         id.flow_type,
         id.rotation,
         cast(id.pcb as double) pcb,
-        id.ds_supplier_code as supplier_code,
+        id.dc_supplier_code as supplier_code,
         ord.date_key AS run_date,
         dsdt.delivery_time
     from vartefact.forecast_item_details id
@@ -264,7 +264,7 @@ object StoreQueries {
         fcst.store_code as entity_code,
         fcst.date_key,
         fcst.daily_sales_prediction
-    FROM temp.v_forecast_daily_sales_prediction fcst
+    FROM temp.t_forecast_daily_sales_prediction fcst
     join ${viewName} itmd
         on fcst.item_id = itmd.item_id
         and fcst.sub_id = itmd.sub_id

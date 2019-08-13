@@ -22,7 +22,7 @@ object SimulationQueries {
         acts.store_code as entity_code,
         acts.date_key,
         cast(acts.daily_sales_sum as double) as daily_sales_sum
-    from vartefact.forecast_sprint4_add_dm_to_daily acts
+    from temp.forecast_sprint4_add_dm_to_daily acts
       join ${viewName} isxi
         on acts.item_id = isxi.item_id
         and acts.sub_id = isxi.sub_id
@@ -131,7 +131,7 @@ object SimulationQueries {
     s"""
 		SELECT ldd.item_id,
 			ldd.sub_id,
-			fss.store_code AS entity_code,
+			itmd.con_holding as entity_code,
 			CASE
 				WHEN fss.day_end_stock_with_actual IS NULL
 					THEN cast(ldd.stock_available_sku AS DOUBLE)
@@ -145,7 +145,6 @@ object SimulationQueries {
       AND fss.flow_type = '${FlowType.DC}'
 		JOIN ${viewName} itmd ON ldd.item_id = itmd.item_id
 			AND ldd.sub_id = itmd.sub_id
-			AND ldd.holding_code = itmd.con_holding
 		WHERE ldd.date_key = '${startDateStr}'
       AND ldd.dc_site='DC1'
       AND ldd.warehouse_code='KS01'

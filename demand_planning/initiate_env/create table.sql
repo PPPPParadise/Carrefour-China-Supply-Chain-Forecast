@@ -10,6 +10,26 @@ CREATE TABLE vartefact.forecast_script_runs (
 	error STRING
 	) STORED AS parquet
     
+CREATE TABLE vartefact.forecast_nsa_dm_extract_log (
+	item_code STRING,
+	sub_code STRING,
+	city_code STRING,
+	extract_order INT,
+	dept_code STRING,
+	npp DECIMAL(15, 4),
+	ppp DECIMAL(15, 4),
+	ppp_start_date STRING,
+	ppp_end_date STRING,
+	city_name STRING,
+	holding_code STRING,
+	item_id INT,
+	sub_id INT,
+	load_date timestamp
+	) PARTITIONED BY (
+	dm_theme_id INT, 
+	date_key STRING) 
+	STORED AS parquet
+
 REATE TABLE vartefact.forecast_item_code_id_stock (
 	store_code STRING,
 	dept_code STRING,
@@ -174,84 +194,7 @@ CREATE TABLE vartefact.forecast_dc_orders_hist (
 	item_id INT,
 	sub_id INT
 	) STORED AS PARQUET;
-    
-CREATE TABLE vartefact.forecast_simulation_orders_hist (
-	item_id INT,
-	sub_id INT,
-	dept_code STRING,
-	item_code STRING,
-	sub_code STRING,
-    
-	con_holding STRING,
-	store_code STRING,
-	supplier_code STRING,
-    rotation STRING,
-
-	order_day STRING,
-	delivery_day STRING,
-	minimum_stock_required DOUBLE,
-	order_qty INT,
-	order_without_pcb DOUBLE
-	) PARTITIONED BY (
-	run_date STRING,
-	flow_type STRING
-	) STORED AS PARQUET;
-         
-    
-CREATE TABLE vartefact.forecast_simulation_result (
-    date_key STRING,
-	item_id INT,
-	sub_id INT,
-	dept_code STRING,
-	item_code STRING,
-	sub_code STRING,
-    
-	con_holding STRING,
-	store_code STRING,
-	supplier_code STRING,
-    rotation STRING,
-    
-	order_day STRING,
-	delivery_day STRING,
-	order_qty INT,
- 	order_without_pcb DOUBLE,
-    is_order_day BOOLEAN,
-    matched_sales_start_date STRING,
-    matched_sales_end_date STRING,
-    start_stock DOUBLE, 
-    future_stock DOUBLE, 
-    minimum_stock_required DOUBLE,
-    dm_delivery DOUBLE, 
-    order_delivery DOUBLE,
-    predict_sales DOUBLE,
-    day_end_stock_with_predict DOUBLE, 
-    actual_sales DOUBLE, 
-    day_end_stock_with_actual DOUBLE,
-    ittreplentyp Integer,
-    shelf_capacity String,
-    ittminunit Integer
-	) PARTITIONED BY (
-	run_date STRING,
-    flow_type STRING
-	) STORED AS PARQUET;
  
-    
-CREATE TABLE vartefact.forecast_simulation_item_status (
-	item_id INT,
-	sub_id INT,
-	store_code STRING,
-	rotation STRING,   
-	dept_code STRING,
-	item_stop_start_date STRING,   
-	item_stop_end_date STRING,
-	order_date STRING,
-	shelf_capacity STRING,
-	ittreplentyp INT,
-	ittminunit INT
-	) PARTITIONED BY (
-	delivery_date STRING,
-	flow_type STRING
-	) STORED AS PARQUET;
 
 CREATE TABLE vartefact.forecast_dm_orders (
 	item_id INT,
@@ -316,6 +259,120 @@ LEFT OUTER JOIN vartefact.forecast_dm_results_to_day dm ON reg.item_id = dm.item
 	AND reg.sub_id = dm.sub_id
 	AND reg.store_code = dm.store_code
 	AND reg.date_key = dm.date_key
+    
+CREATE VIEW vartefact.v_forecast_latest_service_level_item_dc
+AS
+(
+		SELECT r.*
+		FROM vartefact.monitor_service_level_item_dc r
+		JOIN (
+			SELECT fsr.item_code,
+				fsr.sub_code,
+				fsr.dept_code,
+				max(fsr.date_key) AS max_run_date
+			FROM vartefact.monitor_service_level_item_dc fsr
+			GROUP BY fsr.item_code,
+				fsr.sub_code,
+				fsr.dept_code
+			) t ON r.item_code = t.item_code
+			AND r.sub_code = t.sub_code
+			AND r.dept_code = t.dept_code
+			AND r.date_key = t.max_run_date
+)
+    
+CREATE TABLE vartefact.forecast_simulation_dm_orders (
+	item_id INT,
+	sub_id INT,
+	store_code STRING,
+	theme_start_date STRING,
+	theme_end_date STRING,
+	npp DECIMAL(15, 4),
+	ppp DECIMAL(15, 4),
+	ppp_start_date STRING,
+	ppp_end_date STRING,
+	city_code STRING,
+	dept_code STRING,
+	dept STRING,
+	item_code STRING,
+	sub_code STRING,
+	pcb STRING,
+	dc_supplier_code STRING,
+	ds_supplier_code STRING,
+	rotation STRING,
+	run_date STRING,
+	first_order_date STRING,
+	first_delivery_date STRING,
+	sales_before_order DOUBLE,
+	order_received DOUBLE,
+	regular_sales_before_dm DOUBLE,
+	four_weeks_after_dm DOUBLE,
+	dm_sales DOUBLE,
+	current_store_stock DOUBLE,
+	order_qty INT,
+	order_without_pcb DOUBLE
+	) partitioned by (
+	dm_theme_id INT)
+  stored as parquet;
+    
+CREATE TABLE vartefact.forecast_simulation_orders_hist (
+	item_id INT,
+	sub_id INT,
+	dept_code STRING,
+	item_code STRING,
+	sub_code STRING,
+    
+	con_holding STRING,
+	store_code STRING,
+	supplier_code STRING,
+    rotation STRING,
+
+	order_day STRING,
+	delivery_day STRING,
+	minimum_stock_required DOUBLE,
+	order_qty INT,
+	order_without_pcb DOUBLE
+	) PARTITIONED BY (
+	run_date STRING,
+	flow_type STRING
+	) STORED AS PARQUET;
+         
+    
+CREATE TABLE vartefact.forecast_simulation_result (
+    date_key STRING,
+	item_id INT,
+	sub_id INT,
+	dept_code STRING,
+	item_code STRING,
+	sub_code STRING,
+    
+	con_holding STRING,
+	store_code STRING,
+	supplier_code STRING,
+    rotation STRING,
+    
+	order_day STRING,
+	delivery_day STRING,
+	order_qty INT,
+ 	order_without_pcb DOUBLE,
+    is_order_day BOOLEAN,
+    matched_sales_start_date STRING,
+    matched_sales_end_date STRING,
+    start_stock DOUBLE, 
+    future_stock DOUBLE, 
+    minimum_stock_required DOUBLE,
+    dm_delivery DOUBLE, 
+    order_delivery DOUBLE,
+    predict_sales DOUBLE,
+    day_end_stock_with_predict DOUBLE, 
+    actual_sales DOUBLE, 
+    day_end_stock_with_actual DOUBLE,
+    ittreplentyp Integer,
+    shelf_capacity String,
+    ittminunit Integer
+	) PARTITIONED BY (
+	run_date STRING,
+    flow_type STRING
+	) STORED AS PARQUET;
 
 CREATE VIEW vartefact.v_forecast_simulation_lastest_result
 AS
@@ -327,17 +384,20 @@ AS
 				fsr.item_id,
 				fsr.sub_id,
 				fsr.store_code,
+				fsr.flow_type,
 				max(fsr.run_date) AS max_run_date
 			FROM vartefact.forecast_simulation_result fsr
 			GROUP BY fsr.date_key,
 				fsr.item_id,
 				fsr.sub_id,
-				fsr.store_code
+				fsr.store_code,
+				fsr.flow_type
 			) t ON r.item_id = t.item_id
 			AND r.sub_id = t.sub_id
 			AND r.store_code = t.store_code
 			AND r.date_key = t.date_key
 			AND r.run_date = t.max_run_date
+			AND r.flow_type = t.flow_type
 		)
 
 CREATE VIEW vartefact.v_forecast_simulation_stock
@@ -357,17 +417,20 @@ AS
 				fsr.item_id,
 				fsr.sub_id,
 				fsr.store_code,
+				fsr.flow_type,
 				max(fsr.run_date) AS max_run_date
 			FROM vartefact.forecast_simulation_result fsr
 			GROUP BY fsr.date_key,
 				fsr.item_id,
 				fsr.sub_id,
-				fsr.store_code
+				fsr.store_code,
+				fsr.flow_type
 			) t ON r.item_id = t.item_id
 			AND r.sub_id = t.sub_id
 			AND r.store_code = t.store_code
 			AND r.date_key = t.date_key
 			AND r.run_date = t.max_run_date
+			AND r.flow_type = t.flow_type
 		)
 
 

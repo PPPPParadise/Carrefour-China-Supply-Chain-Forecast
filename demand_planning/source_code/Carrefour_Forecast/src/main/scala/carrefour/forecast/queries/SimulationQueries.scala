@@ -22,7 +22,7 @@ object SimulationQueries {
         acts.store_code as entity_code,
         acts.date_key,
         cast(acts.daily_sales_sum as double) as daily_sales_sum
-    from vartefact.forecast_sprint4_add_dm_to_daily acts
+    from temp.forecast_sprint4_add_dm_to_daily acts
       join ${viewName} isxi
         on acts.item_id = isxi.item_id
         and acts.sub_id = isxi.sub_id

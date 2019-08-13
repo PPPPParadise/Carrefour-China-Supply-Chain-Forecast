@@ -30,8 +30,9 @@ object ProcessLogic {
     val sqlc = spark.sqlContext
 
     try {
-      LogUtil.info(s"\n\n\n Forecast process for ${modelRun.flowType} start with input parameter" +
-        s" \n ${modelRun.getScriptParameter} \n\n\n")
+      LogUtil.info(s"\n\nRun for ${modelRun.runDateStr}\n " +
+        s"Forecast process for ${modelRun.flowType} start with input parameter" +
+        s" \n ${modelRun.getScriptParameter} \n")
       infoSb.append("Job Start:")
         .append(new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date()))
         .append(",")
@@ -186,7 +187,10 @@ object ProcessLogic {
           modelRun, stockLevelMap, dmOrdersMap, onTheWayStockMap)
       })
 
-      if (modelRun.isSimulation) {
+      if (modelRun.isSimulation && modelRun.isDebug) {
+        DataUtil.insertDebugInfoToDatalake(resDf, modelRun.debugTableName, sqlc)
+
+      } else if (modelRun.isSimulation) {
         SimulationUtil.insertSimulationResultToDatalake(resDf, modelRun, sqlc)
 
         outputLine = s"Number of simulation lines: ${resDf.count()}"

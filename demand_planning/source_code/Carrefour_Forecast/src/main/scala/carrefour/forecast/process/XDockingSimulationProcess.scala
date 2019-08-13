@@ -60,8 +60,8 @@ object XDockingSimulationProcess {
       sub_id,
       store_code,
       false,
-      false,
-      "",
+      isDebug,
+      debugTable,
       true)
 
     ProcessLogic.process(xdockRun)

@@ -54,8 +54,8 @@ object DcSimulationProcess {
       sub_id,
       "",
       true,
-      false,
-      "",
+      isDebug,
+      debugTable,
       true)
 
     ProcessLogic.process(dcRun)

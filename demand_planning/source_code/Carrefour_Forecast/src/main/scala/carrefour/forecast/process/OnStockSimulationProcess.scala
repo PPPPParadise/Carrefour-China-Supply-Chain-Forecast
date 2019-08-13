@@ -18,6 +18,8 @@ object OnStockSimulationProcess {
 
     var item_id = 0
     var sub_id = 0
+    var isDebug = false
+    var debugTable = ""
     var store_code = ""
 
     for (i <- 1 until args.length) {
@@ -33,6 +35,11 @@ object OnStockSimulationProcess {
 
       if (argPair(0).equalsIgnoreCase("store_code")) {
         store_code = argPair(1)
+      }
+
+      if (argPair(0).equalsIgnoreCase("debug_table")) {
+        isDebug = true
+        debugTable = argPair(1)
       }
 
       if (argPair(0).equalsIgnoreCase("help")) {
@@ -51,8 +58,8 @@ object OnStockSimulationProcess {
       sub_id,
       store_code,
       false,
-      false,
-      "",
+      isDebug,
+      debugTable,
       true)
 
     ProcessLogic.process(onstockRun)

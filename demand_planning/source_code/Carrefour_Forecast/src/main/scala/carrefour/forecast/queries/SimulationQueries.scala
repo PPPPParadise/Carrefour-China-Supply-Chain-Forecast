@@ -36,10 +36,11 @@ object SimulationQueries {
     * 查询模拟运行计算的门店库存水平的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param flowType Flow Type
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @return SQL with variables filled 拼装好的SQL
     */
-  def getSimulationActualStockLevelSql(stockDateStr: String, viewName: String): String = {
+  def getSimulationActualStockLevelSql(stockDateStr: String, flowType: FlowType.Value, viewName: String): String = {
     s"""
 		SELECT icis.item_id,
 			icis.sub_id,
@@ -55,6 +56,7 @@ object SimulationQueries {
 			AND icis.sub_id = fss.sub_id
 			AND icis.store_code = fss.store_code
 			AND fss.date_key = '${stockDateStr}'
+      AND fss.flow_type= '${flowType}'
 		JOIN ${viewName} itmd ON icis.item_id = itmd.item_id
 			AND icis.sub_id = itmd.sub_id
 			AND icis.store_code = itmd.store_code
@@ -68,14 +70,13 @@ object SimulationQueries {
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param flowType Flow Type
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
-    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+
     * @return SQL with variables filled 拼装好的SQL
     */
-  def getSimulationOnTheWayStockSql(startDateStr: String, endDateStr: String, viewName: String,
-                                    isDcFlow: Boolean): String = {
-
-    if (isDcFlow) {
+  def getSimulationOnTheWayStockSql(startDateStr: String, endDateStr: String, flowType: FlowType.Value,
+                                    viewName: String): String = {
       s"""
     SELECT ord.item_id,
         ord.sub_id,
@@ -87,34 +88,12 @@ object SimulationQueries {
         on ord.item_id = itmd.item_id
         and ord.sub_id = itmd.sub_id
         and ord.store_code = itmd.store_code
-    WHERE ord.flow_type = '${FlowType.DC}'
+    WHERE ord.flow_type = '${flowType}'
         AND ord.delivery_day >= '${startDateStr}'
         AND ord.delivery_day <= '${endDateStr}'
         AND ord.order_day < '${startDateStr}'
         AND ord.order_qty > 0
     """
-
-    } else {
-      s"""
-    SELECT ord.item_id,
-        ord.sub_id,
-        ord.store_code as entity_code,
-        ord.delivery_day,
-        cast(ord.order_qty as double) order_qty
-    FROM ${SimulationTables.simulationOrdersTable} ord
-    join ${viewName} itmd
-        on ord.item_id = itmd.item_id
-        and ord.sub_id = itmd.sub_id
-        and ord.store_code = itmd.store_code
-    WHERE ord.flow_type != '${FlowType.DC}'
-        AND ord.delivery_day >= '${startDateStr}'
-        AND ord.delivery_day <= '${endDateStr}'
-        AND ord.order_day < '${startDateStr}'
-        AND ord.order_qty > 0
-    """
-
-    }
-
   }
 
   /**

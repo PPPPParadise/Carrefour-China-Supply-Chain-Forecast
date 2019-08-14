@@ -126,7 +126,8 @@ object ProcessLogic {
         .saveAsTable("vartefact." + modelRun.viewName)
 
       // Find the actual stock level
-      val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.isDcFlow, modelRun.viewName, spark, modelRun.isSimulation)
+      val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.flowType,
+        modelRun.isDcFlow, modelRun.viewName, spark, modelRun.isSimulation)
 
       outputLine = s"Number of current stock level found: ${stockLevelMap.size}"
       LogUtil.info(outputLine)
@@ -363,13 +364,14 @@ object ProcessLogic {
     * @param isSimulation Whether it is simulation process 是否为模拟运行
     * @return Current stock level 当前库存
     */
-  def getActualStockMap(startDateStr: String, stockDateStr: String, isDcFlow: Boolean, viewName: String,
-                        spark: SparkSession, isSimulation: Boolean): Map[ItemEntity, Double] = {
+  def getActualStockMap(startDateStr: String, stockDateStr: String, flowType: FlowType.Value,
+                        isDcFlow: Boolean, viewName: String, spark: SparkSession,
+                        isSimulation: Boolean): Map[ItemEntity, Double] = {
     if (isDcFlow) {
       QueryUtil.getDCActualStockMap(startDateStr, stockDateStr, isDcFlow, viewName, spark, isSimulation)
     } else {
       QueryUtil.
-        getActualStockMap(stockDateStr, isDcFlow, viewName, spark, isSimulation)
+        getActualStockMap(stockDateStr, flowType, isDcFlow, viewName, spark, isSimulation)
     }
   }
 
@@ -438,7 +440,7 @@ object ProcessLogic {
       case FlowType.XDocking | FlowType.OnStockStore => {
         if (modelRun.isSimulation) {
           SimulationUtil.getSimulationOnTheWayStockMap(startDateStr, endDateStr,
-            modelRun.isDcFlow, modelRun.viewName, spark)
+            modelRun.flowType,  modelRun.isDcFlow, modelRun.viewName, spark)
         } else {
           QueryUtil.getOnTheWayStockMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName,
             modelRun.orderTableName, spark)

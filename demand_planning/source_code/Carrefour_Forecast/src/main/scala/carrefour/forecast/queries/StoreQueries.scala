@@ -263,7 +263,7 @@ object StoreQueries {
         fcst.sub_id,
         fcst.store_code as entity_code,
         fcst.date_key,
-        fcst.daily_sales_prediction
+        sum(fcst.daily_sales_prediction) as daily_sales_prediction
     FROM temp.t_forecast_daily_sales_prediction fcst
     join ${viewName} itmd
         on fcst.item_id = itmd.item_id
@@ -271,6 +271,10 @@ object StoreQueries {
         and fcst.store_code = itmd.store_code
     WHERE fcst.date_key >= '${startDateStr}'
         AND fcst.date_key <= '${endDateStr}'
+    GROUP BY fcst.item_id,
+        fcst.sub_id,
+        fcst.store_code,
+        fcst.date_key
     """
   }
 

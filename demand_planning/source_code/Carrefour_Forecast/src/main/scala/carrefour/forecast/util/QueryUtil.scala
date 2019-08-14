@@ -4,6 +4,7 @@ import carrefour.forecast.model.ItemEntity
 import carrefour.forecast.queries.{DcQueries, SimulationQueries, StoreQueries}
 import org.apache.spark.sql.functions.{col, lit, when}
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
+import carrefour.forecast.model.EnumFlowType.FlowType
 
 /**
   * Utility used to query data
@@ -15,20 +16,21 @@ object QueryUtil {
     * 获取当前门店库存
     *
     * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
+    * @param flowType Flow Type
     * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @param spark Spark session
     * @param isSimulation Whether it is simulation process 是否为模拟运行
     * @return Current store stock level 当前门店库存
     */
-  def getActualStockMap(stockDateStr: String, isDcFlow: Boolean, viewName: String,
+  def getActualStockMap(stockDateStr: String, flowType:FlowType.Value, isDcFlow: Boolean, viewName: String,
                         spark: SparkSession, isSimulation: Boolean): Map[ItemEntity, Double] = {
     import spark.implicits._
 
     var stockSql = StoreQueries.getActualStockLevelSql(stockDateStr, viewName)
 
     if (isSimulation) {
-      stockSql = SimulationQueries.getSimulationActualStockLevelSql(stockDateStr, viewName)
+      stockSql = SimulationQueries.getSimulationActualStockLevelSql(stockDateStr, flowType, viewName)
     }
 
     val stockDf = spark.sqlContext.sql(stockSql)

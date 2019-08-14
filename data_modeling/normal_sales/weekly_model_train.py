@@ -238,12 +238,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         # All features
         features = flat_features + time_features
 
-        week_end = date_stop_train
-        predict_week_key = calendarDf[calendarDf['date_value'] == week_end]["week_key"].max()
+        # week_end = date_stop_train
+        predict_week_key = calendarDf[calendarDf['date_value'] == date_stop_train]["week_key"].max()
 
-        # Train/Test split
-        train = df_oneFinal.loc[df_oneFinal['week_end_date'] < date_stop_train]
-        # test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
+        # Train/Test split contain the data of lastest week
+        train = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train]
+        # test = df_oneFinal.loc[df_oneFinal['week_end_date'] > date_stop_train]
 
        # Weekly loops : we train one model per week
 
@@ -290,7 +290,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 numFolds = 3
 
                 # The item needs to have at least 3 rows of data
-                if len(X_train > numFolds):
+                if X_train.shape[0] > numFolds:
                     pass
                 else:
                     print("".join([str(datetime.datetime.now()), ', index ', str(counter),
@@ -331,7 +331,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
                                                              eval_metric="mae")
 
-                score /= numFolds
+                # score /= numFolds
 
             except Exception as e:
                 #print('error for target_value:', target_week_value, 'and week', week)

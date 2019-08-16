@@ -85,7 +85,7 @@ config = {}
 config['database'] = 'temp'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
-# config['incremental'] = True
+config['incremental'] = True
 config['starting_date'] = 20170101
 # config['ending_date'] = 20170107
 ###############################  End  ##########################
@@ -214,6 +214,21 @@ def print_context(ds, **kwargs):
     print(ds)
     return 'Whatever you return gets printed in the logs'
 
+def get_spark():
+   print('Trying to get spark connection...')
+   warehouse_location = os.path.abspath('spark-warehouse')
+   spark = (SparkSession \
+      .builder \
+      .appName("Forecast") \
+      .config("spark.sql.warehouse.dir", warehouse_location) \
+      .config("spark.num.executors", '15') \
+      .config("spark.executor.memory", '20G') \
+      .config("spark.executor.cores", '25') \
+      .enableHiveSupport() \
+      .getOrCreate()
+   ) 
+   print('Spark connection created!')
+   return spark
 
 run_this = PythonOperator(
    task_id='Start',
@@ -642,32 +657,6 @@ step25.set_upstream(step24)
 #                            dag=dag)
 # step26.set_upstream(step25)
 def normal_final_output_table():
-   # USE_SPARK = 1
-   # if USE_SPARK:
-   #    print('Trying to get spark connection...')
-   #    warehouse_location = os.path.abspath('spark-warehouse')
-   #    spark = (SparkSession \
-   #       .builder \
-   #       .appName("Qiang (Charles)") \
-   #       .config("spark.sql.warehouse.dir", warehouse_location) \
-   #       .config("spark.num.executors", '15') \
-   #       .config("spark.executor.memory", '20G') \
-   #       .config("spark.executor.cores", '25') \
-   #       .enableHiveSupport() \
-   #       .getOrCreate()
-   #    ) 
-   #    print('Spark connection created!')
-   #    sqlStr = f"""
-   #    use {config['database']}
-   #    """
-   #    spark.sql(sqlStr).toPandas()
-   #    sqlStr = f"""
-   #    SHOW TABLES LIKE 'forecast_sprint3_v10_flag_sprint4'
-   #    """
-   #    if (spark.sql(sqlStr).toPandas().shape[0] > 0) and (config['incremental']):
-   #       execute_impala_by_sql_file('forecast_sprint3_v10_flag_sprint4',\
-   #                                  './sqls/26.incremental_forecast_sprint3_v10_flag_sprin4.sql',set_timeperiod=False,database='config',dropfirst=False)
-   #    else:
    execute_impala_by_sql_file('forecast_sprint3_v10_flag_sprint4',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/26.forecast_sprint3_v10_flag_sprin4.sql')
       # spark.stop()
@@ -680,9 +669,17 @@ step26.set_upstream(step25)
 # train normal item by python
 # op_kwargs={'table_name': "result_forecast_10w_on_the_fututre",  
 def step27_model_execute_python(**kwargs):
+   ## create summary table if not exists
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-create.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
    delta = datetime.timedelta(days = 1)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
+   ## insert the new data into the summary table
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-insert.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
 step27_model = PythonOperator(task_id="step27_model",
                            provide_context=True,
                            python_callable=step27_model_execute_python,
@@ -697,17 +694,7 @@ step27_model.set_upstream(step26)
 # op_kwargs={'table_name': "chinese_festivals",  
 # op_kwargs={'table_name': "dm_mapping_1719_dates_last_version",  
 def save_DM_csv_as_table():
-   print('Trying to get spark connection...')
-   warehouse_location = os.path.abspath('spark-warehouse')
-   spark = SparkSession \
-      .builder \
-      .appName("Forecast_saveastable") \
-      .config("spark.sql.warehouse.dir", warehouse_location) \
-      .config("spark.num.executors", '10') \
-      .config("spark.executor.memory", '15G') \
-      .config("spark.executor.cores", '20') \
-      .enableHiveSupport() \
-      .getOrCreate()
+   spark = get_spark()
    sqlContext = SQLContext(spark)
    print('Spark connection created!')
    sqlStr = f""" use {config['database']} """
@@ -862,9 +849,15 @@ step_promo_10.set_upstream(step_promo_9)
 # train promo model by python
 # op_kwargs={'table_name': "promo_sales_order_prediction_by_item_store_dm",  
 def step_promo_11_model_execute_python(**kwargs):
+   execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
    delta = datetime.timedelta(days = 1)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
+   execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/11_promo_sales_order_prediction_by_item_store_dm_all-insert.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
 step_promo_11_model = PythonOperator(task_id="step_promo_11_model",
                            provide_context=True,
                            python_callable=step_promo_11_model_execute_python,
@@ -925,16 +918,31 @@ step_normal_to_day_4.set_upstream(step_normal_to_day_3)
 #5  
 # execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred',\
 #                            '../sqls/PRED_TO_DAY/2_4forecast_regular_results_week_to_day_original_pred.sql', set_timeperiod=True)
+# step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
+#                            python_callable=execute_impala_by_sql_file,
+#                            provide_context=True,
+#                            op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred",
+#                               'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
+#                               'set_timeperiod':True},
+#                            dag=dag)
+# step_normal_to_day_5.set_upstream(step_normal_to_day_4)
+def step_normal_to_day_5_output_table():
+   ## create table if not exixts
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-create.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
+                              set_timeperiod=False,database='config')
+   ## insert into summary table
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-insert.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
 step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
-                           python_callable=execute_impala_by_sql_file,
-                           provide_context=True,
-                           op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred",
-                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
-                              'set_timeperiod':True},
+                           python_callable=step_normal_to_day_5_output_table,
                            dag=dag)
 step_normal_to_day_5.set_upstream(step_normal_to_day_4)
-
-
+                           
 # After getting the results: Split DM to day 
 # #0  
 # # Upload DM pattern in 1_2018_big_event_impact
@@ -992,12 +1000,20 @@ step_promo_to_day_4.set_upstream(step_promo_to_day_3)
 # execute_impala_by_sql_file('forecast_DM_results_to_day',\
 #                            '../sqls/PRED_TO_DAY/3_5forecast_DM_results_to_day.sql', 
 #                            set_timeperiod=True)
+def step_promo_to_day_5_output_table():
+   ## create table if not exists
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-create.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day.sql',
+                              set_timeperiod=False,database='config')
+   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+                           f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-insert.sql',
+                           set_timeperiod=False,database='config',dropfirst=False)
+                              
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
-                           python_callable=execute_impala_by_sql_file,
-                           provide_context=True,
-                           op_kwargs={'table_name': "forecast_DM_results_to_day",
-                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day.sql',
-                              'set_timeperiod':True},
+                           python_callable=step_promo_to_day_5_output_table,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
 

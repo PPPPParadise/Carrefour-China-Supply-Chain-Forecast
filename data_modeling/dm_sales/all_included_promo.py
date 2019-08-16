@@ -8,6 +8,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import lpad
+from pyspark.sql.functions import regexp_replace
 from impala.dbapi import connect
 import argparse
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
@@ -116,6 +117,7 @@ def main():
     spark_df = spark_df.withColumn("std_dev_predicted", spark_df["std_dev_predicted"].cast(FloatType()))
     spark_df = spark_df.withColumn("confidence_interval_max", spark_df["confidence_interval_max"].cast(FloatType()))
     spark_df = spark_df.withColumn("order_prediction", spark_df["order_prediction"].cast(FloatType()))
+    spark_df = spark_df.withColumn('sub_family_code', regexp_replace('sub_family_code', '.0', ''))
     spark_df.write.mode('overwrite').saveAsTable(f"{config['database']}.promo_sales_order_prediction_by_item_store_dm")
     spark.stop()
 

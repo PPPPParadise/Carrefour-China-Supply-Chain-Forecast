@@ -168,7 +168,10 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       sql = sql.format(database=database)
    # execute the SQL
    database_table_name = f"{database}.{table_name}"
-   impalaexec(sql,database_table_name)
+   if '_all' not in database_table_name:
+      impalaexec(sql,database_table_name)
+   else:
+      impalaexec(sql)
    # update the table
    sql = f""" INVALIDATE METADATA {database}.{table_name} """
    impalaexec(sql)
@@ -203,7 +206,10 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
       sql = sql.format(database=database)
    # execute the SQL
    database_table_name = f"{database}.{table_name}"
-   hiveexec(sql,database_table_name)
+   if '_all' not in database_table_name:
+      hiveexec(sql,database_table_name)
+   else:
+      hiveexec(sql)
    # update the table
    sql = f""" INVALIDATE METADATA {database}.{table_name} """
    impalaexec(sql)
@@ -850,13 +856,13 @@ step_promo_10.set_upstream(step_promo_9)
 # op_kwargs={'table_name': "promo_sales_order_prediction_by_item_store_dm",  
 def step_promo_11_model_execute_python(**kwargs):
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
    delta = datetime.timedelta(days = 2)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/11_promo_sales_order_prediction_by_item_store_dm_all-insert.sql',
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-insert.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
 step_promo_11_model = PythonOperator(task_id="step_promo_11_model",
                            provide_context=True,
@@ -928,14 +934,14 @@ step_normal_to_day_4.set_upstream(step_normal_to_day_3)
 # step_normal_to_day_5.set_upstream(step_normal_to_day_4)
 def step_normal_to_day_5_output_table():
    ## create table if not exixts
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre',\
+   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
                               set_timeperiod=False,database='config')
    ## insert into summary table
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-insert.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
 step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
@@ -1002,13 +1008,13 @@ step_promo_to_day_4.set_upstream(step_promo_to_day_3)
 #                            set_timeperiod=True)
 def step_promo_to_day_5_output_table():
    ## create table if not exists
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+   execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre',\
+   execute_impala_by_sql_file('forecast_DM_results_to_day',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day.sql',
                               set_timeperiod=False,database='config')
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
+   execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
                            f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-insert.sql',
                            set_timeperiod=False,database='config',dropfirst=False)
                               

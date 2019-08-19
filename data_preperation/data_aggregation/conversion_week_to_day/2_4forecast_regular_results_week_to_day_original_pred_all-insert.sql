@@ -9,7 +9,7 @@ Input:
 Output: {database}.forecast_regular_results_week_to_day_original_pred
 */
 -- 4. Split weekly prediction to day for demand palnning 
-insert into table {database}.forecast_regular_results_week_to_day_original_pred_all 
+insert OVERWRITE table {database}.forecast_regular_results_week_to_day_original_pred_all 
 partition (
     date_key,
     insert_date_key)

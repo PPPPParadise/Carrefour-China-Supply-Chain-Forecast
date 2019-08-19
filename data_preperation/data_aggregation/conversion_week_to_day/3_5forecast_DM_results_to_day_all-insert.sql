@@ -11,7 +11,7 @@ Output: {database}.forecast_DM_results_to_day
 -- 4. 
 -- drop view {database}.forecast_DM_results_to_day;
 
-insert into table {database}.forecast_DM_results_to_day_all 
+insert OVERWRITE table {database}.forecast_DM_results_to_day_all 
 partition (
     date_key,
     insert_date_key)

@@ -1,6 +1,6 @@
 
 -- insert into the table 
-insert into table temp.result_forecast_10w_on_the_fututre_all 
+insert OVERWRITE table temp.result_forecast_10w_on_the_fututre_all 
 partition (
     week_key,
     insert_date_key)

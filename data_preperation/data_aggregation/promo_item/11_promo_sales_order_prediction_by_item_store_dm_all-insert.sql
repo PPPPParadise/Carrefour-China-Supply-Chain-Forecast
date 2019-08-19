@@ -1,7 +1,7 @@
 
 -- insert into the table 
 
-insert into table {database}.promo_sales_order_prediction_by_item_store_dm_all 
+insert OVERWRITE table {database}.promo_sales_order_prediction_by_item_store_dm_all 
 partition (
     insert_date_key)
 select

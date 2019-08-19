@@ -214,9 +214,9 @@ def run_model_rolling(folder, data_set1, data_set2, futur_prediction, date_stop_
                 'item_store', 'week_key', 'sales_qty_sum', 'w{}_sales_qty'.format(week_shift_number)]] \
                 .to_csv(f'{savePath}/{skippedWeekFile}', mode='a', index=False, header=False)
 
-            df_oneFinal = df_oneItemW[
-               (df_oneItemW['sales_qty_sum'] != -1) & (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] != -1)]
-            # df_oneFinal = df_oneItemW
+            # df_oneFinal = df_oneItemW[
+            #    (df_oneItemW['sales_qty_sum'] != -1) & (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] != -1)]
+        df_oneFinal = df_oneItemW
 
         # All features 
         features = flat_features + time_features
@@ -226,13 +226,14 @@ def run_model_rolling(folder, data_set1, data_set2, futur_prediction, date_stop_
         for roll in range(rolling_weeks_num):
             # week_end = date_stop_train
             date_stop_train = date_stop_train_base + timedelta(days=7 * roll)
-            train = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train]
+            train_base = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train].copy()
             # test = df_oneFinal.loc[df_oneFinal['week_end_date'] >= date_stop_train]
 
             # Weekly loops : we train one model per week
             for target_week_value, week in zip(target_week_value_copied, week_shift):
 
-                train = train[(np.isfinite(train[target_week_value])) & (train[target_week_value] != -1) ] ## speed
+                train = train_base[np.isfinite(train_base[target_week_value])].copy()
+                train = train[train[target_week_value] != -1].copy()
                 train.reset_index(drop=True, inplace=True)
 
                 X_train = train[features]
@@ -318,8 +319,8 @@ def run_model_rolling(folder, data_set1, data_set2, futur_prediction, date_stop_
                     # for i in range(0, number_of_weeks):
                     i = 0
                     # The week sales to predict   # speed
-                    base_week_end = date_stop_train + timedelta(days=7 * i)
-                    base_week_key = calendarDf[calendarDf['date_value'] == base_week_end]["week_key"].min()
+                    # base_week_end = date_stop_train + timedelta(days=7 * i)
+                    base_week_key = calendarDf[calendarDf['date_value'] == date_stop_train]["week_key"].min()
 
                     # The input data to perform perdict # speed
                     test = df_oneFinal.loc[df_oneFinal['week_key'] == base_week_key].copy()
@@ -390,9 +391,7 @@ def run_model_rolling(folder, data_set1, data_set2, futur_prediction, date_stop_
                         score_dict['full_item'].append(item)
                         score_dict['week'].append(weekofyear)
                         score_dict['train_mape_score'].append(score)
-
-                        score_dict['store_code'].append(
-                            rel_error_store_list[i])
+                        score_dict['store_code'].append(rel_error_store_list[i])
                         score_dict['predict_sales'].append(predict_sales[i])
                         score_dict['predict_sales_error_squared']\
                             .append(predict_sales_error_squared[i])

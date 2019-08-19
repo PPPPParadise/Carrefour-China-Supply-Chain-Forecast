@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import KFold
+import traceback
 
 import utils_v2
 from utils_v2 import read_features
@@ -153,6 +154,9 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
     progress = int(len(item_list) / 100) + 1
     progressCounter = 1
 
+    base_week_key = calendarDf[calendarDf['date_value'] == date_stop_train]["week_key"].min()
+    print(f"predict after week {base_week_key}")
+
     # for item
     for item in item_list:
 
@@ -175,18 +179,6 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                           # 'cumul/somme': [],
                           # 'rel_error': [],
                           # 'actual_sales': [],
-                          'predict_sales': [],
-                          'predict_sales_error_squared': [],
-                          'predict_sales_max_confidence_interval': [],
-                          'order_prediction': []}
-
-        else:
-            score_dict = {'full_item': [], 'store_code': [],
-                          'week': [], 'train_mape_score': [],
-                          'predict_mape_score': [],
-                          'cumul/somme': [],
-                          'rel_error': [],
-                          'actual_sales': [],
                           'predict_sales': [],
                           'predict_sales_error_squared': [],
                           'predict_sales_max_confidence_interval': [],
@@ -233,24 +225,23 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
             #df_oneFinal = df_oneItemW[
             #    (df_oneItemW['sales_qty_sum'] != -1) & (df_oneItemW['w{}_sales_qty'.format(week_shift_number)] != -1)]
-            df_oneFinal = df_oneItemW
+        df_oneFinal = df_oneItemW
 
         # All features
         features = flat_features + time_features
 
         # week_end = date_stop_train
-        predict_week_key = calendarDf[calendarDf['date_value'] == date_stop_train]["week_key"].max()
 
         # Train/Test split contain the data of lastest week
-        train = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train]
+        train_base = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train].copy()
         # test = df_oneFinal.loc[df_oneFinal['week_end_date'] > date_stop_train]
 
        # Weekly loops : we train one model per week
 
         for target_week_value, week in zip(target_week_value_copied, week_shift):
 
-            train = train[np.isfinite(train[target_week_value])]
-            train = train[train[target_week_value] != -1]
+            train = train_base[np.isfinite(train_base[target_week_value])].copy()
+            train = train[train[target_week_value] != -1].copy()
             
             train.reset_index(drop=True, inplace=True)
 
@@ -302,18 +293,13 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 # kf = KFold(n_splits=numFolds, shuffle=False, random_state=7)
 
                 # KFold training
-                #for train_index, test_index in kf.split(X_train):
-                #train_items = train[['full_item']].drop_duplicates().sample(frac=0.9, replace=False, random_state=1).full_item
-                #train_index = train[train.full_item.isin(train_items)].index
-                #test_index = train[~train.full_item.isin(train_items)].index
+                
                 train_index = X_train.sample(frac=0.75, replace=False, random_state=1).index
                 test_index = X_train[~X_train.index.isin(train_index)].index
 
                 X_tr, X_te = X_train[X_train.index.isin(train_index)], X_train[X_train.index.isin(test_index)]
                 y_tr, y_te = y_train[y_train.index.isin(train_index)], y_train[y_train.index.isin(test_index)]
                 
-                #X_tr, X_te = X_train.iloc[train_index], X_train.iloc[test_index]
-                #y_tr, y_te = y_train.iloc[train_index], y_train.iloc[test_index]
                 
                 eval_set = [(X_tr, y_tr), (X_te, y_te)]
                 sales_prediction_model.fit(X_tr, y_tr, verbose=False,
@@ -335,7 +321,8 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
             except Exception as e:
                 #print('error for target_value:', target_week_value, 'and week', week)
-
+                print(traceback.format_exc())
+                print('error for target_value:', target_week_value, 'and week', week)
                 print("".join([str(datetime.datetime.now()),
                                          ', index ', str(
                                              counter), ', item ', item,
@@ -368,31 +355,25 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 # for i in range(0, number_of_weeks):
                 i = 0
                 # The week sales to predict
-                predict_week_end = date_stop_train + timedelta(days=7 * i)
-                predict_week_key = calendarDf[calendarDf['date_value']
-                                                == predict_week_end]["week_key"].min()
+                # base_week_end = date_stop_train + timedelta(days=7 * i)
 
-                # The input data to perform perdict
-                test = df_oneFinal.loc[df_oneFinal['week_key']
-                                        == predict_week_key]
-                test = test.sort_values(
-                    ['item_store', 'week_key'], ascending=True)
+                # The input data to perform perdict # speed
+                test = df_oneFinal.loc[df_oneFinal['week_key'] == base_week_key].copy()
+                test = test.sort_values(['item_store', 'week_key'], ascending=True)
 
                 X_test = test[features]
-                if futur_prediction:
-                    pass
-                else:
-                    y_test = test[target_week_value]
-
+                ## predict forecast in [0,)
                 forecast = sales_prediction_model.predict(X_test)
+                forecast = np.array([max(0, x) for x in forecast])
+
                 error_squared_forecast = sales_prediction_squared_error_model.predict(
                     X_test)
+                error_squared_forecast = np.array([max(-x, x) for x in error_squared_forecast])
 
                 test.loc[:, 'forecast'] = forecast
                 test.loc[:, 'error_squared_forecast'] = error_squared_forecast
 
-                predict_sales_error_squared = list(
-                    test.error_squared_forecast)
+                predict_sales_error_squared = list(test.error_squared_forecast)
 
                 # Change the value here to modify the desired confidence interval
                 # As reference: 3* = 90% interval, 1.28* = 80% interval... Cf normal distribution
@@ -429,20 +410,6 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                 # If the predictions are not on the futur, we can compute the metrics
 
-                if futur_prediction:
-                    pass
-                else:
-                    errors = pd.DataFrame(
-                        (forecast - y_test).values, columns=['rel_error'])
-                    errors['sales_qty_sum'] = y_test.values
-                    errors = errors.sort_values('rel_error')
-                    errors['cumul'] = errors['sales_qty_sum'].cumsum()
-                    somme = errors['sales_qty_sum'].sum()
-                    errors['cumul/somme'] = errors['cumul'] / somme
-                    errors = errors.set_index('cumul/somme')
-                    rel_error_each_list = list((forecast - y_test).values)
-                    actual_sales = list(y_test)
-
                 rel_error_store_list = list(test['store_code'])
                 predict_sales = list(test.forecast)
                 predict_sales_error_squared = list(
@@ -450,31 +417,15 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 predict_sales_max_confidence_interval = list(
                     test.predict_sales_max_confidence_interval)
 
+                ## make sure we don't generate week_key that dosen't exist
+                week_end_temp = date_stop_train + timedelta(days=7 * week)
+                weekofyear = calendarDf[calendarDf['date_value'] == week_end_temp]["week_key"].min()
                 # Save the metrics in a dictionnary
                 for i in range(0, len(forecast)):
                     score_dict['full_item'].append(item)
-                    ## make sure we don't generate week_key that dosen't exist
-                    week_end_temp = date_stop_train + timedelta(days=7 * week)
-                    weekofyear = calendarDf[calendarDf['date_value'] == week_end_temp]["week_key"].min()
                     score_dict['week'].append(weekofyear)
                     score_dict['train_mape_score'].append(score)
-
-                    if futur_prediction:
-                        pass
-                    else:
-                        score_dict['predict_mape_score'].append(
-                            abs(forecast - y_test).sum() / y_test.sum())
-                        try:
-                            score_dict['cumul/somme'].append(
-                                errors[errors['rel_error'] >= 0].index[0])
-                        except Exception as e:
-                            score_dict['cumul/somme'].append(0)
-                        score_dict['rel_error'].append(
-                            rel_error_each_list[i])
-                        score_dict['actual_sales'].append(actual_sales[i])
-
-                    score_dict['store_code'].append(
-                        rel_error_store_list[i])
+                    score_dict['store_code'].append(rel_error_store_list[i])
                     score_dict['predict_sales'].append(predict_sales[i])
                     score_dict['predict_sales_error_squared']\
                         .append(predict_sales_error_squared[i])
@@ -484,7 +435,6 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                         .append(order_prediction[i])
 
         # Save the metrics in a csv
-
         score_df = pd.DataFrame(score_dict)
         if counter == 1:
             score_df[score_df.full_item == 'head_only'].to_csv(

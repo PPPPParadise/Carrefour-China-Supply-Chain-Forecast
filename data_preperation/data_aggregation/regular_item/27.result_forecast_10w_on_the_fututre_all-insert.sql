@@ -1,6 +1,6 @@
 
 -- insert into the table 
-insert OVERWRITE table temp.result_forecast_10w_on_the_fututre_all 
+insert OVERWRITE table {database}.result_forecast_10w_on_the_fututre_all 
 partition (
     week_key,
     insert_date_key)
@@ -16,5 +16,5 @@ select
     sub_id ,
     week_key ,
     cast(from_timestamp(now(), 'yyyyMMdd') as int) as insert_date_key  
-from temp.result_forecast_10w_on_the_fututre
+from {database}.result_forecast_10w_on_the_fututre
 ;

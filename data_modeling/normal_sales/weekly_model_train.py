@@ -233,20 +233,20 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         # week_end = date_stop_train
 
         # Train/Test split contain the data of lastest week
-        train_base = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train].copy()
+        train_base_all = df_oneFinal.loc[df_oneFinal['week_end_date'] <= date_stop_train].copy()
         # test = df_oneFinal.loc[df_oneFinal['week_end_date'] > date_stop_train]
 
        # Weekly loops : we train one model per week
 
         for target_week_value, week in zip(target_week_value_copied, week_shift):
 
-            train = train_base[np.isfinite(train_base[target_week_value])].copy()
-            train = train[train[target_week_value] != -1].copy()
+            train_base_week = train_base_all[np.isfinite(train_base_all[target_week_value])].copy()
+            train_base_week = train_base_week[train_base_week[target_week_value] != -1].copy()
             
-            train.reset_index(drop=True, inplace=True)
+            train_base_week.reset_index(drop=True, inplace=True)
 
-            X_train = train[features]
-            y_train = train[target_week_value]
+            X_train = train_base_week[features]
+            y_train = train_base_week[target_week_value]
 
             # X_test = test[features]
             # y_test = test[target_week_value]
@@ -358,7 +358,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 # base_week_end = date_stop_train + timedelta(days=7 * i)
 
                 # The input data to perform perdict # speed
-                test = df_oneFinal.loc[df_oneFinal['week_key'] == base_week_key].copy()
+                test = train_base_all[train_base_all['week_key'] == base_week_key].copy()
                 test = test.sort_values(['item_store', 'week_key'], ascending=True)
 
                 X_test = test[features]

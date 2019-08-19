@@ -323,7 +323,7 @@ def run_model_rolling(folder, data_set1, data_set2, futur_prediction, date_stop_
                     base_week_key = calendarDf[calendarDf['date_value'] == date_stop_train]["week_key"].min()
 
                     # The input data to perform perdict # speed
-                    test = df_oneFinal.loc[df_oneFinal['week_key'] == base_week_key].copy()
+                    test = train_base[train_base['week_key'] == base_week_key].copy()
                     test = test.sort_values(['item_store', 'week_key'], ascending=True)
 
                     X_test = test[features]

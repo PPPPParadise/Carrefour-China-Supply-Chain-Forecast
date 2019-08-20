@@ -38,6 +38,7 @@ select
     stostocd
 from combine
 where stastocd is null
+and stostocd <> '812'
 ;
 
 -- INVALIDATE METADATA  {database}.forecast_store_code_scope_sprint4;

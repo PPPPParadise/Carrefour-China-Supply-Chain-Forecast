@@ -944,6 +944,13 @@ def step_normal_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-insert.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
+   ## create view for normal item if 
+   execute_impala_by_sql_file('forecast_weekly_normal_view',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/1_weekly_normal_view.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
+   execute_impala_by_sql_file('forecast_daily_normal_view',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/2_daily_normal_view.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
 step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
                            python_callable=step_normal_to_day_5_output_table,
                            dag=dag)
@@ -1017,10 +1024,16 @@ def step_promo_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
                            f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-insert.sql',
                            set_timeperiod=False,database='config',dropfirst=False)
+   ## create view for dm item if 
+   execute_impala_by_sql_file('forecast_weekly_normal_view',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/3_weekly_DM_view.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
+   execute_impala_by_sql_file('forecast_daily_normal_view',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
+                              set_timeperiod=False,database='config',dropfirst=False)
                               
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
-
 

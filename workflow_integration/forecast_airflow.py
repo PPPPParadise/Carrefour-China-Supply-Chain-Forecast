@@ -82,7 +82,7 @@ dag = DAG('forecast_dataflow',
 
 ############################### Config ##########################
 config = {}
-config['database'] = 'temp'
+config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
 config['incremental'] = True

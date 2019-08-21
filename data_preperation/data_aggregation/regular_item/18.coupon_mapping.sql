@@ -10,9 +10,9 @@ Input:  temp.forecast_assortment_full
 Output: temp.coupon_mapping 
 */
 
--- drop table if exists temp.coupon_mapping;
+-- drop table if exists {database}.coupon_mapping;
 
-create table temp.coupon_mapping as
+create table {database}.coupon_mapping as
 -- Get the item_id and item_code mapping from assortment
 with item_code_id_mapping as (
 select
@@ -20,7 +20,7 @@ select
     sub_code,
     item_id,
     sub_id
-from temp.forecast_assortment_full
+from {database}.forecast_assortment_full
 where item_id is not null
 group by concat(dept_code,item_code),sub_code, item_id, sub_id
 ),
@@ -186,4 +186,4 @@ from add_item_id
 where item_id is not null
 ;
 
--- INVALIDATE METADATA temp.coupon_mapping;
+-- INVALIDATE METADATA {database}.coupon_mapping;

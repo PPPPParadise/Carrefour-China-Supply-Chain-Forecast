@@ -75,7 +75,7 @@ default_args = {
 }
 
 
-dag = DAG('forecast_normal_dm_flow',
+dag = DAG('forecast_dm_flow',
           schedule_interval='0 2 * * 2',
           default_args=default_args, catchup=False)
 
@@ -672,26 +672,6 @@ step26 = PythonOperator(task_id="step26",
 step26.set_upstream(step25)
 
 
-# train normal item by python
-# op_kwargs={'table_name': "result_forecast_10w_on_the_fututre",  
-def step27_model_execute_python(**kwargs):
-   ## create summary table if not exists
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-create.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 2)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
-   os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
-   ## insert the new data into the summary table
-   execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-insert.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-step27_model = PythonOperator(task_id="step27_model",
-                           provide_context=True,
-                           python_callable=step27_model_execute_python,
-                           dag=dag)
-step27_model.set_upstream(step26)
-
 # DM dataset 
 #0
 # 在做着部分之前 一些excel是要先传进去的 
@@ -870,91 +850,6 @@ step_promo_11_model = PythonOperator(task_id="step_promo_11_model",
                            dag=dag)
 step_promo_11_model.set_upstream(step_promo_10)
 
-
-# After getting the results: Split week to day 
-# #1 
-# # 1_2018_big_event_impact.ipynb 
-# op_kwargs={'table_name': "2018_big_event_impact",  
-# op_kwargs={'table_name': "forecast_big_events",  
-# op_kwargs={'table_name': "forecast_dm_pattern",  
-def step_normal_to_day_1_execute_python(**kwargs):
-   os.system(f""" python3.6 {config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' -c '{config['config_data_path']}' """)
-   
-step_normal_to_day_1 = PythonOperator(task_id="step_normal_to_day_1",
-                           python_callable=step_normal_to_day_1_execute_python,
-                           dag=dag)
-step_normal_to_day_1.set_upstream(step27_model)
-
-#2 
-# execute_impala_by_sql_file('forecast_regular_day',\
-#                            '../sqls/PRED_TO_DAY/2_1forecast_regular_day.sql', set_timeperiod=True)
-step_normal_to_day_2 = PythonOperator(task_id="step_normal_to_day_2",
-                           python_callable=execute_impala_by_sql_file,
-                           provide_context=True,
-                           op_kwargs={'table_name': "forecast_regular_day",
-                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_1forecast_regular_day.sql',
-                              'set_timeperiod':True},
-                           dag=dag)
-step_normal_to_day_2.set_upstream(step_normal_to_day_1)
-
-#3
-# execute_impala_by_sql_file('forecast_w2d_good_regular_days',\
-#                            '../sqls/PRED_TO_DAY/2_2forecast_w2d_good_regular_days.sql', set_timeperiod=True)
-step_normal_to_day_3 = PythonOperator(task_id="step_normal_to_day_3",
-                           python_callable=execute_impala_by_sql_file,
-                           provide_context=True,
-                           op_kwargs={'table_name': "forecast_w2d_good_regular_days",
-                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_2forecast_w2d_good_regular_days.sql',
-                              'set_timeperiod':True},
-                           dag=dag)
-step_normal_to_day_3.set_upstream(step_normal_to_day_2)
-
-#4
-# execute_impala_by_sql_file('forecast_regular_dayofweek_percentage',\
-#                            '../sqls/PRED_TO_DAY/2_3forecast_regular_dayofweek_percentage.sql', set_timeperiod=True)
-step_normal_to_day_4 = PythonOperator(task_id="step_normal_to_day_4",
-                           python_callable=execute_impala_by_sql_file,
-                           provide_context=True,
-                           op_kwargs={'table_name': "forecast_regular_dayofweek_percentage",
-                              'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_3forecast_regular_dayofweek_percentage.sql',
-                              'set_timeperiod':True},
-                           dag=dag)
-step_normal_to_day_4.set_upstream(step_normal_to_day_3)
-
-#5  
-# execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred',\
-#                            '../sqls/PRED_TO_DAY/2_4forecast_regular_results_week_to_day_original_pred.sql', set_timeperiod=True)
-# step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
-#                            python_callable=execute_impala_by_sql_file,
-#                            provide_context=True,
-#                            op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred",
-#                               'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
-#                               'set_timeperiod':True},
-#                            dag=dag)
-# step_normal_to_day_5.set_upstream(step_normal_to_day_4)
-def step_normal_to_day_5_output_table():
-   ## create table if not exixts
-   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-create.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred.sql',
-                              set_timeperiod=False,database='config')
-   ## insert into summary table
-   execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/2_4forecast_regular_results_week_to_day_original_pred_all-insert.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-   ## create view for normal item if 
-   execute_impala_by_sql_file('forecast_weekly_normal_view',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/1_weekly_normal_view.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-   execute_impala_by_sql_file('forecast_daily_normal_view',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/2_daily_normal_view.sql',
-                              set_timeperiod=False,database='config',dropfirst=False)
-step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
-                           python_callable=step_normal_to_day_5_output_table,
-                           dag=dag)
-step_normal_to_day_5.set_upstream(step_normal_to_day_4)
                            
 # After getting the results: Split DM to day 
 # #0  

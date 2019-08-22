@@ -8,8 +8,12 @@
     * Shipment: lfms.daily_shipment
     * Order: lfms.ord
 * Store
-    * Stock
+    * Stock: fds.p4cm_daily_stock
     * 
+
+* DM 
+    * ods.nsa_dm_theme
+    * nsa.dm_extract_log
 
 ## Sales forecast tables
 
@@ -45,7 +49,8 @@
 ## Other
 
 * Item details (rotation, etc)
-    * 
+    * vartefact.forecast_store_item_details (lastest version, updated 22 Aug)
+    * vartefact.forecast_item_details (old version)
 * Service level by item
     * vartefact.service_level_safety2_vinc
 * Daily transaction (oos filled with medium sales)

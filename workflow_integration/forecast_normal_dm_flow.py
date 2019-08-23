@@ -935,6 +935,7 @@ step_normal_to_day_4.set_upstream(step_normal_to_day_3)
 #                               'set_timeperiod':True},
 #                            dag=dag)
 # step_normal_to_day_5.set_upstream(step_normal_to_day_4)
+# op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred_all",
 def step_normal_to_day_5_output_table():
    ## create table if not exixts
    execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
@@ -1016,6 +1017,7 @@ step_promo_to_day_4.set_upstream(step_promo_to_day_3)
 # execute_impala_by_sql_file('forecast_DM_results_to_day',\
 #                            '../sqls/PRED_TO_DAY/3_5forecast_DM_results_to_day.sql', 
 #                            set_timeperiod=True)
+# op_kwargs={'table_name': "forecast_dm_results_to_day_all",
 def step_promo_to_day_5_output_table():
    ## create table if not exists
    execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
@@ -1029,14 +1031,20 @@ def step_promo_to_day_5_output_table():
                            set_timeperiod=False,database='config',dropfirst=False)
    ## create view for dm item if 
    execute_impala_by_sql_file('forecast_weekly_normal_view',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/3_weekly_DM_view.sql',
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/3_all_DM_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
+   # house table
+   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
+                              set_timeperiod=True,database='config',dropfirst=False)
                               
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
 
+
+                           

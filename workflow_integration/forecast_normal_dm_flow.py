@@ -63,10 +63,13 @@ order_output_folder = Variable.get("order_output_folder")
 store_order_file = Variable.get("store_order_file_name")
 
 
+# airflow backfill forecast_normal_dm_flow -s 2019-08-19 -e 2019-08-21
+
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 13),
     'email': ['vincent.lin@artefact.com'],
+    'depends_on_past': False, 
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -76,7 +79,7 @@ default_args = {
 
 
 dag = DAG('forecast_normal_dm_flow',
-          schedule_interval='0 2 * * 2',
+          schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
 
 
@@ -858,7 +861,7 @@ def step_promo_11_model_execute_python(**kwargs):
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 2)
+   delta = datetime.timedelta(days = 1)
    starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\

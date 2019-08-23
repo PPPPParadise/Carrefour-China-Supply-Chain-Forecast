@@ -67,6 +67,7 @@ default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 13),
     'email': ['vincent.lin@artefact.com'],
+    'depends_on_past': False, 
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -74,9 +75,8 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
-
-dag = DAG('forecast_normal_flow',
-          schedule_interval='0 2 * * 2',
+dag = DAG('forecast_normal_dm_flow',
+          schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
 
 

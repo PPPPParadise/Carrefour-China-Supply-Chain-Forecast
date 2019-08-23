@@ -81,7 +81,7 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     # Filter for the training
     df_filtered = df.copy()
 
-    # Train only on 2018 and filter negative sales
+    # Train only from 2018 and filter negative sales
     df_filtered = df_filtered[df_filtered['week_end_date']
                               >= datetime.date(2018, 1, 1)]
     df_filtered = df_filtered.loc[df_filtered[target_value] > 0]

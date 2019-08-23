@@ -65,7 +65,7 @@ store_order_file = Variable.get("store_order_file_name")
 
 default_args = {
     'owner': 'Carrefour',
-    'start_date': datetime.datetime(2019, 8, 13),
+    'start_date': datetime.datetime(2019, 8, 18, 2, 0),
     'email': ['vincent.lin@artefact.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -76,8 +76,8 @@ default_args = {
 
 
 dag = DAG('forecast_dm_flow',
-          schedule_interval='0 2 * * 2',
-          default_args=default_args, catchup=False)
+schedule_interval='0 2 * * 2 0',
+   default_args=default_args, catchup=False)
 
 
 ############################### Config ##########################

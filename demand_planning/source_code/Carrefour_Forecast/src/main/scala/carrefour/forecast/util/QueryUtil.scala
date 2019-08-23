@@ -87,15 +87,33 @@ object QueryUtil {
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param isSimulation Whether it is simulation process 是否为模拟运行
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @param spark Spark session
     * @return DM orders. DM订单
     */
-  def getDmOrderMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
-                    spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+  def getDmOrderMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, isSimulation: Boolean,
+                    viewName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val dmOrderSql = StoreQueries.getDmOrdersSql(startDateStr, endDateStr, viewName)
+    var dmOrderSql = ""
+
+    if (isSimulation) {
+      if (isDcFlow) {
+        dmOrderSql = SimulationQueries.getSimulationDmDcOrdersSql(startDateStr, endDateStr, viewName)
+      } else {
+        dmOrderSql = SimulationQueries.getSimulationDmOrdersSql(startDateStr, endDateStr, viewName)
+      }
+
+    } else {
+      if (isDcFlow) {
+        dmOrderSql = DcQueries.getDmDcOrdersSql(startDateStr, endDateStr, viewName)
+      } else {
+        dmOrderSql = StoreQueries.getDmOrdersSql(startDateStr, endDateStr, viewName)
+      }
+    }
+
+
     val dmOrderDf = spark.sqlContext.sql(dmOrderSql)
 
     val grouppedDmDf = dmOrderDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),

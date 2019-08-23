@@ -3,6 +3,7 @@ package carrefour.forecast.process
 import carrefour.forecast.core.ProcessLogic
 import carrefour.forecast.model.EnumFlowType.FlowType
 import carrefour.forecast.model.ModelRun
+import carrefour.forecast.util.Utils
 
 /**
   * Simulation process for on stock store order
@@ -11,7 +12,7 @@ import carrefour.forecast.model.ModelRun
 object OnStockSimulationProcess {
 
   def main(args: Array[String]): Unit = {
-    val runDate = args(0)
+    var runDate = args(0)
     val flowType = FlowType.OnStockStore
     val defaultStockLevel = 0.0
     val defaultDeliveryTime = "AfterStoreOpen"
@@ -24,6 +25,11 @@ object OnStockSimulationProcess {
 
     for (i <- 1 until args.length) {
       val argPair = args(i).split("=")
+
+      if (argPair(0).equalsIgnoreCase("day_shift")) {
+        val dayShift = Integer.valueOf(argPair(1))
+        runDate = Utils.getRunDate(runDate, dayShift)
+      }
 
       if (argPair(0).equalsIgnoreCase("item_id")) {
         item_id = Integer.valueOf(argPair(1))

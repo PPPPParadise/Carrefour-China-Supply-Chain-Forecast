@@ -23,20 +23,24 @@ object DcQueries {
         fdls.con_holding,
         fdls.con_holding AS entity_code,
         fdls.con_holding AS store_code,
-        fdls.flow_type,
+        id.risk_item_unilever,
         fdls.rotation,
-        cast(fdls.pcb AS DOUBLE) pcb,
+        cast(id.qty_per_unit AS DOUBLE) pcb,
         fdls.ds_supplier_code AS supplier_code,
         dodm.order_date AS run_date,
         'AfterStoreOpen' AS delivery_time,
         fdls.avg_sales_qty AS average_sales
       FROM vartefact.forecast_dc_latest_sales fdls
-      JOIN vartefact.forecast_dc_order_deliver_mapping dodm ON dodm.con_holding = fdls.con_holding
+      JOIN vartefact.forecast_dc_order_delivery_mapping dodm ON dodm.con_holding = fdls.con_holding
         AND dodm.order_date = '${orderDateStr}'
       JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '${stockDateStr}'
         AND fdls.item_code = icis.item_code
         AND fdls.sub_code = icis.sub_code
         AND fdls.dept_code = icis.dept_code
+      JOIN vartefact.v_forecast_inscope_dc_item_details id ON fdls.item_code = id.item_code
+        AND fdls.sub_code = id.sub_code
+        AND fdls.dept_code = id.dept_code
+        AND dodm.risk_item_unilever = id.risk_item_unilever
       WHERE fdls.date_key = '${orderDateStr}'
   """
   }
@@ -74,8 +78,9 @@ object DcQueries {
         "" as item_stop_end_date,
         cast(itmd.average_sales as double) average_sales
     from ${viewName} itmd
-    join vartefact.forecast_dc_order_deliver_mapping dodm
+    join vartefact.forecast_dc_order_delivery_mapping dodm
         on itmd.con_holding = dodm.con_holding
+        and itmd.risk_item_unilever = dodm.risk_item_unilever
     join vartefact.forecast_calendar ord
         on ord.date_key = dodm.order_date
     join vartefact.forecast_calendar dev
@@ -105,31 +110,60 @@ object DcQueries {
           fcst.sub_id,
           fcst.con_holding as entity_code,
           fcst.order_day as date_key,
-          fcst.order_qty
+          fcst.order_qty as order_qty
         FROM vartefact.forecast_onstock_orders fcst
         JOIN ${viewName} itmd ON fcst.item_id = itmd.item_id
           AND fcst.sub_id = itmd.sub_id
         WHERE fcst.order_day >= '${startDateStr}'
           AND fcst.order_day <= '${endDateStr}'
 
-        UNION
+          union
 
-        SELECT fdo.item_id,
-          fdo.sub_id,
-          itmd.con_holding AS entity_code,
-          fdo.first_order_date AS date_key,
-          fdo.order_qty AS order_qty
-        FROM vartefact.forecast_dm_orders fdo
-        JOIN ${viewName} itmd ON fdo.item_id = itmd.item_id
-          AND fdo.sub_id = itmd.sub_id
-        WHERE fdo.first_order_date >= '${startDateStr}'
-          AND fdo.first_order_date <= '${endDateStr}'
-          AND fdo.rotation != 'X'
+          SELECT dm.item_id,
+            dm.sub_id,
+            dm.con_holding as entity_code,
+            dm.first_order_date as date_key,
+            dm.first_dm_order_qty as order_qty
+          FROM vartefact.forecast_simulation_dm_orders dm
+          JOIN ${viewName} itmd ON dm.item_id = dm.item_id
+            AND dm.sub_id = itmd.sub_id
+          WHERE dm.first_order_date >= '${startDateStr}'
+            AND dm.first_order_date <= '${endDateStr}'
+
         ) t
       GROUP BY t.item_id,
         t.sub_id,
         t.entity_code,
         t.date_key
+    """
+  }
+
+  /**
+    * SQL query to get orders from DM process
+    * 查询DM订单系统生成的DM订单的SQL
+    *
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
+  def getDmDcOrdersSql(startDateStr: String, endDateStr: String, viewName: String): String = {
+    s"""
+    SELECT dm.item_id,
+        dm.sub_id,
+        dm.con_holding as entity_code,
+        dm.first_delivery_date,
+        cast(sum(dm.order_qty) as DOUBLE) as dm_order_qty
+    FROM vartefact.forecast_dm_dc_orders dm
+    join ${viewName} itmd
+        on dm.item_id = itmd.item_id
+        and dm.sub_id = itmd.sub_id
+    WHERE dm.first_delivery_date >= '${startDateStr}'
+        AND dm.first_delivery_date <= '${endDateStr}'
+    GROUP BY dm.item_id,
+       dm.sub_id,
+       dm.con_holding,
+       dm.first_delivery_date
     """
   }
 

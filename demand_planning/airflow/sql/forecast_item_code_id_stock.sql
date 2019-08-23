@@ -27,7 +27,8 @@ SELECT DISTINCT pds.date_key,
 	pds.stop_month,
 	pds.stop_reason
 FROM fds.p4cm_daily_stock pds
-JOIN vartefact.item_details id ON pds.item_code = id.item_code
+JOIN vartefact.v_forecast_inscope_store_item_details id ON pds.item_code = id.item_code
 	AND pds.sub_code = id.sub_code
 	AND pds.dept_code = id.dept_code
-WHERE date_key = '{0}'
+    AND pds.store_code = id.store_code
+WHERE pds.date_key = '{0}'

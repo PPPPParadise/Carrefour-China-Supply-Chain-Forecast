@@ -123,7 +123,7 @@ object ProcessLogic {
 
       activeItemEntities.write.format("parquet")
         .mode("overwrite")
-        .saveAsTable("vartefact." + modelRun.viewName)
+        .saveAsTable("temp." + modelRun.viewName)
 
       // Find the actual stock level
       val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.flowType,
@@ -134,10 +134,14 @@ object ProcessLogic {
       outputSb.append(outputLine).append(",")
 
       // Get DM orders to be delivered
-      val dmOrdersMap = getDmOrderMap(modelRun, startDateStr, endDateStr, spark)
+      val dmOrdersMap = QueryUtil.getDmOrderMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.isSimulation,
+        modelRun.viewName, spark)
 
       // Get orders to be delivered
       val onTheWayStockMap = getOnTheWayStockMap(modelRun, startDateStr, endDateStr, spark)
+
+      // Get previously generated order forecast
+      val pastOrderForecastkMap = getPastOrderForecastMap(modelRun, startDateStr, endDateStr, spark)
 
       // Get item stores that having sales prediction and valid for logic
       val orderItemStore = activeItemEntities
@@ -152,6 +156,8 @@ object ProcessLogic {
       val salesPredictionDf = getSalesPrediction(modelRun, dateMapDf, startDateStr, endDateStr, sqlc)
 
       var predictionWithSalesDf = salesPredictionDf
+
+
 
       outputLine = s"Number of sales predictions: ${predictionWithSalesDf.count()}"
       LogUtil.info(outputLine)
@@ -185,7 +191,7 @@ object ProcessLogic {
       // Perform logic for every item store combination
       val resDf = grouppedDf.flatMapGroups((ist, rows) => {
         OrderLogic.generateOrder(ist, rows, runDateStr,
-          modelRun, stockLevelMap, dmOrdersMap, onTheWayStockMap)
+          modelRun, stockLevelMap, dmOrdersMap, onTheWayStockMap, pastOrderForecastkMap)
       })
 
       if (modelRun.isSimulation && modelRun.isDebug) {
@@ -332,7 +338,7 @@ object ProcessLogic {
     */
   private def extractActiveOrderOpportunities(df: DataFrame, modelRun: ModelRun, sqlc: SQLContext): DataFrame = {
 
-    val newDf = df.where("(item_stop_start_date='' and item_stop_start_date='') " +
+    val newDf = df.where("(item_stop_start_date='' and item_stop_end_date='') " +
       "or ( item_stop_start_date!='' and to_timestamp(delivery_date, 'yyyyMMdd') < to_timestamp(item_stop_start_date, 'dd/MM/yyyy')) " +
       "or ( item_stop_end_date!='' and to_timestamp(order_date, 'yyyyMMdd') > to_timestamp(item_stop_end_date, 'dd/MM/yyyy')) ")
 
@@ -405,26 +411,6 @@ object ProcessLogic {
   }
 
   /**
-    * Get orders from DM process
-    * 获取DM订单系统生成的DM订单
-    *
-    * @param modelRun Job run information 脚本运行信息
-    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
-    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
-    * @param spark Spark session
-    * @return DM orders DM 订单
-    */
-  private def getDmOrderMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
-                            spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
-    modelRun.flowType match {
-      case FlowType.XDocking | FlowType.OnStockStore =>
-        QueryUtil.getDmOrderMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName, spark)
-      case FlowType.DC =>
-        Map.empty[ItemEntity, List[Tuple2[String, Double]]]
-    }
-  }
-
-  /**
     * Get on the way order quantity and delivery date
     * 获取在途订单订货量及其抵达日期
     *
@@ -445,6 +431,29 @@ object ProcessLogic {
           QueryUtil.getOnTheWayStockMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName,
             modelRun.orderTableName, spark)
         }
+      }
+
+      case FlowType.DC => {
+        Map.empty
+      }
+    }
+  }
+
+  /**
+    * Get previously generated order forecast
+    * 获取过去生成的订单规划
+    *
+    * @param modelRun Job run information 脚本运行信息
+    * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param spark Spark session
+    * @return On the way order 在途订单
+    */
+  private def getPastOrderForecastMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
+                                  spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+    modelRun.flowType match {
+      case FlowType.XDocking | FlowType.OnStockStore => {
+        Map.empty
       }
 
       case FlowType.DC => {

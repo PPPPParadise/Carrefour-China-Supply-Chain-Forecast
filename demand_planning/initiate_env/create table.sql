@@ -200,6 +200,7 @@ CREATE TABLE vartefact.forecast_dm_orders (
 	item_id INT,
 	sub_id INT,
 	store_code STRING,
+	con_holding STRING,
 	theme_start_date STRING,
 	theme_end_date STRING,
 	npp DECIMAL(15, 4),
@@ -208,7 +209,6 @@ CREATE TABLE vartefact.forecast_dm_orders (
 	ppp_end_date STRING,
 	city_code STRING,
 	dept_code STRING,
-	dept STRING,
 	item_code STRING,
 	sub_code STRING,
 	pcb STRING,
@@ -218,14 +218,37 @@ CREATE TABLE vartefact.forecast_dm_orders (
 	run_date STRING,
 	first_order_date STRING,
 	first_delivery_date STRING,
-	sales_before_order DOUBLE,
-	order_received DOUBLE,
 	regular_sales_before_dm DOUBLE,
 	four_weeks_after_dm DOUBLE,
 	dm_sales DOUBLE,
-	current_store_stock DOUBLE,
 	order_qty INT,
 	order_without_pcb DOUBLE
+	) partitioned by (
+	dm_theme_id INT)
+  stored as parquet;
+  
+CREATE TABLE vartefact.forecast_dm_dc_orders (
+	item_id INT,
+	sub_id INT,
+	con_holding STRING,
+	theme_start_date STRING,
+	theme_end_date STRING,
+	npp DECIMAL(15, 4),
+	ppp DECIMAL(15, 4),
+	ppp_start_date STRING,
+	ppp_end_date STRING,
+	dept_code STRING,
+	item_code STRING,
+	sub_code STRING,
+	ds_supplier_code STRING,
+	rotation STRING,
+	run_date STRING,
+	first_order_date STRING,
+	first_delivery_date STRING,
+	regular_sales_before_dm DOUBLE,
+	four_weeks_after_dm DOUBLE,
+	dm_sales DOUBLE,
+	order_qty INT
 	) partitioned by (
 	dm_theme_id INT)
   stored as parquet;
@@ -284,6 +307,7 @@ CREATE TABLE vartefact.forecast_simulation_dm_orders (
 	item_id INT,
 	sub_id INT,
 	store_code STRING,
+	con_holding STRING,
 	theme_start_date STRING,
 	theme_end_date STRING,
 	npp DECIMAL(15, 4),
@@ -292,7 +316,6 @@ CREATE TABLE vartefact.forecast_simulation_dm_orders (
 	ppp_end_date STRING,
 	city_code STRING,
 	dept_code STRING,
-	dept STRING,
 	item_code STRING,
 	sub_code STRING,
 	pcb STRING,
@@ -302,14 +325,37 @@ CREATE TABLE vartefact.forecast_simulation_dm_orders (
 	run_date STRING,
 	first_order_date STRING,
 	first_delivery_date STRING,
-	sales_before_order DOUBLE,
-	order_received DOUBLE,
 	regular_sales_before_dm DOUBLE,
 	four_weeks_after_dm DOUBLE,
 	dm_sales DOUBLE,
-	current_store_stock DOUBLE,
 	order_qty INT,
 	order_without_pcb DOUBLE
+	) partitioned by (
+	dm_theme_id INT)
+  stored as parquet;
+  
+CREATE TABLE vartefact.forecast_simulation_dm_dc_orders (
+	item_id INT,
+	sub_id INT,
+	con_holding STRING,
+	theme_start_date STRING,
+	theme_end_date STRING,
+	npp DECIMAL(15, 4),
+	ppp DECIMAL(15, 4),
+	ppp_start_date STRING,
+	ppp_end_date STRING,
+	dept_code STRING,
+	item_code STRING,
+	sub_code STRING,
+	ds_supplier_code STRING,
+	rotation STRING,
+	run_date STRING,
+	first_order_date STRING,
+	first_delivery_date STRING,
+	regular_sales_before_dm DOUBLE,
+	four_weeks_after_dm DOUBLE,
+	dm_sales DOUBLE,
+	order_qty INT
 	) partitioned by (
 	dm_theme_id INT)
   stored as parquet;
@@ -384,20 +430,17 @@ AS
 				fsr.item_id,
 				fsr.sub_id,
 				fsr.store_code,
-				fsr.flow_type,
 				max(fsr.run_date) AS max_run_date
 			FROM vartefact.forecast_simulation_result fsr
 			GROUP BY fsr.date_key,
 				fsr.item_id,
 				fsr.sub_id,
-				fsr.store_code,
-				fsr.flow_type
+				fsr.store_code
 			) t ON r.item_id = t.item_id
 			AND r.sub_id = t.sub_id
 			AND r.store_code = t.store_code
 			AND r.date_key = t.date_key
 			AND r.run_date = t.max_run_date
-			AND r.flow_type = t.flow_type
 		)
 
 CREATE VIEW vartefact.v_forecast_simulation_stock
@@ -417,20 +460,17 @@ AS
 				fsr.item_id,
 				fsr.sub_id,
 				fsr.store_code,
-				fsr.flow_type,
 				max(fsr.run_date) AS max_run_date
 			FROM vartefact.forecast_simulation_result fsr
 			GROUP BY fsr.date_key,
 				fsr.item_id,
 				fsr.sub_id,
-				fsr.store_code,
-				fsr.flow_type
+				fsr.store_code
 			) t ON r.item_id = t.item_id
 			AND r.sub_id = t.sub_id
 			AND r.store_code = t.store_code
 			AND r.date_key = t.date_key
 			AND r.run_date = t.max_run_date
-			AND r.flow_type = t.flow_type
 		)
 
 
@@ -456,3 +496,101 @@ AS
 			AND o.order_day = t.order_day
 			AND o.run_date = t.max_run_date
 		)
+        
+CREATE view vartefact.v_forecast_daily_onstock_order_items AS
+SELECT
+    *
+from
+    (
+        select
+            distinct id.dept_code,
+            id.item_code,
+            id.sub_code,
+            id.con_holding,
+            mp.store_code,
+            id.flow_type,
+            id.rotation,
+            id.ds_supplier_code,
+            id.dc_supplier_code,
+            ord.date_key as order_day,
+            trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
+            trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date
+        from
+            vartefact.forecast_item_details id
+            join vartefact.forecast_stores_dept fsd on fsd.dept_code = id.dept_code
+            and id.item_status != 'Stop'
+            and fsd.remarks != 'Close'
+            and fsd.store_code != '812'
+            join vartefact.onstock_order_delivery_mapping mp on mp.dept_code = fsd.dept_code
+            and id.rotation = mp.`class`
+            and mp.store_code = fsd.store_code
+            join vartefact.forecast_calendar ord on ord.weekday_short = mp.order_weekday
+            left join vartefact.forecast_p4cm_store_item stp on id.item_code = stp.item_code
+            and id.sub_code = stp.sub_code
+            and mp.store_code = stp.store_code
+            and id.dept_code = stp.dept_code
+            and stp.date_key = ord.date_key
+    ) t
+where
+    (
+        item_stop_start_date = ''
+        and item_stop_end_date = ''
+    )
+    OR (
+        item_stop_start_date != ''
+        and to_timestamp(order_day, 'yyyyMMdd') < to_timestamp(item_stop_start_date, 'dd/MM/yyyy')
+    )
+    OR (
+        item_stop_end_date != ''
+        and to_timestamp(order_day, 'yyyyMMdd') > to_timestamp(item_stop_end_date, 'dd/MM/yyyy')
+    )
+                 
+                 
+CREATE view vartefact.v_forecast_daily_xdock_order_items AS
+SELECT
+    *
+from
+    (
+        select
+            distinct id.dept_code,
+            id.item_code,
+            id.sub_code,
+            id.con_holding,
+            fsd.store_code,
+            id.flow_type,
+            id.rotation,
+            id.ds_supplier_code,
+            id.dc_supplier_code,
+            ord.date_key as order_day,
+            trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
+            trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date
+        from
+            vartefact.forecast_item_details id
+            join vartefact.xdock_order_delivery_mapping xo on id.flow_type = 'Xdock'
+            and xo.item_code = id.item_code
+            and xo.sub_code = id.sub_code
+            and xo.dept_code = id.dept_code
+            and id.item_status != 'Stop'
+            join vartefact.forecast_stores_dept fsd on fsd.dept_code = id.dept_code
+            and fsd.remarks != 'Close'
+            and fsd.store_code != '812'
+            join vartefact.forecast_calendar ord on ord.iso_weekday = xo.order_weekday
+            left join vartefact.forecast_p4cm_store_item stp on id.item_code = stp.item_code
+            and id.sub_code = stp.sub_code
+            and fsd.store_code = stp.store_code
+            and id.dept_code = stp.dept_code
+            and stp.date_key = ord.date_key
+    ) t
+where
+    (
+        item_stop_start_date = ''
+        and item_stop_end_date = ''
+    )
+    OR (
+        item_stop_start_date != ''
+        and to_timestamp(order_day, 'yyyyMMdd') < to_timestamp(item_stop_start_date, 'dd/MM/yyyy')
+    )
+    OR (
+        item_stop_end_date != ''
+        and to_timestamp(order_day, 'yyyyMMdd') > to_timestamp(item_stop_end_date, 'dd/MM/yyyy')
+    )

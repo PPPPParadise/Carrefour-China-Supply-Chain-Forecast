@@ -9,15 +9,6 @@ from os.path import abspath
 import numpy as np
 
 
-def get_store_dm_qty(first_dm_order_qty, supplier_code, pcb):
-    if supplier_code == 'KSSE':
-        pcb = 1
-    if supplier_code == 'KXS1':
-        pcb = 1
-
-    return np.ceil(first_dm_order_qty / pcb) * pcb
-
-
 def store_order_file_process(date_str, record_folder, output_path, store_order_filename):
     warehouse_location = abspath('spark-warehouse')
     os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
@@ -91,7 +82,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         ord.order_qty,
         ord.order_without_pcb,
         ord.delivery_day,
-        cast(0.75 * dm.order_qty as DOUBLE) as first_dm_order_qty,
+        dm.first_dm_order_qty,
         dm.order_without_pcb as dm_order_qty_without_pcb,
         dm.pcb,
         dm.ppp,
@@ -111,11 +102,10 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         AND osi.item_code = dm.item_code
         AND osi.sub_code =  dm.sub_code
         AND dm.first_order_date = '{0}'
-    LEFT JOIN vartefact.monitor_service_level_item_dc sl
+    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
         and  ord.dept_code = sl.dept_code
-        and  sl.date_key='{0}'
         """.replace("\n", " ").format(run_date.strftime("%Y%m%d"))
 
     onstock_store_df = sqlc.sql(onstock_store_sql)
@@ -127,12 +117,9 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     onstock_store['order_qty_without_pcb'] = onstock_store['order_without_pcb'].fillna(0)
 
-    onstock_store['first_dm_order_qty'] = onstock_store['first_dm_order_qty'].fillna(0)
+    onstock_store['dm_order_qty'] = onstock_store['first_dm_order_qty'].fillna(0)
 
     onstock_store['pcb'] = onstock_store['pcb'].fillna(1)
-
-    onstock_store['dm_order_qty'] = onstock_store.apply(
-        lambda x: get_store_dm_qty(x.first_dm_order_qty, x.supplier_code, x.pcb), axis=1)
 
     onstock_store['dm_order_qty_without_pcb'] = onstock_store['dm_order_qty_without_pcb'].fillna(0)
 
@@ -196,7 +183,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.npp,
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
-        cast(dc.qty_per_pack as DOUBLE) AS qty_per_pack
+        cast(dc.qty_per_box as DOUBLE) AS qty_per_box
     FROM xdock_items osi
     LEFT JOIN vartefact.forecast_xdock_orders ord
         ON osi.store_code = ord.store_code
@@ -210,11 +197,10 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         AND osi.item_code = dm.item_code
         AND osi.sub_code =  dm.sub_code
         AND dm.first_order_date = '{0}'
-    LEFT JOIN vartefact.monitor_service_level_item_dc sl
+    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
         and  ord.dept_code = sl.dept_code
-        and  sl.date_key='{0}'
     JOIN vartefact.forecast_dc_item_details dc 
         ON ord.item_code = dc.item_code
         AND ord.sub_code = dc.sub_code
@@ -228,9 +214,9 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     xdock_order = xdock_df.toPandas()
 
     # +
-    onstock_store['order_qty'] = onstock_store['order_qty'].fillna(0)
+    xdock_order['order_qty'] = xdock_order['order_qty'].fillna(0)
 
-    onstock_store['order_qty_without_pcb'] = onstock_store['order_without_pcb'].fillna(0)
+    xdock_order['order_qty_without_pcb'] = xdock_order['order_without_pcb'].fillna(0)
 
     xdock_order['dm_order_qty'] = xdock_order['dm_order_qty'].fillna(0)
 
@@ -243,8 +229,8 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     xdock_order['order_qty_with_sl'] = np.round((xdock_order['order_qty'] + xdock_order['dm_order_qty'])
                                                 * (2 - xdock_order['service_level']), 2)
 
-    xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_pack']) * xdock_order[
-        'qty_per_pack']
+    xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_box']) * xdock_order[
+        'qty_per_box']
 
     # +
     wb = Workbook()
@@ -272,6 +258,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     sc.stop()
 
 
+
 def dc_order_file_process(date_str, record_folder, output_path, dc_order_filename):
     warehouse_location = abspath('spark-warehouse')
     os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
@@ -291,7 +278,7 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
     sqlc = SQLContext(sc)
 
     run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
-
+    
     # -
     dc_sql = """
     SELECT ord.dept_code,
@@ -300,6 +287,8 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
         ord.sub_code,
         ord.order_qty,
         ord.delivery_day,
+        dm.order_qty as dm_order_qty,
+        dm.npp,
         cast(sl.service_level AS DOUBLE) service_level,
         cast(dc.qty_per_unit AS float) AS qty_per_unit,
         dc.order_uint,
@@ -307,10 +296,12 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
         dc.item_name_local,
         dc.current_warehouse
     FROM vartefact.forecast_dc_orders ord
-    LEFT JOIN vartefact.monitor_service_level_item_dc sl ON ord.item_code = sl.item_code
+    LEFT JOIN vartefact.forecast_dm_dc_orders dm ON ord.item_id = dm.item_id
+        AND ord.sub_id = dm.sub_id
+        AND dm.first_order_date = '{0}'
+    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl ON ord.item_code = sl.item_code
         AND ord.sub_code = sl.sub_code
         AND ord.dept_code = sl.dept_code
-        AND sl.date_key = '{0}'
     JOIN vartefact.forecast_dc_item_details dc ON ord.item_code = dc.item_code
         AND ord.sub_code = dc.sub_code
         AND ord.dept_code = dc.dept_code
@@ -322,8 +313,12 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
     dc_orders = dc_df.toPandas()
 
     dc_orders['service_level'] = dc_orders['service_level'].fillna(1)
+    
+    dc_orders['order_qty'] = dc_orders['order_qty'].fillna(0)
 
-    dc_orders['order_qty_with_sl'] = np.round(dc_orders['order_qty'] * (2 - dc_orders['service_level']), 2)
+    dc_orders['dm_order_qty'] = dc_orders['dm_order_qty'].fillna(0)
+
+    dc_orders['order_qty_with_sl'] = np.round((dc_orders['order_qty'] + dc_orders['dm_order_qty']) * (2 - dc_orders['service_level']), 2)
 
     dc_orders['order_qty_by_unit'] = np.ceil(dc_orders['order_qty_with_sl'] / dc_orders['qty_per_unit'])
 
@@ -333,6 +328,7 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
     ws.append(
         ['Supplier Code', 'Warehouse', 'Delivery Date', 'Item Code', 'Item Name', 'Item Name Local', 'POQ quantity',
          'Purchase Quantity', 'Unit', 'Intend Purchase Qty', 'Qty without service level', 'Qty per Unit',
+         'Regular Order (in Pieces)','DM Order (In Pieces)',
          'Purchase Price', 'Purchase Amount', 'Unit DC Discount',
          'Unit % discount', 'Additional free goods', 'NPP', 'Main barcode'])
 
@@ -342,7 +338,8 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
                    ord.item_name_english, ord.item_name_local, '',
                    ord.order_qty_by_unit, ord.order_uint, ord.order_qty_with_sl,
                    ord.order_qty, ord.qty_per_unit,
-                   '', '', '', '', '', '', ''])
+                   ord.order_qty, ord.dm_order_qty,
+                   '', '', '', '', '', ord.npp, ''])
 
     wb.save(record_folder + '/' + dc_order_filename)
 

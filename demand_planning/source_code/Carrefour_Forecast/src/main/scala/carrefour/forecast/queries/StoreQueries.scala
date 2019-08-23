@@ -21,30 +21,29 @@ object StoreQueries {
           id.con_holding,
           mp.store_code,
           mp.store_code as entity_code,
-          id.flow_type,
           id.rotation,
-          cast(id.pcb as double) pcb,
+          cast(id.qty_per_unit as double) as pcb,
           id.dc_supplier_code as supplier_code,
           ord.date_key AS run_date,
           dsdt.delivery_time,
-          fsd.dept
-      from vartefact.forecast_item_details id
-      join vartefact.forecast_stores_dept fsd
-          on fsd.dept_code = id.dept_code
-      join vartefact.onstock_order_delivery_mapping mp
-          on mp.dept_code = fsd.dept_code and id.rotation = mp.`class`
-          and mp.store_code = fsd.store_code
+          id.repl_type,
+          id.min_stock
+      from vartefact.v_forecast_inscope_store_item_details id
+      join vartefact.forecast_onstock_order_delivery_mapping mp
+          on id.dept_code = mp.dept_code
+          and id.rotation = mp.rotation
+          and id.store_code = mp.store_code
       join vartefact.forecast_stores_delv_time  dsdt
-          on fsd.store_code = dsdt.store_code
+          on id.store_code = dsdt.store_code
       join vartefact.forecast_calendar ord
           on ord.date_key = '${startDateStr}'
-          and ord.weekday_short = mp.order_weekday
+          and ord.iso_weekday = mp.order_iso_weekday
       join vartefact.forecast_item_code_id_stock icis
           on icis.date_key = '${stockDateStr}'
           and id.item_code = icis.item_code
           and id.sub_code = icis.sub_code
           and id.dept_code = icis.dept_code
-          and fsd.store_code = icis.store_code
+          and id.store_code = icis.store_code
   """
   }
 
@@ -61,49 +60,45 @@ object StoreQueries {
   def getOnStockStoreInScopeOrderDaysSql(stockDateStr: String,
                                          startDateStr: String, endDateStr: String, viewName: String): String = {
     s"""
-    SELECT
-      itmd.item_id,
-      itmd.sub_id,
-      itmd.dept_code,
-      itmd.item_code,
-      itmd.sub_code,
-      itmd.con_holding,
-      itmd.store_code,
-      itmd.entity_code,
-      itmd.supplier_code,
-      itmd.rotation,
-      itmd.pcb,
-      itmd.delivery_time,
-      ord.date_key,
-      ord.date_key AS order_date,
-      dev.date_key AS delivery_date,
-      ord.weekday_short as order_weekday,
-      dev.weekday_short as delivery_weekday,
-      trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
-      trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date,
-      stp.shelf_capacity,
-      opi.ittreplentyp,
-      opi.ittminunit
-  from ${viewName} itmd
-  join vartefact.onstock_order_delivery_mapping mp
-      on mp.dept_code = itmd.dept_code
-      and itmd.rotation = mp.`class`
-      and mp.store_code = itmd.store_code
-  join vartefact.forecast_calendar ord
-      on ord.weekday_short = mp.order_weekday
-  join  vartefact.forecast_calendar dev
-      on dev.weekday_short = mp.delivery_weekday and dev.week_index = ord.week_index + mp.week_shift
-  join ods.p4md_itmsto opi
-      on cast(opi.ittitmid as INT) = itmd.item_id
-      and opi.ittstocd = itmd.store_code
-      and opi.ittreplentyp <> 1
-  join vartefact.forecast_p4cm_store_item stp
-      on itmd.item_code = stp.item_code
-      and itmd.sub_code = stp.sub_code
-      and itmd.store_code = stp.store_code
-      and itmd.dept_code = stp.dept_code
-      and stp.date_key = '${startDateStr}'
-  where ord.date_key>='${startDateStr}' and dev.date_key <='${endDateStr}'
+      SELECT
+        itmd.item_id,
+        itmd.sub_id,
+        itmd.dept_code,
+        itmd.item_code,
+        itmd.sub_code,
+        itmd.con_holding,
+        itmd.store_code,
+        itmd.entity_code,
+        itmd.supplier_code,
+        itmd.rotation,
+        itmd.pcb,
+        itmd.delivery_time,
+        ord.date_key,
+        ord.date_key AS order_date,
+        dev.date_key AS delivery_date,
+        ord.weekday_short as order_weekday,
+        dev.weekday_short as delivery_weekday,
+        trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
+        trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date,
+        stp.shelf_capacity,
+        cast(itmd.repl_type as INT) as ittreplentyp,
+        cast(itmd.min_stock as INT) as ittminunit
+    from ${viewName} itmd
+    join vartefact.forecast_onstock_order_delivery_mapping mp
+        on mp.dept_code = itmd.dept_code
+        and mp.rotation = itmd.rotation
+        and mp.store_code = itmd.store_code
+    join vartefact.forecast_calendar ord
+        on ord.iso_weekday = mp.order_iso_weekday
+    join  vartefact.forecast_calendar dev
+        on dev.iso_weekday = mp.delivery_iso_weekday and dev.week_index = ord.week_index + mp.week_shift
+    join vartefact.forecast_p4cm_store_item stp
+        on itmd.item_code = stp.item_code
+        and itmd.sub_code = stp.sub_code
+        and itmd.store_code = stp.store_code
+        and itmd.dept_code = stp.dept_code
+        and stp.date_key = '${startDateStr}'
+    where ord.date_key>='${startDateStr}' and dev.date_key <='${endDateStr}'
       """
   }
 
@@ -124,33 +119,33 @@ object StoreQueries {
         id.item_code,
         id.sub_code,
         id.con_holding,
-        fsd.store_code,
-        fsd.store_code as entity_code,
-        id.flow_type,
+        id.risk_item_unilever,
+        id.store_code,
+        id.store_code as entity_code,
         id.rotation,
-        cast(id.pcb as double) pcb,
+        cast(id.qty_per_unit as double) as pcb,
         id.dc_supplier_code as supplier_code,
         ord.date_key AS run_date,
-        dsdt.delivery_time
-    from vartefact.forecast_item_details id
-    join vartefact.xdock_order_delivery_mapping xo
-        on id.flow_type = 'Xdock'
-        and xo.item_code = id.item_code
+        dsdt.delivery_time,
+        id.repl_type,
+        id.min_stock
+    from vartefact.v_forecast_inscope_store_item_details id
+    join vartefact.forecast_xdock_order_mapping xo
+        on xo.item_code = id.item_code
         and xo.sub_code = id.sub_code
         and xo.dept_code = id.dept_code
-    join vartefact.forecast_stores_dept fsd
-        on fsd.dept_code = id.dept_code
+        and xo.store_code = id.store_code
     join vartefact.forecast_stores_delv_time dsdt
-        on fsd.store_code = dsdt.store_code
+        on id.store_code = dsdt.store_code
     join vartefact.forecast_calendar ord
         on ord.date_key = '${startDateStr}'
-        and ord.iso_weekday = xo.order_weekday
+        and ord.iso_weekday = xo.order_iso_weekday
     join vartefact.forecast_item_code_id_stock icis
         on icis.date_key = '${stockDateStr}'
         and id.item_code = icis.item_code
         and id.sub_code = icis.sub_code
         and id.dept_code = icis.dept_code
-        and fsd.store_code = icis.store_code
+        and id.store_code = icis.store_code
     """
   }
 
@@ -182,33 +177,40 @@ object StoreQueries {
         itmd.delivery_time,
         ord.date_key,
         ord.date_key AS order_date,
-        dev.date_key AS delivery_date,
+        date_format(
+            date_add(
+                to_timestamp(dodm.delivery_date, 'yyyyMMdd'), xo.dc_to_store_time
+                ),
+            'yyyyMMdd'
+        ) AS delivery_date,
         ord.weekday_short as order_weekday,
-        dev.weekday_short as delivery_weekday,
+        "" as delivery_weekday,
         trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
         trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date,
         stp.shelf_capacity,
-        opi.ittreplentyp,
-        opi.ittminunit
+        cast(itmd.repl_type as INT) as ittreplentyp,
+        cast(itmd.min_stock as INT) as ittminunit
     from ${viewName} itmd
-    join vartefact.xdock_order_delivery_mapping xo
+    join vartefact.forecast_xdock_order_mapping xo
         on itmd.item_code = xo.item_code
         and itmd.sub_code = xo.sub_code
         and itmd.dept_code = xo.dept_code
+        and itmd.store_code = xo.store_code
     join vartefact.forecast_calendar ord
-        on ord.iso_weekday = xo.order_weekday
-    join vartefact.forecast_calendar dev
-        on dev.iso_weekday = xo.delivery_weekday and dev.week_index = ord.week_index + xo.week_shift
-    join ods.p4md_itmsto opi
-        on cast(opi.ittitmid as INT) = itmd.item_id
-        and opi.ittstocd = itmd.store_code
+        on ord.iso_weekday = xo.order_iso_weekday
+    join vartefact.forecast_dc_order_delivery_mapping dodm
+        on dodm.con_holding = itmd.con_holding
+        and dodm.order_date = ord.date_key
+        and dodm.risk_item_unilever = itmd.risk_item_unilever
     join vartefact.forecast_p4cm_store_item stp
         on itmd.item_code = stp.item_code
         and itmd.sub_code = stp.sub_code
         and itmd.dept_code = stp.dept_code
         and itmd.store_code = stp.store_code
         and stp.date_key = '${startDateStr}'
-    where ord.date_key>='${startDateStr}' and dev.date_key <='${endDateStr}'
+    where ord.date_key>='${startDateStr}'
+        and date_add(to_timestamp(dodm.delivery_date, 'yyyyMMdd'), xo.dc_to_store_time)
+         <= to_timestamp('${endDateStr}', 'yyyyMMdd')
     """
   }
 
@@ -263,8 +265,16 @@ object StoreQueries {
         fcst.sub_id,
         fcst.store_code as entity_code,
         fcst.date_key,
-        sum(fcst.daily_sales_prediction) as daily_sales_prediction
-    FROM temp.t_forecast_daily_sales_prediction fcst
+        sum (
+        case when
+          fcst.daily_sales_prediction_original < 0.2 and itmd.rotation = 'X'
+        then 0
+        when
+          itmd.rotation = 'X'
+        then fcst.daily_sales_prediction_original
+        else fcst.daily_sales_prediction
+        end ) as daily_sales_prediction
+    FROM temp.t_forecast_simulation_daily_sales_prediction fcst
     join ${viewName} itmd
         on fcst.item_id = itmd.item_id
         and fcst.sub_id = itmd.sub_id
@@ -293,7 +303,7 @@ object StoreQueries {
         dm.sub_id,
         dm.store_code as entity_code,
         dm.first_delivery_date,
-        cast(sum(dm.order_qty) as DOUBLE) as dm_order_qty
+        cast(sum(dm.first_dm_order_qty) as DOUBLE) as dm_order_qty
     FROM vartefact.forecast_dm_orders dm
     join ${viewName} itmd
         on dm.item_id = itmd.item_id

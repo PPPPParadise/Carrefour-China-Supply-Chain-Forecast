@@ -1,5 +1,4 @@
 import datetime
-import os
 from datetime import timedelta
 from os.path import abspath
 
@@ -31,7 +30,7 @@ def insert_script_run(date_str, status, parameter, output_str, info_str, error_s
 def dm_order_simulation(date_str):
     warehouse_location = abspath('spark-warehouse')
 
-    print_output(f'\n\n\n Forecast simulation process for DM start with input date {date_str} \n\n\n')
+    print_output(f'\n Forecast simulation process for DM start with input date {date_str} \n')
 
     # for logging
     output_str = ""
@@ -40,12 +39,12 @@ def dm_order_simulation(date_str):
     spark = SparkSession.builder \
         .appName("Forecast process for DM") \
         .config("spark.sql.warehouse.dir", warehouse_location) \
-        .config("spark.driver.memory", '16g') \
-        .config("spark.executor.memory", '16g') \
-        .config("spark.num.executors", '12') \
+        .config("spark.driver.memory", '6g') \
+        .config("spark.executor.memory", '6g') \
+        .config("spark.num.executors", '14') \
         .config("hive.exec.compress.output", 'false') \
-        .config("spark.sql.broadcastTimeout", 7200)\
-        .config("spark.sql.autoBroadcastJoinThreshold", -1)\
+        .config("spark.sql.broadcastTimeout", 7200) \
+        .config("spark.sql.autoBroadcastJoinThreshold", -1) \
         .enableHiveSupport() \
         .getOrCreate()
 
@@ -58,10 +57,10 @@ def dm_order_simulation(date_str):
     run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
 
     # starting day of the DM calculation period
-    start_date = run_date + timedelta(weeks=2)
+    start_date = run_date + timedelta(weeks=4)
 
     # end day of the DM calculation period
-    end_date = run_date + timedelta(weeks=7)
+    end_date = run_date + timedelta(weeks=5)
 
     stock_date = run_date + timedelta(days=-1)
 
@@ -69,7 +68,7 @@ def dm_order_simulation(date_str):
                 + ", DM start date:" + start_date.strftime("%Y%m%d") \
                 + ", DM end date:" + end_date.strftime("%Y%m%d")
 
-    print_output(f"Load DM items and stores for range {start_date} to {end_date}")
+    print_output(f"Load DM items and stores for DM that starts between {start_date} and {end_date}")
 
     dm_item_store_sql = \
         """
@@ -81,9 +80,14 @@ def dm_order_simulation(date_str):
             del.ppp_start_date,
             del.ppp_end_date,
             del.city_code,
-            fsd.store_code,
-            fsd.dept_code,
-            fsd.dept,
+            id.store_code,
+            del.dept_code,
+            id.con_holding,
+            id.risk_item_unilever,
+            cast(id.qty_per_unit as int) as pcb,
+            id.dc_supplier_code,
+            id.ds_supplier_code,
+            id.rotation,
             icis.item_id,
             icis.sub_id,
             icis.item_code,
@@ -93,15 +97,22 @@ def dm_order_simulation(date_str):
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
         JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
-        JOIN vartefact.forecast_stores_dept fsd ON ps.stostocd = fsd.store_code
-        JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
+        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
             AND del.item_code = CONCAT (
-                icis.dept_code,
-                icis.item_code
+                id.dept_code,
+                id.item_code
                 )
-            AND del.sub_code = icis.sub_code
-            AND fsd.dept_code = icis.dept_code
-            AND fsd.store_code = icis.store_code
+            AND del.sub_code = id.sub_code
+            AND del.dept_code = id.dept_code
+            AND id.store_status != 'Stop' 
+            AND id.repl_type != '1' 
+            AND id.seasonal = 'No'
+            AND id.dc_status != 'Stop'
+        JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
+            AND id.item_code = icis.item_code
+            AND id.sub_code = icis.sub_code
+            AND id.dept_code = icis.dept_code
+            AND id.store_code = icis.store_code
         LEFT JOIN vartefact.forecast_simulation_dm_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
             AND icis.dept_code = fdo.dept_code
             AND icis.item_code = fdo.item_code
@@ -109,7 +120,7 @@ def dm_order_simulation(date_str):
             AND icis.store_code = fdo.store_code
         WHERE del.extract_order = 50
             AND ndt.theme_start_date >= '{1}'
-            AND ndt.theme_end_date <= '{2}'
+            AND ndt.theme_start_date < '{2}'
         """.replace("\n", " ")
 
     dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
@@ -150,8 +161,6 @@ def dm_order_simulation(date_str):
         insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
         return
 
-    dm_item_store_df.write.mode("overwrite").format("parquet").saveAsTable("vartefact.tmp_dm_item_store")
-
     dm_item_store_df.createOrReplaceTempView("dm_item_store")
 
     # # The first order day within PPP period
@@ -161,23 +170,17 @@ def dm_order_simulation(date_str):
         SELECT dis.item_id,
             dis.sub_id,
             dis.store_code,
-            id.pcb,
-            id.dc_supplier_code,
-            id.ds_supplier_code,
-            id.rotation,
             ord.date_key AS first_order_date,
             dev.date_key AS first_delivery_date
         FROM dm_item_store dis
-        JOIN vartefact.forecast_item_details id ON id.item_code = dis.item_code
-            AND id.sub_code = dis.sub_code
-            AND id.dept_code = dis.dept_code
-        JOIN vartefact.onstock_order_delivery_mapping mp ON mp.dept_code = dis.dept_code
-            AND id.rotation = mp.`class`
-            AND mp.store_code = dis.store_code
-        JOIN vartefact.forecast_calendar ord ON ord.weekday_short = mp.order_weekday
-        JOIN vartefact.forecast_calendar dev ON dev.weekday_short = mp.delivery_weekday
+        JOIN vartefact.forecast_onstock_order_delivery_mapping mp ON dis.dept_code = mp.dept_code
+            AND dis.rotation = mp.rotation
+            AND dis.store_code = mp.store_code
+        JOIN vartefact.forecast_calendar ord ON ord.iso_weekday = mp.order_iso_weekday
+        JOIN vartefact.forecast_calendar dev ON dev.iso_weekday = mp.delivery_iso_weekday
             AND dev.week_index = ord.week_index + mp.week_shift
         WHERE to_timestamp(ord.date_key, 'yyyyMMdd') >= to_timestamp(dis.ppp_start_date, 'yyyy-MM-dd')
+            AND to_timestamp(dev.date_key, 'yyyyMMdd') >= date_add(to_timestamp(dis.theme_start_date, 'yyyy-MM-dd'), -7)
             AND dev.date_key <= '{0}'
         """.replace("\n", " ")
 
@@ -190,24 +193,24 @@ def dm_order_simulation(date_str):
         SELECT dis.item_id,
             dis.sub_id,
             dis.store_code,
-            id.pcb,
-            id.dc_supplier_code,
-            id.ds_supplier_code,
-            id.rotation,
             ord.date_key AS first_order_date,
-            dev.date_key AS first_delivery_date
+            date_format(
+                date_add(
+                    to_timestamp(dodm.delivery_date, 'yyyyMMdd'), xo.dc_to_store_time
+                    ),
+                'yyyyMMdd'
+            ) AS first_delivery_date
         FROM dm_item_store dis
-        JOIN vartefact.forecast_item_details id ON id.item_code = dis.item_code
-            AND id.sub_code = dis.sub_code
-            AND id.dept_code = dis.dept_code
-        JOIN vartefact.xdock_order_delivery_mapping xo ON dis.item_code = xo.item_code
+        JOIN vartefact.forecast_xdock_order_mapping xo ON dis.item_code = xo.item_code
             AND dis.sub_code = xo.sub_code
             AND dis.dept_code = xo.dept_code
-        JOIN vartefact.forecast_calendar ord ON ord.iso_weekday = xo.order_weekday
-        JOIN vartefact.forecast_calendar dev ON dev.iso_weekday = xo.delivery_weekday
-            AND dev.week_index = (ord.week_index + xo.week_shift)
+            AND dis.store_code = xo.store_code
+        JOIN vartefact.forecast_calendar ord ON ord.iso_weekday = xo.order_iso_weekday
+        JOIN vartefact.forecast_dc_order_delivery_mapping dodm ON dodm.con_holding = dis.con_holding
+            AND dodm.order_date = ord.date_key
+            AND dis.risk_item_unilever = dodm.risk_item_unilever
         WHERE to_timestamp(ord.date_key, 'yyyyMMdd') >= to_timestamp(dis.ppp_start_date, 'yyyy-MM-dd')
-            AND dev.date_key <= '{0}'
+            AND date_add(to_timestamp(dodm.delivery_date, 'yyyyMMdd'), xo.dc_to_store_time)  <= to_timestamp('{0}', 'yyyyMMdd')
         """.replace("\n", " ")
 
     xdock_order_sql = xdock_order_sql.format(end_date.strftime("%Y%m%d"))
@@ -220,8 +223,7 @@ def dm_order_simulation(date_str):
         agg(F.min("first_order_date").alias("first_order_date"))
 
     first_order_deliver_df = order_deliver_df \
-        .select(['item_id', 'sub_id', 'store_code', 'pcb', 'dc_supplier_code', 'ds_supplier_code',
-                 'rotation', 'first_order_date', 'first_delivery_date']) \
+        .select(['item_id', 'sub_id', 'store_code', 'first_order_date', 'first_delivery_date']) \
         .join(first_order_df, ['item_id', 'sub_id', 'store_code', 'first_order_date'])
 
     dm_item_store_order_df = dm_item_store_df \
@@ -238,160 +240,28 @@ def dm_order_simulation(date_str):
 
     dm_sales_predict_sql = \
         """
-        SELECT dm.*,
-            cast(pred.sales_prediction AS DOUBLE) AS dm_sales
-        FROM temp.v_forecast_dm_sales_prediction pred
-        JOIN dm_item_store_order dm ON cast(pred.item_id AS INT) = dm.item_id
-            AND cast(pred.sub_id AS INT) = dm.sub_id
-            AND cast(pred.current_dm_theme_id AS INT) = dm.dm_theme_id
-            AND pred.store_code = dm.store_code
+        select 
+          dm.*,
+          cast(coalesce(pred.sales_prediction, '0', pred.sales_prediction) as double) as dm_sales,
+          coalesce(pred.sales_prediction, 'no', 'yes') as having_dm_prediction
+        from 
+            dm_item_store_order dm
+        left join temp.v_forecast_simulation_dm_sales_prediction pred
+            on cast(pred.item_id as int) = dm.item_id
+            and cast(pred.sub_id as int) = dm.sub_id
+            and cast(pred.current_dm_theme_id as int) = dm.dm_theme_id
+            and pred.store_code = dm.store_code
         """.replace("\n", " ")
 
     dm_prediction = sqlc.sql(dm_sales_predict_sql)
+    
+    dm_prediction.filter("having_dm_prediction = 'no' ").write.mode("overwrite").format("parquet").saveAsTable("vartefact.forecast_no_dm_prediction")
 
     dm_prediction.createOrReplaceTempView("dm_prediction")
-
-    dm_prediction.write.mode("overwrite").format("parquet").saveAsTable("vartefact.tmp_dm_prediction")
 
     output_line = f"Number of DM sales prediction {dm_prediction.count()}"
     print_output(output_line)
     output_str = output_str + output_line + ","
-
-    # # Get store stock level
-    actual_stock_sql = \
-        """
-        SELECT icis.item_id,
-            icis.sub_id,
-            icis.store_code,
-            dp.rotation,
-            CASE
-              WHEN fss.day_end_stock_with_actual IS NULL
-                THEN cast(icis.balance_qty AS DOUBLE)
-              ELSE fss.day_end_stock_with_actual
-            END AS current_store_stock,
-            cast(stp.shelf_capacity as double) as shelf_capacity,
-            cast(opi.ittreplentyp as int) as ittreplentyp,
-            cast(opi.ittminunit as double) as ittminunit
-        FROM dm_prediction dp
-        JOIN vartefact.forecast_item_code_id_stock icis ON icis.item_id = dp.item_id
-            AND icis.sub_id = dp.sub_id
-            AND icis.store_code = dp.store_code
-            AND icis.date_key = {0}
-        LEFT OUTER JOIN vartefact.v_forecast_simulation_stock fss
-            ON icis.item_id = fss.item_id
-            AND icis.sub_id = fss.sub_id
-            AND icis.store_code = fss.store_code
-            AND fss.date_key = '{0}'
-        JOIN ods.p4md_itmsto opi ON cast(opi.ittitmid AS INT) = dp.item_id
-            AND opi.ittstocd = dp.store_code
-        JOIN vartefact.forecast_p4cm_store_item stp ON icis.item_code = stp.item_code
-            AND dp.sub_code = stp.sub_code
-            AND dp.dept_code = stp.dept_code
-            AND dp.store_code = stp.store_code
-            AND stp.date_key = '{1}'
-        """.replace("\n", " ")
-
-    actual_stock_sql = actual_stock_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"))
-
-    actual_stock = sqlc.sql(actual_stock_sql)
-
-    actual_stock = \
-        actual_stock.withColumn("initial_minumum_stock",
-                                F.when((actual_stock.ittreplentyp == 1) | (actual_stock.ittreplentyp == 4),
-                                       actual_stock.shelf_capacity)
-                                .when(actual_stock.ittreplentyp == 3,
-                                      actual_stock.ittminunit))
-
-    actual_stock = \
-        actual_stock.withColumn("minumum_stock",
-                                F.when((actual_stock.initial_minumum_stock == 0)
-                                       | F.isnull(actual_stock.initial_minumum_stock),
-                                       F.when(actual_stock.rotation == 'A', 8)
-                                       .when(actual_stock.rotation == 'B', 6)
-                                       .when(actual_stock.rotation == 'X', 2))
-                                .otherwise(actual_stock.initial_minumum_stock))
-
-    actual_stock = actual_stock.drop('initial_minumum_stock', 'rotation')
-
-    output_line = f"Number of current stock stores {actual_stock.count()}"
-    print_output(output_line)
-    output_str = output_str + output_line + ","
-
-    dm_with_stock = dm_prediction.join(actual_stock, ['item_id', 'sub_id', 'store_code'], "left")
-
-    # # Regular sales before first delivery day
-
-    regular_sales_sql = \
-        """
-        SELECT dp.item_id,
-            dp.sub_id,
-            dp.store_code,
-            dp.dm_theme_id,
-            daily_sales_prediction AS sales_prediction
-        FROM temp.t_forecast_daily_sales_prediction fcst
-        JOIN dm_prediction dp ON fcst.item_id = dp.item_id
-            AND fcst.sub_id = dp.sub_id
-            AND fcst.store_code = dp.store_code
-            AND fcst.date_key >= {0}
-            AND to_timestamp(fcst.date_key, 'yyyyMMdd') <= to_timestamp(dp.first_delivery_date, 'yyyy-MM-dd')
-        """.replace("\n", " ")
-
-    regular_sales_sql = regular_sales_sql.format(run_date.strftime("%Y%m%d"))
-    # -
-
-    regular_sales = sqlc.sql(regular_sales_sql)
-
-    agg_regular_sales = regular_sales.groupBy(['item_id', 'sub_id', 'store_code', 'dm_theme_id']). \
-        agg(F.sum("sales_prediction").alias("sales_before_order"))
-
-    dm_with_sales = dm_with_stock.join(agg_regular_sales, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'], "left")
-
-    # # Orders to be received before first order day
-    print_output("Arriving stock")
-
-    orders_received_sql = \
-        """
-        SELECT *
-        FROM (
-            SELECT dp.item_id,
-                dp.sub_id,
-                dp.store_code,
-                dp.dm_theme_id,
-                cast(foo.order_qty AS DOUBLE) order_qty
-            FROM vartefact.v_forecast_simulation_orders foo
-            JOIN dm_prediction dp ON foo.item_id = dp.item_id
-                AND foo.sub_id = dp.sub_id
-                AND foo.store_code = dp.store_code
-                AND foo.order_day >= {0}
-                AND foo.flow_type='OnStock'
-                AND to_timestamp(foo.delivery_day, 'yyyyMMdd') <= to_timestamp(dp.first_delivery_date, 'yyyy-MM-dd')
-            
-            UNION
-            
-            SELECT dp.item_id,
-                dp.sub_id,
-                dp.store_code,
-                dp.dm_theme_id,
-                cast(fxo.order_qty AS DOUBLE) order_qty
-            FROM vartefact.v_forecast_simulation_orders fxo
-            JOIN dm_prediction dp ON fxo.item_id = dp.item_id
-                AND fxo.sub_id = dp.sub_id
-                AND fxo.store_code = dp.store_code
-                AND fxo.order_day >= {0}
-                AND fxo.flow_type='XDocking'
-                AND to_timestamp(fxo.delivery_day, 'yyyyMMdd') <= to_timestamp(dp.first_delivery_date, 'yyyy-MM-dd')
-            ) t
-        """.replace("\n", " ")
-
-    orders_received_sql = orders_received_sql.format(run_date.strftime("%Y%m%d"))
-    # -
-
-    orders_received = sqlc.sql(orders_received_sql)
-
-    agg_orders_received = orders_received.groupBy(['item_id', 'sub_id', 'store_code', 'dm_theme_id']). \
-        agg(F.sum("order_qty").alias("order_received"))
-
-    dm_with_orders = dm_with_sales.join(agg_orders_received, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'], "left")
 
     # # Regular sales from first order day to DM start day
     print_output("Regular sales before DM")
@@ -402,8 +272,15 @@ def dm_order_simulation(date_str):
             dp.sub_id,
             dp.store_code,
             dp.dm_theme_id,
-            daily_sales_prediction AS sales_prediction
-        FROM temp.t_forecast_daily_sales_prediction fcst
+            case when
+            fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
+                then 0
+                when
+                  dp.rotation = 'X'
+                then fcst.daily_sales_prediction_original
+                else fcst.daily_sales_prediction
+            end AS sales_prediction
+        FROM temp.t_forecast_simulation_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
@@ -416,8 +293,7 @@ def dm_order_simulation(date_str):
     agg_dm_regular_sales = dm_regular_sales.groupBy(['item_id', 'sub_id', 'store_code', 'dm_theme_id']). \
         agg(F.sum("sales_prediction").alias("regular_sales_before_dm"))
 
-    dm_with_regular = dm_with_orders.join(agg_dm_regular_sales, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'],
-                                          "left")
+    dm_with_regular = dm_prediction.join(agg_dm_regular_sales, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'], "left")
 
     # # For ppp <= 90% npp, get 4 weeks after sales for ROTATION A items
     print_output("DM PPP logic")
@@ -430,7 +306,7 @@ def dm_order_simulation(date_str):
             dp.dm_theme_id,
             fcst.daily_sales_prediction AS sales_prediction
         FROM dm_prediction dp
-        JOIN temp.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
+        JOIN temp.t_forecast_simulation_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
             AND to_timestamp(fcst.date_key, 'yyyyMMdd') > to_timestamp(dp.theme_end_date, 'yyyy-MM-dd')
@@ -457,45 +333,49 @@ def dm_order_simulation(date_str):
     dm_with_fourweek = dm_with_fourweek.na.fill(0)
     dm_with_fourweek.cache()
 
-    output_line = f"Number of DM order {dm_with_fourweek.count()}"
+    output_line = f"Number of DM store orders {dm_with_fourweek.count()}"
     print_output(output_line)
     output_str = output_str + output_line
-
-    dm_with_fourweek.write.mode("overwrite").format("parquet").saveAsTable("vartefact.tmp_dm_before_final")
 
     # # Final calculation
 
     print_output("Calculate order quantity")
-    dm_final = dm_with_fourweek.withColumn("dm_order_qty_without_pcb", dm_with_fourweek.sales_before_order
-                                           + dm_with_fourweek.regular_sales_before_dm
+    dm_final = dm_with_fourweek.withColumn("dm_order_qty_without_pcb",
+                                           dm_with_fourweek.regular_sales_before_dm
                                            + dm_with_fourweek.four_weeks_after_dm
-                                           + dm_with_fourweek.dm_sales
-                                           + dm_with_fourweek.minumum_stock
-                                           - dm_with_fourweek.order_received
-                                           - dm_with_fourweek.current_store_stock)
+                                           + dm_with_fourweek.dm_sales)
 
-    dm_final = dm_final.withColumn("true_pcb",
-                        F.when((dm_final.dc_supplier_code == 'KSSE') | (dm_final.dc_supplier_code == 'KXS1'), 1)
-                        .otherwise(dm_final.pcb))
+    dm_final = dm_final \
+        .withColumn("first_dm_order_qty_without_pcb",
+                    F.when(dm_final.rotation != 'X', 0.75 * dm_final.dm_order_qty_without_pcb)
+                    .otherwise(dm_final.dm_order_qty_without_pcb))
+    
+    dm_final = dm_final \
+        .withColumn("first_dm_order_qty",
+                    F.when(dm_final.first_dm_order_qty_without_pcb > 0.0,
+                           F.ceil(dm_final.first_dm_order_qty_without_pcb / dm_final.pcb) * dm_final.pcb)
+                    .otherwise(int(0)))
 
+        
     dm_final_pcb = dm_final \
         .withColumn("dm_order_qty",
                     F.when(dm_final.dm_order_qty_without_pcb > 0.0,
-                           F.ceil(dm_final.dm_order_qty_without_pcb / dm_final.true_pcb) * dm_final.true_pcb)
+                           F.ceil(dm_final.dm_order_qty_without_pcb / dm_final.pcb) * dm_final.pcb)
                     .otherwise(int(0)))
 
     dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
 
-    print_output("Write order to datalake")
+    print_output("Write store order to datalake")
+    
     dm_sql = \
         """
-        INSERT INTO vartefact.forecast_simulation_dm_orders 
-        PARTITION (
-            dm_theme_id)
+        INSERT INTO vartefact.forecast_simulation_dm_orders
+        PARTITION (dm_theme_id)
         SELECT 
-        item_id,
+            item_id,
             sub_id,
             store_code,
+            con_holding,
             theme_start_date,
             theme_end_date,
             npp,
@@ -504,7 +384,6 @@ def dm_order_simulation(date_str):
             ppp_end_date,
             city_code,
             dept_code,
-            dept,
             item_code,
             sub_code,
             pcb,
@@ -514,13 +393,11 @@ def dm_order_simulation(date_str):
             run_date,
             first_order_date,
             first_delivery_date,
-            sales_before_order,
-            order_received,
             regular_sales_before_dm,
             four_weeks_after_dm,
             dm_sales,
-            current_store_stock,
             dm_order_qty,
+            first_dm_order_qty,
             dm_order_qty_without_pcb,
             dm_theme_id
         FROM dm_final_pcb
@@ -529,6 +406,215 @@ def dm_order_simulation(date_str):
     sqlc.sql(dm_sql)
 
     sqlc.sql("refresh table vartefact.forecast_simulation_dm_orders")
+    
+    print_output("Finish writing store order to datalake")
+
+    print_output("Start generating DC orders")
+
+    dm_item_dc_sql = \
+        """
+        SELECT distinct ndt.dm_theme_id,
+            ndt.theme_start_date,
+            ndt.theme_end_date,
+            del.npp,
+            del.ppp,
+            del.ppp_start_date,
+            del.ppp_end_date,
+            del.dept_code,
+            dcid.holding_code,
+            dcid.risk_item_unilever,
+            dcid.primary_ds_supplier as ds_supplier_code,
+            cast(dcid.qty_per_unit as int) as pcb,
+            dcid.rotation,
+            dcid.qty_per_unit,
+            icis.item_id,
+            icis.sub_id,
+            icis.item_code,
+            icis.sub_code,
+            icis.date_key AS run_date
+        FROM vartefact.forecast_nsa_dm_extract_log del
+        JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
+        JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
+            AND del.item_code = CONCAT (
+                icis.dept_code,
+                icis.item_code
+                )
+            AND del.sub_code = icis.sub_code
+            AND del.dept_code = icis.dept_code
+        JOIN vartefact.forecast_dc_item_details dcid ON dcid.item_code =icis.item_code
+            AND dcid.sub_code = icis.sub_code
+            AND dcid.dept_code = icis.dept_code
+            AND dcid.dc_status !='Stop'
+            AND dcid.seasonal = 'No'
+        WHERE del.extract_order = 50
+            AND ndt.theme_start_date >= '{1}'
+            AND ndt.theme_start_date <= '{2}'
+        """.replace("\n", " ")
+
+    dm_item_dc_sql = dm_item_dc_sql.format(run_date.strftime("%Y%m%d"), start_date.isoformat(),
+                                           end_date.isoformat())
+
+    dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
+    
+    first_dc_dm = dm_item_dc_df. \
+        groupBy(['item_id', 'sub_id']). \
+        agg(F.min("theme_start_date").alias("theme_start_date"))
+
+    dm_item_dc_df = dm_item_dc_df.join(first_dc_dm, ['item_id', 'sub_id', 'theme_start_date'])
+    
+    output_line = f"Number of item that will have DM order in DC {dm_item_dc_df.count()}"
+    print_output(output_line)
+    output_str = output_str + output_line + ","
+
+    dm_item_dc_df.cache()
+
+    dm_item_dc_df.createOrReplaceTempView("dm_item_dc")
+
+    # +
+    dc_order_sql = \
+        """
+        SELECT distinct dis.item_id,
+            dis.sub_id,
+            ord.date_key AS first_order_date,
+            dev.date_key AS first_delivery_date
+        FROM dm_item_dc dis
+        JOIN vartefact.forecast_dc_order_delivery_mapping dodm
+            ON dis.holding_code = dodm.con_holding
+            AND dis.risk_item_unilever = dodm.risk_item_unilever
+        JOIN vartefact.forecast_calendar ord
+            ON ord.date_key = dodm.order_date
+        JOIN vartefact.forecast_calendar dev
+            ON dev.weekday_short = dodm.delivery_weekday and dev.week_index = ord.week_index + dodm.week_shift
+        WHERE to_timestamp(ord.date_key, 'yyyyMMdd') >= to_timestamp(dis.ppp_start_date, 'yyyy-MM-dd')
+            AND dev.date_key <= '{0}'
+            AND dis.rotation != 'X'
+        """.replace("\n", " ")
+
+    dc_order_sql = dc_order_sql.format(end_date.strftime("%Y%m%d"))
+
+    # +
+    dc_order_deliver_df = sqlc.sql(dc_order_sql)
+
+    dc_first_order_df = dc_order_deliver_df.groupBy(['item_id', 'sub_id']). \
+        agg(F.min("first_order_date").alias("first_order_date"))
+
+    dc_first_order_deliver_df = dc_order_deliver_df \
+        .select(['item_id', 'sub_id', 'first_order_date', 'first_delivery_date']) \
+        .join(dc_first_order_df, ['item_id', 'sub_id', 'first_order_date'])
+    # -
+
+    dm_item_dc_order_df = dm_item_dc_df \
+        .join(dc_first_order_deliver_df, \
+              ['item_id', 'sub_id'])
+
+    dm_item_dc_order_df.createOrReplaceTempView("dm_item_dc_order")
+
+    dm_store_to_dc_sql = \
+        """
+        select 
+          dm.item_id,
+          dm.sub_id,
+          dm.holding_code,
+          dm.theme_start_date,
+          dm.theme_end_date,
+          dm.npp,
+          dm.ppp,
+          dm.ppp_start_date,
+          dm.ppp_end_date,
+          dm.dept_code,
+          dm.item_code,
+          dm.sub_code,
+          dm.pcb,
+          dm.ds_supplier_code,
+          dm.rotation,
+          dm.run_date,
+          dm.first_order_date,
+          dm.first_delivery_date,
+          sum(sod.regular_sales_before_dm) as regular_sales_before_dm,
+          sum(sod.four_weeks_after_dm) as four_weeks_after_dm,
+          sum(sod.dm_sales) as dm_sales,
+          sum(sod.order_qty) as dm_order_qty_without_pcb,
+          dm.dm_theme_id
+        FROM 
+            vartefact.forecast_simulation_dm_orders sod
+        JOIN dm_item_dc_order dm
+            on sod.item_id = dm.item_id
+            and sod.sub_id = dm.sub_id
+            and sod.dm_theme_id = dm.dm_theme_id
+        GROUP BY
+          dm.dm_theme_id,
+          dm.item_id,
+          dm.sub_id,
+          dm.holding_code,
+          dm.theme_start_date,
+          dm.theme_end_date,
+          dm.npp,
+          dm.ppp,
+          dm.ppp_start_date,
+          dm.ppp_end_date,
+          dm.dept_code,
+          dm.item_code,
+          dm.sub_code,
+          dm.pcb,
+          dm.ds_supplier_code,
+          dm.rotation,
+          dm.run_date,
+          dm.first_order_date,
+          dm.first_delivery_date
+        """.replace("\n", " ")
+
+    dm_dc_order = sqlc.sql(dm_store_to_dc_sql)
+
+    dm_dc_pcb = dm_dc_order \
+        .withColumn("dm_order_qty",
+                    F.when(dm_dc_order.dm_order_qty_without_pcb > 0.0,
+                           F.ceil(dm_dc_order.dm_order_qty_without_pcb / dm_dc_order.pcb) * dm_dc_order.pcb)
+                    .otherwise(int(0)))
+
+    dm_dc_pcb.createOrReplaceTempView("dm_dc_final")
+    
+    output_line = f"Number of DM DC orders {dm_dc_pcb.count()}"
+    print_output(output_line)
+    output_str = output_str + output_line
+    
+    print_output("Write DC order to datalake")
+
+    dm_dc_sql = \
+        """
+        INSERT INTO vartefact.forecast_simulation_dm_dc_orders
+        PARTITION (dm_theme_id)
+        SELECT 
+          item_id,
+          sub_id,
+          holding_code,
+          theme_start_date,
+          theme_end_date,
+          npp,
+          ppp,
+          ppp_start_date,
+          ppp_end_date,
+          dept_code,
+          item_code,
+          sub_code,
+          pcb,
+          ds_supplier_code,
+          rotation,
+          run_date,
+          first_order_date,
+          first_delivery_date,
+          regular_sales_before_dm,
+          four_weeks_after_dm,
+          dm_sales,
+          dm_order_qty,
+          dm_order_qty_without_pcb,
+          dm_theme_id
+        FROM dm_dc_final
+        """.replace("\n", " ")
+
+    # +
+    sqlc.sql(dm_dc_sql)
+
+    sqlc.sql("refresh table vartefact.forecast_simulation_dm_dc_orders")
 
     info_str = info_str + f"Job Finish:{get_current_time()}"
     insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)

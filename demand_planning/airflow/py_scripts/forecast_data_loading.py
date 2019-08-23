@@ -1,4 +1,5 @@
 import warnings
+import datetime
 
 warnings.filterwarnings('ignore')
 from impala.dbapi import connect
@@ -54,5 +55,12 @@ def data_loading_process(run_date, tomorrow_date, project_folder):
     sql = read_sql('forecast_lfms_daily_dcstock.sql', project_folder)
     run_sql_with_impala(sql.format(tomorrow_date))
     record_load_result(tomorrow_date, 'vartefact.forecast_lfms_daily_dcstock')
+    
+    tomorrow_date_dash = datetime.datetime.strptime(tomorrow_date, '%Y%m%d').date().strftime("%Y-%m-%d")
+    
+    print('Load forecast_nsa_dm_extract_log')
+    sql = read_sql('forecast_nsa_dm_extract_log.sql', project_folder)
+    run_sql_with_impala(sql.format(tomorrow_date_dash))
+    record_load_result(tomorrow_date, 'vartefact.forecast_nsa_dm_extract_log')
 
     print('All Loaded')

@@ -3,7 +3,8 @@ package carrefour.forecast.core
 import carrefour.forecast.model.{DateRow, ItemEntity, ModelRun}
 import carrefour.forecast.util.LogUtil
 import org.apache.spark.sql.Row
-
+import java.util.{Calendar, Date}
+import java.text.SimpleDateFormat
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
@@ -17,20 +18,22 @@ object OrderLogic {
     * Generate orders
     * 生成订单
     *
-    * @param ist Item and store information 商品及门店信息
-    * @param rows Input data rows. One row per day. 输入数据列。每个自然日对应一行
-    * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
-    * @param modelRun Job run information 脚本运行信息
-    * @param stockLevelMap Day end stock level 门店盘点库存量
-    * @param dmOrdersMap DM order quantity and delivery date / DM 订单订货量及其抵达日期
+    * @param ist              Item and store information 商品及门店信息
+    * @param rows             Input data rows. One row per day. 输入数据列。每个自然日对应一行
+    * @param runDateStr       Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param modelRun         Job run information 脚本运行信息
+    * @param stockLevelMap    Day end stock level 门店盘点库存量
+    * @param dmOrdersMap      DM order quantity and delivery date / DM 订单订货量及其抵达日期
     * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
+    * @param pastOrderForecastkMap Previously generated order forecast 过去生成的订单规划
     * @return Order information 订单信息
     */
   def generateOrder(ist: ItemEntity, rows: Iterator[Row], runDateStr: String,
                     modelRun: ModelRun,
                     stockLevelMap: Map[ItemEntity, Double],
                     dmOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]],
-                    onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): List[DateRow] = {
+                    onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]],
+                    pastOrderForecastkMap: Map[ItemEntity, List[Tuple2[String, Double]]]): List[DateRow] = {
 
     var dateRowList = List.empty[DateRow]
 
@@ -41,6 +44,12 @@ object OrderLogic {
     var futureStock = 0.0
     var lasti = 0
     var lastj = 0
+
+    val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
+    val cal = Calendar.getInstance()
+    cal.setTime(dateKeyFormat.parse(runDateStr))
+    cal.add(Calendar.DATE, 14)
+    val twoWeeksAfterRunDate = cal.getTime
 
     var order = getEmptyOrder(runDateStr, ist, modelRun.isDcFlow)
 
@@ -58,7 +67,7 @@ object OrderLogic {
 
       var deliveryMap: Map[String, Double] = Map()
       if (modelRun.isDcFlow) {
-        dateRowList = processPastDcOrders(dateRowList, ist , onTheWayStockMap)
+        dateRowList = processPastDcOrders(dateRowList, ist, pastOrderForecastkMap)
       } else {
         deliveryMap = getDeliveryMap(ist, onTheWayStockMap)
       }
@@ -90,17 +99,6 @@ object OrderLogic {
           currentStock = currentStock - dateRowList(orderD).predict_sales
           currentStock = currentStock + dateRowList(orderD).dm_delivery
           currentStock = currentStock + dateRowList(orderD).order_delivery
-
-          dateRowList(orderD).day_end_stock_with_predict = currentStock
-
-          dateRowList(orderD).dept_code = order.dept_code
-          dateRowList(orderD).item_code = order.item_code
-          dateRowList(orderD).sub_code = order.sub_code
-          dateRowList(orderD).store_code = order.store_code
-          dateRowList(orderD).con_holding = order.con_holding
-          dateRowList(orderD).supplier_code = order.supplier_code
-          dateRowList(orderD).rotation = order.rotation
-          dateRowList(orderD).ittreplentyp = order.ittreplentyp
 
           orderD = orderD + 1
         }
@@ -163,7 +161,8 @@ object OrderLogic {
             order.minStock = minStockLevel
             order.maxStock = maxStockLevel
 
-            if (futureStock + order.order_qty.doubleValue() > maxStockLevel) {
+            if (futureStock + order.order_qty.doubleValue() > maxStockLevel
+              && isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)) {
 
               if (futureStock > minStockLevel) {
                 orderQty = 0
@@ -171,7 +170,8 @@ object OrderLogic {
                 orderQty = maxStockLevel - futureStock
               }
 
-            } else if (futureStock + order.order_qty.doubleValue() < minStockLevel) {
+            } else if (futureStock + order.order_qty.doubleValue() < minStockLevel
+              && isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)) {
               orderQty = minStockLevel - futureStock
             }
 
@@ -186,16 +186,10 @@ object OrderLogic {
           }
 
           if (orderQty > 0) {
-            var pcb = order.pcb
-            if (!ist.is_dc_flow && (order.supplier_code.equalsIgnoreCase("KSSE")
-              || order.supplier_code.equalsIgnoreCase("KXS1"))) {
-              pcb = 1
-            }
-
-            if (orderQty < pcb) {
-              orderQty = pcb
-            } else if (orderQty % pcb > 0) {
-              orderQty = math.ceil(orderQty / pcb).intValue() * pcb
+            if (orderQty < order.pcb) {
+              orderQty = order.pcb
+            } else if (orderQty % order.pcb > 0) {
+              orderQty = math.ceil(orderQty / order.pcb).intValue() * order.pcb
             }
 
             order.order_qty = orderQty.intValue()
@@ -211,18 +205,34 @@ object OrderLogic {
 
       if (modelRun.isSimulation) {
         i = 0
-        currentStock = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
+        var currentStockWithActual = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
+        var currentStockWithPred = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
+
         while (i < dateRowList.size) {
 
-          currentStock = currentStock - dateRowList(i).actual_sales
-          currentStock = currentStock + dmDeliveryMap.getOrElse(dateRowList(i).date_key, 0.0)
-          currentStock = currentStock + deliveryMap.getOrElse(dateRowList(i).date_key, 0.0)
+          val dmDelivery = dmDeliveryMap.getOrElse(dateRowList(i).date_key, 0.0)
+          val orderDelivery = deliveryMap.getOrElse(dateRowList(i).date_key, 0.0)
 
-          if (currentStock < 0.0) {
-            currentStock = 0.0
+          currentStockWithActual = currentStockWithActual - dateRowList(i).actual_sales + dmDelivery + orderDelivery
+          if (currentStockWithActual < 0.0) {
+            currentStockWithActual = 0.0
           }
+          dateRowList(i).day_end_stock_with_actual = currentStockWithActual
 
-          dateRowList(i).day_end_stock_with_actual = currentStock
+          currentStockWithPred = currentStockWithPred - dateRowList(i).predict_sales + dmDelivery + orderDelivery
+          if (currentStockWithPred < 0.0) {
+            currentStockWithPred = 0.0
+          }
+          dateRowList(i).day_end_stock_with_predict = currentStockWithPred
+
+          dateRowList(i).dept_code = order.dept_code
+          dateRowList(i).item_code = order.item_code
+          dateRowList(i).sub_code = order.sub_code
+          dateRowList(i).store_code = order.store_code
+          dateRowList(i).con_holding = order.con_holding
+          dateRowList(i).supplier_code = order.supplier_code
+          dateRowList(i).rotation = order.rotation
+          dateRowList(i).ittreplentyp = order.ittreplentyp
 
           i = i + 1
         }
@@ -261,9 +271,10 @@ object OrderLogic {
   /**
     * Generate empty orer
     * 生成空订单
+    *
     * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
-    * @param ist Item and store information 商品及门店信息
-    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param ist        Item and store information 商品及门店信息
+    * @param isDcFlow   Whether it is DC flow 是否为计算DC/货仓订单
     * @return Empty order 空订单
     */
   private def getEmptyOrder(runDateStr: String, ist: ItemEntity, isDcFlow: Boolean): DateRow = {
@@ -283,11 +294,11 @@ object OrderLogic {
     * Read information from input data row
     * 从输入数据列中读取数据
     *
-    * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
-    * @param ist Item and store information 商品及门店信息
-    * @param row Input data row  输入数据列
+    * @param runDateStr   Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param ist          Item and store information 商品及门店信息
+    * @param row          Input data row  输入数据列
     * @param isSimulation Whether it is simulation run 是否为模拟运行
-    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param isDcFlow     Whether it is DC flow 是否为计算DC/货仓订单
     * @return Daily information for order logic 用于订单逻辑的每日数据
     */
   private def mapDateRow(runDateStr: String, ist: ItemEntity, row: Row, isSimulation: Boolean,
@@ -355,7 +366,7 @@ object OrderLogic {
 
       } else if (ittreplentyp == 2 || ittreplentyp == 4) {
         val shelf_capacity = row.getAs[String]("shelf_capacity")
-          minumumStock = 2
+        minumumStock = 2
       }
     } catch {
       case ex: Exception => LogUtil.error("Fallback to use default stock", ex)
@@ -384,7 +395,7 @@ object OrderLogic {
     * Get DM orders for this item and store
     * 获取当前商品和门店的DM订单
     *
-    * @param ist Item and store information 商品及门店信息
+    * @param ist         Item and store information 商品及门店信息
     * @param dmOrdersMap DM order quantity and delivery date / DM 订单订货量及其抵达日期
     * @return DM order quantity and delivery date / DM 订单订货量及其抵达日期
     */
@@ -413,7 +424,7 @@ object OrderLogic {
     * Get on the way order for this item and store
     * 获取当前商品和门店的在途订单
     *
-    * @param ist Item and store information 商品及门店信息
+    * @param ist              Item and store information 商品及门店信息
     * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
     * @return On the way order quantity and delivery date 在途订单订货量及其抵达日期
     */
@@ -439,7 +450,7 @@ object OrderLogic {
     * Get past DC order for this item and con holding
     * 获取当前商品及供应商的过去生成的订单
     *
-    * @param ist Item and con holding information 商品及供应商信息
+    * @param ist             Item and con holding information 商品及供应商信息
     * @param pastDcOrdersMap Past DC order results 过去生成的货仓订单
     * @return Past DC order information 过去生成的货仓订单信息
     */
@@ -461,6 +472,12 @@ object OrderLogic {
     dateRowList
   }
 
+  private def isAfterTwoWeeks(orderDayStr: String, twoWeeksAfterRunDate: Date): Boolean = {
+    val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
+    val orderDate = dateKeyFormat.parse(orderDayStr)
+
+    orderDate.after(twoWeeksAfterRunDate)
+  }
 
 
 }

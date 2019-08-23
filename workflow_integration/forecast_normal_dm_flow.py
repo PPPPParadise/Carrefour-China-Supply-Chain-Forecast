@@ -160,11 +160,12 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       sql = f.read()
    #pass the time parameter if set_timeperiod is true
    if set_timeperiod:
-      # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -201,8 +202,10 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
       # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -682,8 +685,8 @@ def step27_model_execute_python(**kwargs):
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 2)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   delta = datetime.timedelta(days = 5)
+   starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    ## insert the new data into the summary table
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
@@ -861,8 +864,8 @@ def step_promo_11_model_execute_python(**kwargs):
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 1)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   delta = datetime.timedelta(days = 6)
+   starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-insert.sql',

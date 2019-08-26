@@ -1046,6 +1046,7 @@ def step_promo_to_day_5_output_table():
                               
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
+                           provide_context=True,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
 

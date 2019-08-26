@@ -32,7 +32,7 @@ os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0
 warehouse_location = abspath('spark-warehouse')
 
 config = {}
-config['database'] = 'temp'
+config['database'] = 'vartefact'
 
 spark = SparkSession \
     .builder \
@@ -46,9 +46,12 @@ spark = SparkSession \
 
 file_name = f"check_null-{time.strftime('%Y%m%d',time.localtime(time.time()))}.txt"
 
-def record_in_txt(file_name,title,sql,df1):
+def record_in_txt(file_name,title,sql,df1,count=False):
     record_result = open(f'{proc_root}/{file_name}', 'a')
-    record_result.write(f'\n\n{title}')
+    if count != False:
+        record_result.write(f'\n\nNo.{count}: {title}')
+    else:
+        record_result.write(f'\n\n{title}')
     record_result.write(f'\ntime: {str(datetime.datetime.now())}')
     record_result.write('\nSQL:')
     record_result.write(sql)
@@ -79,7 +82,8 @@ def check_table(table_name,database='temp',count=0):
     new_df = pd.DataFrame(new_dict)
     new_df['proportion'] = new_df['counts']/df.iloc[0]['total_num']
     new_df.sort_values(by=['counts'],inplace=True)
-    record_in_txt(file_name,table_name,sql,new_df)
+    title_str = database + '.' + table_name
+    record_in_txt(file_name,title_str,sql,new_df,count)
     new_df.to_csv(f"{proc_root}/check_results/row_null_checks_{count}_{database}_{table_name}.csv",index=False)
     print(f"{database}.{table_name} checked result: {new_df} ")
     print(f"{database}.{table_name} checked result more detail in Test/data folder")
@@ -99,7 +103,7 @@ print(len(list(set(tables))))
 
 for i in range(len(tables)):
     try:
-        print(check_table(tables[i],'temp',i))
+        print(check_table(tables[i],config['database'],i))
     except Exception as e:
         record_result = open(f'{proc_root}/{file_name}', 'a')
         record_result.write(f'{traceback.format_exc()}')

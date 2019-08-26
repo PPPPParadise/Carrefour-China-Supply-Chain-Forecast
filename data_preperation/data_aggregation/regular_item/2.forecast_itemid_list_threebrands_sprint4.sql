@@ -35,7 +35,7 @@ item_id_list_Unilever AS (
     FROM nsa.daily_corresponding
     WHERE holding_code = '700'
     AND store_code IN (SELECT stostocd FROM store_code_list)
-    AND dept_code IN ('11', '12')
+    AND dept_code IN ('11', '12', '14')
     AND date_key >= cast({starting_date} as string)
     AND date_key < cast({ending_date} as string)
 ),
@@ -46,7 +46,7 @@ item_id_list_Nestle AS (
     FROM nsa.daily_corresponding
     WHERE holding_code = '002'
     AND store_code IN (SELECT stostocd FROM store_code_list)
-    AND dept_code IN ('14')
+    AND dept_code IN ('14', '15')
    AND date_key >= cast({starting_date} as string)
     AND date_key < cast({ending_date} as string)
 )

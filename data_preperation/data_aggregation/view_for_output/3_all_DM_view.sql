@@ -1,7 +1,7 @@
 
 -- create view
 
-create view if not exists {database}.forecast_weekly_dm_view as
+create view if not exists {database}.forecast_all_dm_view as
 with 
     lastest_week_insert as (
         select

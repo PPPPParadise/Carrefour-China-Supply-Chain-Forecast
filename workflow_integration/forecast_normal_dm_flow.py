@@ -160,11 +160,12 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       sql = f.read()
    #pass the time parameter if set_timeperiod is true
    if set_timeperiod:
-      # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -201,8 +202,10 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
       # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -682,8 +685,8 @@ def step27_model_execute_python(**kwargs):
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 2)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   delta = datetime.timedelta(days = 5)
+   starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    ## insert the new data into the summary table
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
@@ -861,8 +864,8 @@ def step_promo_11_model_execute_python(**kwargs):
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 1)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   delta = datetime.timedelta(days = 6)
+   starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/dm_sales/all_included_promo.py -d {config['database']} -f '{config['parent_path']}/data_modeling/dm_sales/promo_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    execute_impala_by_sql_file('promo_sales_order_prediction_by_item_store_dm_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/promo_item/11_promo_sales_order_prediction_by_item_store_dm_all-insert.sql',
@@ -935,6 +938,7 @@ step_normal_to_day_4.set_upstream(step_normal_to_day_3)
 #                               'set_timeperiod':True},
 #                            dag=dag)
 # step_normal_to_day_5.set_upstream(step_normal_to_day_4)
+# op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred_all",
 def step_normal_to_day_5_output_table():
    ## create table if not exixts
    execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
@@ -1016,6 +1020,7 @@ step_promo_to_day_4.set_upstream(step_promo_to_day_3)
 # execute_impala_by_sql_file('forecast_DM_results_to_day',\
 #                            '../sqls/PRED_TO_DAY/3_5forecast_DM_results_to_day.sql', 
 #                            set_timeperiod=True)
+# op_kwargs={'table_name': "forecast_dm_results_to_day_all",
 def step_promo_to_day_5_output_table():
    ## create table if not exists
    execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
@@ -1029,14 +1034,21 @@ def step_promo_to_day_5_output_table():
                            set_timeperiod=False,database='config',dropfirst=False)
    ## create view for dm item if 
    execute_impala_by_sql_file('forecast_weekly_normal_view',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/3_weekly_DM_view.sql',
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/3_all_DM_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
+   # house table
+   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
+                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
+                              set_timeperiod=True,database='config',dropfirst=False)
                               
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
+                           provide_context=True,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
 
+
+                           

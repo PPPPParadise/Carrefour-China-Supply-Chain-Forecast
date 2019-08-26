@@ -20,9 +20,9 @@
 * weekly normal:
     * vartefact.result_forecast_10w_on_the_fututre_all
     * vartefact.forecast_weekly_normal_view
-* weekly dm:
+* all dm:
     * vartefact.promo_sales_order_prediction_by_item_store_dm_all
-    * vartefact.forecast_weekly_dm_view
+    * vartefact.forecast_all_dm_view
 * daily normal:
     * vartefact.forecast_regular_results_week_to_day_original_pred_all
     * vartefact.forecast_daily_normal_view

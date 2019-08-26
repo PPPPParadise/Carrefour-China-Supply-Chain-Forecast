@@ -34,11 +34,13 @@
 ## Real orders
 
 * DC
-    * normal: vartefact.xxx
-    * DM: vartefact.xxx
+    * normal: vartefact.forecast_dc_orders
+    * DM: vartefact.forecast_dm_dc_orders
 * Store
-    * normal: 
-    * DM: 
+    * normal
+        * onstock: vartefact.forecast_onstock_orders
+        * xdocking: vartefact.forecast_xdock_orders
+    * DM: vartefact.forecast_dm_orders
 
 
 ## Order simulations

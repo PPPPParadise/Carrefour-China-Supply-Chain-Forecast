@@ -85,23 +85,6 @@ object SimulationProcess {
       true)
 
     ProcessLogic.process(xdockRun)
-
-    val dcRun = ModelRun(runDate,
-      FlowType.DC,
-      "vartefact.forecast_dc_orders",
-      "vartefact.forecast_dc_orders_hist",
-      "tmp_in_scope_dc_item_store",
-      defaultStockLevel,
-      defaultDeliveryTime,
-      item_id,
-      sub_id,
-      "",
-      true,
-      false,
-      "",
-      true)
-
-    ProcessLogic.process(dcRun)
   }
 
 }

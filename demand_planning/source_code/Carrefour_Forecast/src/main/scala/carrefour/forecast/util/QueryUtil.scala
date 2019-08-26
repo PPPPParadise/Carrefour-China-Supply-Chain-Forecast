@@ -12,8 +12,8 @@ import carrefour.forecast.model.EnumFlowType.FlowType
 object QueryUtil {
 
   /**
-    * Get current store stock level
-    * 获取当前门店库存
+    * Get current store stock level. Negative stock level with be considered as 0 stock
+    * 获取当前门店库存.
     *
     * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param flowType Flow Type
@@ -41,7 +41,13 @@ object QueryUtil {
         row.getAs[String]("entity_code"),
         isDcFlow)
 
-      itemStore -> row.getAs[Double]("stock_level")
+      var stockLevel = row.getAs[Double]("stock_level")
+
+      if (stockLevel < 0) {
+        stockLevel = 0
+      }
+
+      itemStore -> stockLevel
     }).collect().toMap
 
     return stockLevelMap

@@ -121,9 +121,11 @@ object ProcessLogic {
       activeItemEntities.cache()
       activeItemEntities.createOrReplaceTempView(modelRun.viewName)
 
-      activeItemEntities.write.format("parquet")
-        .mode("overwrite")
-        .saveAsTable("temp." + modelRun.viewName)
+      if (modelRun.isSimulation) {
+        activeItemEntities.write.format("parquet")
+          .mode("overwrite")
+          .saveAsTable("temp." + modelRun.viewName)
+      }
 
       // Find the actual stock level
       val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.flowType,

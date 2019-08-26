@@ -341,6 +341,12 @@ object OrderLogic {
       }
     }
 
+    if (isDcFlow) {
+      dateRow.con_holding = ist.entity_code
+    } else {
+      dateRow.store_code = ist.entity_code
+    }
+
     if (isSimulation) {
       dateRow.actual_sales = row.getAs[Double]("actual_sales")
     }

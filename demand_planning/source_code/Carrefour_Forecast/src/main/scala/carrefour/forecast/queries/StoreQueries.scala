@@ -267,14 +267,14 @@ object StoreQueries {
         fcst.date_key,
         sum (
         case when
-          fcst.daily_sales_prediction_original < 0.2 and itmd.rotation = 'X'
+          fcst.daily_sales_prediction_original < 0.2 and itmd.rotation != 'A'
         then 0
         when
-          itmd.rotation = 'X'
+          itmd.rotation != 'A'
         then fcst.daily_sales_prediction_original
         else fcst.daily_sales_prediction
         end ) as daily_sales_prediction
-    FROM temp.t_forecast_simulation_daily_sales_prediction fcst
+    FROM vartefact.t_forecast_daily_sales_prediction fcst
     join ${viewName} itmd
         on fcst.item_id = itmd.item_id
         and fcst.sub_id = itmd.sub_id

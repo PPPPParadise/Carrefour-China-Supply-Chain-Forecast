@@ -61,6 +61,7 @@ case class DateRow(
 
                     order_day: String,
                     delivery_day: String,
+                    max_predict_sales: Double,
                     predict_sales: Double,
 
                     var order_without_pcb: Double = 0,

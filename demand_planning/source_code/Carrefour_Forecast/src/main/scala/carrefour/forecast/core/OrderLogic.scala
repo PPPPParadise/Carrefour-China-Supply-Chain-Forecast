@@ -122,7 +122,7 @@ object OrderLogic {
           order.matched_sales_start_date = dateRowList(futureD).date_key
           // expected stock on delivery day of order
           while (dateRowList(futureD).date_key < order.delivery_day) {
-            futureStock = futureStock - dateRowList(futureD).predict_sales
+            futureStock = futureStock - dateRowList(futureD).max_predict_sales
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureD = futureD + 1
@@ -134,7 +134,7 @@ object OrderLogic {
 
           // expected stock on delivery day of next order
           while (dateRowList(futureD).date_key < deliveryDay) {
-            futureStock = futureStock - dateRowList(futureD).predict_sales
+            futureStock = futureStock - dateRowList(futureD).max_predict_sales
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             order.matched_sales_end_date = dateRowList(futureD).date_key
@@ -142,7 +142,7 @@ object OrderLogic {
           }
 
           if ("AfterStoreOpen".equalsIgnoreCase(order.delivery_time)) {
-            futureStock = futureStock - dateRowList(futureD).predict_sales
+            futureStock = futureStock - dateRowList(futureD).max_predict_sales
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             order.matched_sales_end_date = dateRowList(futureD).date_key
@@ -281,11 +281,11 @@ object OrderLogic {
 
     if (isDcFlow) {
       DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-        , ist.entity_code, "", "", "", 0.0, "", "", "", 0.0
+        , ist.entity_code, "", "", "", 0.0, "", "", "", 0.0, 0.0
       )
     } else {
       DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-        , "", ist.entity_code, "", "", 0.0, "", "", "", 0.0
+        , "", ist.entity_code, "", "", 0.0, "", "", "", 0.0, 0.0
       )
     }
   }
@@ -325,6 +325,7 @@ object OrderLogic {
       row.getAs[String]("order_date"),
       row.getAs[String]("delivery_date"),
 
+      row.getAs[Double]("max_predict_sales"),
       row.getAs[Double]("predict_sales")
     )
 
@@ -362,35 +363,13 @@ object OrderLogic {
     * @return Minimum required stock level 最低门店库存要求
     */
   private def getMinimumStoreStock(row: Row): Double = {
-    var minumumStock: Double = 0
+    var minumumStock: Double = 1
 
-    try {
-      val ittreplentyp = row.getAs[Integer]("ittreplentyp")
-
-      if (ittreplentyp == 3) {
-        minumumStock = row.getAs[Int]("ittminunit").doubleValue()
-
-      } else if (ittreplentyp == 2 || ittreplentyp == 4) {
-        val shelf_capacity = row.getAs[String]("shelf_capacity")
-        minumumStock = 2
-      }
-    } catch {
-      case ex: Exception => LogUtil.error("Fallback to use default stock", ex)
-
-    } finally {
-      if (minumumStock == 0) {
-        val rotation = row.getAs[String]("rotation").trim()
-
-        if (rotation.equalsIgnoreCase("A")) {
-          minumumStock = 8
-        } else if (rotation.equalsIgnoreCase("B")) {
-          minumumStock = 6
-        } else if (rotation.equalsIgnoreCase("X")) {
-          minumumStock = 2
-        }
-
-      }
-
+    val ittreplentyp = row.getAs[Integer]("ittreplentyp")
+    if (ittreplentyp == 3) {
+      minumumStock = row.getAs[Int]("ittminunit").doubleValue()
+    } else if (ittreplentyp == 2 || ittreplentyp == 4) {
+      val shelf_capacity = row.getAs[String]("shelf_capacity")
     }
 
     minumumStock

@@ -267,12 +267,15 @@ object StoreQueries {
         fcst.date_key,
         sum (
         case when
+          fcst.daily_sales_prediction < 0.2 and itmd.rotation != 'A'
+        then 0
+        else fcst.daily_sales_prediction
+        end ) as max_predict_sales,
+        sum (
+        case when
           fcst.daily_sales_prediction_original < 0.2 and itmd.rotation != 'A'
         then 0
-        when
-          itmd.rotation != 'A'
-        then fcst.daily_sales_prediction_original
-        else fcst.daily_sales_prediction
+        else fcst.daily_sales_prediction_original
         end ) as daily_sales_prediction
     FROM vartefact.t_forecast_daily_sales_prediction fcst
     join ${viewName} itmd

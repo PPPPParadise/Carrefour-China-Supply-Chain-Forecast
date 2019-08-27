@@ -104,18 +104,24 @@ object DcQueries {
         t.sub_id,
         t.entity_code,
         t.date_key,
+        cast(sum(t.order_qty) AS DOUBLE) AS max_predict_sales,
         cast(sum(t.order_qty) AS DOUBLE) AS daily_sales_prediction
       FROM (
         SELECT fcst.item_id,
           fcst.sub_id,
           fcst.con_holding as entity_code,
           fcst.order_day as date_key,
-          fcst.order_qty as order_qty
+          sum(fcst.order_qty) as order_qty
         FROM vartefact.forecast_onstock_orders fcst
         JOIN ${viewName} itmd ON fcst.item_id = itmd.item_id
           AND fcst.sub_id = itmd.sub_id
         WHERE fcst.order_day >= '${startDateStr}'
           AND fcst.order_day <= '${endDateStr}'
+       GROUP BY
+          fcst.item_id,
+          fcst.sub_id,
+          fcst.con_holding,
+          fcst.order_day
 
           union
 

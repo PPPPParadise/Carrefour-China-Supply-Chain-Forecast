@@ -273,9 +273,14 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
                                 'std_dev_predicted'] = features_predictions_df.squared_error_predicted ** 0.5
 
     # Evaluate confidence interval
+    
     features_predictions_df.loc[:, 'confidence_interval_80_max'] = (
-                    features_predictions_df.forecast + 1.97 *
-                    np.log(abs(features_predictions_df.squared_error_predicted)**0.5 + 1))
+                    features_predictions_df.forecast + 2 * (abs(features_predictions_df.squared_error_predicted)**0.5))
+
+    features_predictions_df.loc[:, 'sales_prediction_cap'] = 3*abs(test.forecast)
+
+    features_predictions_df.predict_sales_max_confidence_interval = features_predictions_df[[
+                    'confidence_interval_80_max', 'sales_prediction_cap']].min(axis=1)
 
     features_predictions_df.loc[:,
                                 'confidence_interval_max'] = features_predictions_df.confidence_interval_80_max

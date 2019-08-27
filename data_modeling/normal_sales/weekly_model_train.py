@@ -306,6 +306,14 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 #                               early_stopping_rounds=15,
                 #                               eval_set=eval_set, eval_metric="mae")
                 
+                
+                
+                X_tr, X_te, y_tr, y_te = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
+                eval_set = [(X_tr, y_tr), (X_te, y_te)]
+                sales_prediction_model.fit(X_tr, y_tr, verbose=False, eval_metric="mae",
+                                            early_stopping_rounds=15, 
+                                               eval_set=eval_set)
+                
                 sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
                 
                 results[X_train.index] = sales_prediction_model.predict(X_train)

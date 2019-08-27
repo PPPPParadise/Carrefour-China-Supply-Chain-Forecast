@@ -114,7 +114,7 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     hyp_error = {
         'silent': False,
         'learning_rate': learning_rate,
-        'n_estimators': 100,
+        'n_estimators': 1000,
         'max_depth': 6,
         'sub_sample': 0.7,
         'gamma': 5,
@@ -125,38 +125,55 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
 
     sales_prediction_model = xgb.XGBRegressor(**hyp)
     sales_prediction_squared_error_model = xgb.XGBRegressor(**hyp_error)
+    
+    sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
+                
+    results[X_train.index] = sales_prediction_model.predict(X_train)
+
+    mape = abs(results[X_train.index] -
+               y_train.values).sum() / y_train.sum()
+                
+    score = mape
+
+    # Train the error squared predictor
+    error_y_train = (results[X_train.index] - y_train)**2
+
+    sales_prediction_squared_error_model.fit(X_train, error_y_train, 
+                                             verbose=False,
+                                             eval_metric="mae")
+                
 
     # Kfold loop
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=7)
-    score = 0.0
-    best_scores = []
-    results = np.zeros(len(X_train))
+    #kf = KFold(n_splits=n_splits, shuffle=True, random_state=7)
+    #score = 0.0
+    #best_scores = []
+    #results = np.zeros(len(X_train))
 
-    for train_index, test_index in kf.split(X_train):
-
+    #for train_index, test_index in kf.split(X_train):
+        #
         # Train forecast model
-        X_tr, X_te = X_train.iloc[train_index], X_train.iloc[test_index]
-        y_tr, y_te = y_train.iloc[train_index], y_train.iloc[test_index]
-        eval_set = [(X_tr, y_tr), (X_te, y_te)]
+        #X_tr, X_te = X_train.iloc[train_index], X_train.iloc[test_index]
+        #y_tr, y_te = y_train.iloc[train_index], y_train.iloc[test_index]
+        #eval_set = [(X_tr, y_tr), (X_te, y_te)]
 
-        sales_prediction_model.fit(X_tr, y_tr, eval_set=eval_set, verbose=True,
-                                   early_stopping_rounds=20,
-                                   eval_metric='mae'
-                                   )
+        #sales_prediction_model.fit(X_tr, y_tr, eval_set=eval_set, verbose=True,
+        #                           early_stopping_rounds=20,
+        #                           eval_metric='mae'
+        #                           )
 
         # Show and save performance on the training
-        best_scores.append(sales_prediction_model.best_score)
-        mape = abs(results[test_index] - y_te.values).sum() / y_te.sum()
-        print('Mape of:', mape)
-        score += mape
+        #best_scores.append(sales_prediction_model.best_score)
+        #mape = abs(results[test_index] - y_te.values).sum() / y_te.sum()
+        #print('Mape of:', mape)
+        #score += mape
 
         # Train the error squared predictor
-        results[test_index] = sales_prediction_model.predict(X_te)
-        error_y_test = (results[test_index] - y_te)**2
-        sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
-                                                 eval_metric="mae")
+        #results[test_index] = sales_prediction_model.predict(X_te)
+        #error_y_test = (results[test_index] - y_te)**2
+        #sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
+        #                                         eval_metric="mae")
 
-    score /= n_splits
+    #score /= n_splits
     print('Training successful!!')
 
     # Saving results
@@ -255,9 +272,15 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
     features_predictions_df.loc[:,
                                 'std_dev_predicted'] = features_predictions_df.squared_error_predicted ** 0.5
 
-    # Evaluate 80% confidence interval
+    # Evaluate confidence interval
+    
     features_predictions_df.loc[:, 'confidence_interval_80_max'] = (
-        features_predictions_df['forecast'] + 1.28*features_predictions_df.std_dev_predicted)
+                    features_predictions_df.forecast + 2 * (abs(features_predictions_df.squared_error_predicted)**0.5))
+
+    features_predictions_df.loc[:, 'sales_prediction_cap'] = 3*abs(test.forecast)
+
+    features_predictions_df.predict_sales_max_confidence_interval = features_predictions_df[[
+                    'confidence_interval_80_max', 'sales_prediction_cap']].min(axis=1)
 
     features_predictions_df.loc[:,
                                 'confidence_interval_max'] = features_predictions_df.confidence_interval_80_max

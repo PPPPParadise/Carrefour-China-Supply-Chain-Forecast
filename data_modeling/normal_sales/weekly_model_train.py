@@ -270,7 +270,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 sales_prediction_squared_error_model = xgb.XGBRegressor(
                     silent=False,
                     learning_rate=0.03,
-                    n_estimators=100,
+                    n_estimators=1000,
                     max_depth=4,
                     # sub_sample=0.8,
                     gamma=1,
@@ -294,27 +294,30 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                 # KFold training
                 
-                train_index = X_train.sample(frac=0.75, replace=False, random_state=1).index
-                test_index = X_train[~X_train.index.isin(train_index)].index
+                #train_index = X_train.sample(frac=0.75, replace=False, random_state=1).index
+                #test_index = X_train[~X_train.index.isin(train_index)].index
 
-                X_tr, X_te = X_train[X_train.index.isin(train_index)], X_train[X_train.index.isin(test_index)]
-                y_tr, y_te = y_train[y_train.index.isin(train_index)], y_train[y_train.index.isin(test_index)]
+                #X_tr, X_te = X_train[X_train.index.isin(train_index)], X_train[X_train.index.isin(test_index)]
+                #y_tr, y_te = y_train[y_train.index.isin(train_index)], y_train[y_train.index.isin(test_index)]
                 
                 
-                eval_set = [(X_tr, y_tr), (X_te, y_te)]
-                sales_prediction_model.fit(X_tr, y_tr, verbose=False,
-                                               early_stopping_rounds=15,
-                                               eval_set=eval_set, eval_metric="mae")
-                results[test_index] = sales_prediction_model.predict(X_te)
+                #eval_set = [(X_tr, y_tr), (X_te, y_te)]
+                #sales_prediction_model.fit(X_tr, y_tr, verbose=False,
+                #                               early_stopping_rounds=15,
+                #                               eval_set=eval_set, eval_metric="mae")
+                
+                sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
+                
+                results[X_train.index] = sales_prediction_model.predict(X_train)
 
-                mape = abs(results[test_index] -
-                               y_te.values).sum() / y_te.sum()
+                mape = abs(results[X_train.index] -
+                               y_train.values).sum() / y_train.sum()
                 score = mape
 
                 # Train the error squared predictor
-                error_y_test = (results[test_index] - y_te)**2
+                error_y_train = (results[X_train.index] - y_train)**2
 
-                sales_prediction_squared_error_model.fit(X_te, error_y_test, verbose=False,
+                sales_prediction_squared_error_model.fit(X_train, error_y_train, verbose=False,
                                                              eval_metric="mae")
 
                 # score /= numFolds
@@ -377,9 +380,14 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
 
                 # Change the value here to modify the desired confidence interval
                 # As reference: 3* = 90% interval, 1.28* = 80% interval... Cf normal distribution
-
+                
                 test.loc[:, 'predict_sales_max_confidence_interval'] = (
-                    test.forecast + 3*(test.error_squared_forecast**0.5))
+                    test.forecast + 2 * (abs(test.error_squared_forecast)**0.5))
+
+                test.loc[:, 'sales_prediction_cap'] = 3*abs(test.forecast)
+
+                test.predict_sales_max_confidence_interval = test[[
+                    'predict_sales_max_confidence_interval', 'sales_prediction_cap']].min(axis=1)
 
                 predict_sales_max_confidence_interval = list(
                     test.predict_sales_max_confidence_interval)

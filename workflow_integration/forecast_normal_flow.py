@@ -33,24 +33,6 @@ from dateutil import parser
 # -- Usage: Log printing and saving
 # -- Note:
 
-# import logging
-# # create logger 
-# logger = logging.getLogger('forecast_dataflow')
-# logger.setLevel(logging.DEBUG)
-# # create file handler which logs even debug messages
-# fh = logging.FileHandler(f'/data/jupyter/logs/forecast_dataflow.log')
-# fh.setLevel(logging.DEBUG)
-# # create console handler with a higher log level
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.DEBUG)
-# # create formatter and add it to the handlers
-# formatter = logging.Formatter('%(asctime)s - %(process)s - %(module)s - %(funcName)s - %(levelname)s - %(message)s')
-# fh.setFormatter(formatter)
-# ch.setFormatter(formatter)
-# # add the handlers to the logger
-# logger.addHandler(fh)
-# logger.addHandler(ch)
-
 import datetime
 from airflow import DAG
 from airflow.models import Variable
@@ -62,6 +44,8 @@ project_folder = Variable.get("project_folder")
 order_output_folder = Variable.get("order_output_folder")
 store_order_file = Variable.get("store_order_file_name")
 
+
+# airflow backfill forecast_normal_dm_flow -s 2019-08-19 -e 2019-08-21
 
 default_args = {
     'owner': 'Carrefour',
@@ -75,6 +59,7 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
+
 dag = DAG('forecast_normal_dm_flow',
           schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
@@ -85,9 +70,7 @@ config = {}
 config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
-config['incremental'] = True
 config['starting_date'] = 20170101
-# config['ending_date'] = 20170107
 ###############################  End  ##########################
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])
@@ -157,11 +140,12 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       sql = f.read()
    #pass the time parameter if set_timeperiod is true
    if set_timeperiod:
-      # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -198,8 +182,10 @@ def execute_hive_by_sql_file(table_name,file_path,set_timeperiod=False,database=
       # delta = datetime.timedelta(days = 7)
       starting_date = config['starting_date']
       print(f"get starting_date {starting_date}") 
-      ending_date = kwargs.get('ds').replace('-','')
-      ending_date_withline = kwargs.get('ds')
+      ############################ airflow only trigger after interval is passed ############################
+      delta = datetime.timedelta(days = 6)
+      ending_date_withline = str((parser.parse(kwargs.get('ds'))+delta).date())
+      ending_date = ending_date_withline.replace('-','')
       print(f"get ending_date {ending_date}") 
       sql = sql.format(database=database,starting_date=starting_date,ending_date=ending_date,ending_date_withline=ending_date_withline)
    else:
@@ -679,8 +665,8 @@ def step27_model_execute_python(**kwargs):
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-create.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   delta = datetime.timedelta(days = 2)
-   starting_date = str((parser.parse(kwargs.get('ds'))-delta).date())
+   delta = datetime.timedelta(days = 5)
+   starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
    os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
    ## insert the new data into the summary table
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
@@ -753,6 +739,7 @@ step_normal_to_day_4.set_upstream(step_normal_to_day_3)
 #                               'set_timeperiod':True},
 #                            dag=dag)
 # step_normal_to_day_5.set_upstream(step_normal_to_day_4)
+# op_kwargs={'table_name': "forecast_regular_results_week_to_day_original_pred_all",
 def step_normal_to_day_5_output_table():
    ## create table if not exixts
    execute_impala_by_sql_file('forecast_regular_results_week_to_day_original_pred_all',\
@@ -776,4 +763,3 @@ step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
                            python_callable=step_normal_to_day_5_output_table,
                            dag=dag)
 step_normal_to_day_5.set_upstream(step_normal_to_day_4)
-

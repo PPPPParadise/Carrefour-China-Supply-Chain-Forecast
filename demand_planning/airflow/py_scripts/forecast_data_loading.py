@@ -64,3 +64,19 @@ def data_loading_process(run_date, tomorrow_date, project_folder):
     record_load_result(tomorrow_date, 'vartefact.forecast_nsa_dm_extract_log')
 
     print('All Loaded')
+    
+
+def calculate_service_level_process(tomorrow_date, project_folder):
+    print('Load service level')
+
+    print('Load service_level_calculation2')
+    sql = read_sql('forecast_service_level_by_item.sql', project_folder)
+    run_sql_with_impala("drop table if exists vartefact.service_level_calculation2")
+    run_sql_with_impala(sql)
+    
+    print('Load service_level_safety2_vinc')
+    sql = read_sql('forecast_service_level.sql', project_folder)
+    run_sql_with_impala("drop table if exists vartefact.service_level_safety2_vinc")
+    run_sql_with_impala(sql)
+
+    print('All Loaded')

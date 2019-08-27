@@ -1,4 +1,5 @@
 INSERT overwrite vartefact.forecast_item_code_id_stock (
+	con_holding,
 	date_key,
 	store_code,
 	dept_code,
@@ -13,7 +14,8 @@ INSERT overwrite vartefact.forecast_item_code_id_stock (
 	stop_month,
 	stop_reason
 	)
-SELECT DISTINCT pds.date_key,
+SELECT DISTINCT id.con_holding,
+	pds.date_key,
 	pds.store_code,
 	pds.dept_code,
 	pds.item_code,

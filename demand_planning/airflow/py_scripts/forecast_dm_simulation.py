@@ -275,10 +275,7 @@ def dm_order_simulation(date_str):
             case when
             fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
                 then 0
-                when
-                  dp.rotation = 'X'
-                then fcst.daily_sales_prediction_original
-                else fcst.daily_sales_prediction
+                else fcst.daily_sales_prediction_original
             end AS sales_prediction
         FROM temp.t_forecast_simulation_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
@@ -304,7 +301,10 @@ def dm_order_simulation(date_str):
             dp.sub_id,
             dp.store_code,
             dp.dm_theme_id,
-            fcst.daily_sales_prediction AS sales_prediction
+            fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
+                then 0
+                else fcst.daily_sales_prediction_original
+            end AS sales_prediction
         FROM dm_prediction dp
         JOIN temp.t_forecast_simulation_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id

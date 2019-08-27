@@ -254,7 +254,7 @@ def dm_order_process(date_str):
           coalesce(pred.sales_prediction, 'no', 'yes') as having_dm_prediction
        from 
             dm_item_store_order dm
-        left join temp.v_forecast_simulation_dm_sales_prediction pred
+        left join vartefact.forecast_weekly_dm_view pred
             on cast(pred.item_id as int) = dm.item_id
             and cast(pred.sub_id as int) = dm.sub_id
             and cast(pred.current_dm_theme_id as int) = dm.dm_theme_id
@@ -281,12 +281,9 @@ def dm_order_process(date_str):
             case when
             fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
                 then 0
-                when
-                  dp.rotation = 'X'
-                then fcst.daily_sales_prediction_original
-                else fcst.daily_sales_prediction
+                else fcst.daily_sales_prediction_original
             end AS sales_prediction
-        FROM temp.t_forecast_daily_sales_prediction fcst
+        FROM vartefact.t_forecast_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
@@ -312,9 +309,12 @@ def dm_order_process(date_str):
             dp.sub_id,
             dp.store_code,
             dp.dm_theme_id,
-            fcst.daily_sales_prediction AS sales_prediction
+            fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
+                then 0
+                else fcst.daily_sales_prediction_original
+            end AS sales_prediction
         FROM dm_prediction dp
-        JOIN temp.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
+        JOIN vartefact.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
             AND fcst.sub_id = dp.sub_id
             AND fcst.store_code = dp.store_code
             AND to_timestamp(fcst.date_key, 'yyyyMMdd') > to_timestamp(dp.theme_end_date, 'yyyy-MM-dd')

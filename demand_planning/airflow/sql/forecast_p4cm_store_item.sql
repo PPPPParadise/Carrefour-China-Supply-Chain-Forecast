@@ -7,6 +7,7 @@ INSERT overwrite vartefact.forecast_p4cm_store_item (
 	item_stop_reason,
 	item_stop_start_date,
 	item_stop_end_date,
+	npp,
 	shelf_capacity,
 	date_key
 	)
@@ -18,6 +19,7 @@ SELECT DISTINCT psi.store_code,
 	psi.item_stop_reason,
 	psi.item_stop_start_date,
 	psi.item_stop_end_date,
+	psi.npp,
 	psi.shelf_capacity,
 	psi.date_key
 FROM ods.p4cm_store_item psi

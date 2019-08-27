@@ -102,7 +102,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         AND osi.item_code = dm.item_code
         AND osi.sub_code =  dm.sub_code
         AND dm.first_order_date = '{0}'
-    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl
+    LEFT JOIN vartefact.service_level_safety2_vinc sl
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
         and  ord.dept_code = sl.dept_code
@@ -197,7 +197,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         AND osi.item_code = dm.item_code
         AND osi.sub_code =  dm.sub_code
         AND dm.first_order_date = '{0}'
-    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl
+    LEFT JOIN vartefact.service_level_safety2_vinc sl
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
         and  ord.dept_code = sl.dept_code
@@ -226,11 +226,10 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     xdock_order['service_level'] = xdock_order['service_level'].fillna(1)
 
-    xdock_order['order_qty_with_sl'] = np.round((xdock_order['order_qty'] + xdock_order['dm_order_qty'])
-                                                * (2 - xdock_order['service_level']), 2)
+    xdock_order['order_qty_with_sl'] = np.round(xdock_order['order_qty'] * (2 - xdock_order['service_level']), 2)
 
     xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_box']) * xdock_order[
-        'qty_per_box']
+        'qty_per_box'] + xdock_order['dm_order_qty']
 
     # +
     wb = Workbook()
@@ -299,7 +298,7 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
     LEFT JOIN vartefact.forecast_dm_dc_orders dm ON ord.item_id = dm.item_id
         AND ord.sub_id = dm.sub_id
         AND dm.first_order_date = '{0}'
-    LEFT JOIN vartefact.v_forecast_latest_service_level_item_dc sl ON ord.item_code = sl.item_code
+    LEFT JOIN vartefact.service_level_safety2_vinc sl ON ord.item_code = sl.item_code
         AND ord.sub_code = sl.sub_code
         AND ord.dept_code = sl.dept_code
     JOIN vartefact.forecast_dc_item_details dc ON ord.item_code = dc.item_code
@@ -318,9 +317,9 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
 
     dc_orders['dm_order_qty'] = dc_orders['dm_order_qty'].fillna(0)
 
-    dc_orders['order_qty_with_sl'] = np.round((dc_orders['order_qty'] + dc_orders['dm_order_qty']) * (2 - dc_orders['service_level']), 2)
+    dc_orders['order_qty_with_sl'] = np.round(dc_orders['order_qty'] * (2 - dc_orders['service_level']), 2)
 
-    dc_orders['order_qty_by_unit'] = np.ceil(dc_orders['order_qty_with_sl'] / dc_orders['qty_per_unit'])
+    dc_orders['order_qty_by_unit'] = np.ceil((dc_orders['order_qty_with_sl'] + dc_orders['dm_order_qty']) / dc_orders['qty_per_unit'])
 
     # +
     wb = Workbook()

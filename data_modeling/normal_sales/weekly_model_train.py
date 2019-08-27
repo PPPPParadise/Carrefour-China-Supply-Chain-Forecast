@@ -314,7 +314,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                                             early_stopping_rounds=15, 
                                                eval_set=eval_set)
                 
-                sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
+                #sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
                 
                 results[X_train.index] = sales_prediction_model.predict(X_train)
 
@@ -325,8 +325,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 # Train the error squared predictor
                 error_y_train = (results[X_train.index] - y_train)**2
 
-                sales_prediction_squared_error_model.fit(X_train, error_y_train, verbose=False,
-                                                             eval_metric="mae")
+                _, _, y_tr_error, y_te_error = train_test_split(X_train, error_y_train, test_size=0.1, random_state=42)
+                eval_set_error = [(X_tr, y_tr_error), (X_te, y_te_error)]
+                sales_prediction_squared_error_model.fit(X_tr, y_tr_error, verbose=False,
+                                                             eval_metric="mae",
+                                                             early_stopping_rounds=15, 
+                                                             eval_set=eval_set_error)
 
                 # score /= numFolds
 

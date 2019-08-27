@@ -270,7 +270,7 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 sales_prediction_squared_error_model = xgb.XGBRegressor(
                     silent=False,
                     learning_rate=0.03,
-                    n_estimators=100,
+                    n_estimators=1000,
                     max_depth=4,
                     # sub_sample=0.8,
                     gamma=1,

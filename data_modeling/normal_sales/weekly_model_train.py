@@ -382,8 +382,12 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                 # As reference: 3* = 90% interval, 1.28* = 80% interval... Cf normal distribution
                 
                 test.loc[:, 'predict_sales_max_confidence_interval'] = (
-                    test.forecast + 1.97 *
-                    np.log(abs(test.error_squared_forecast)**0.5 + 1))
+                    test.forecast + 2 * (abs(test.error_squared_forecast)**0.5))
+
+                test.loc[:, 'sales_prediction_cap'] = 3*abs(test.forecast)
+
+                test.predict_sales_max_confidence_interval = test[[
+                    'predict_sales_max_confidence_interval', 'sales_prediction_cap']].min(axis=1)
 
                 predict_sales_max_confidence_interval = list(
                     test.predict_sales_max_confidence_interval)

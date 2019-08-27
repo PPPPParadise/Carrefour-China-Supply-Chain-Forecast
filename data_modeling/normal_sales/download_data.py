@@ -66,6 +66,7 @@ def download_data(folder, big_table_name, file_name, spark_session_name='downloa
     sql_query = f"""
     select *
     from {big_table_name}
+    where sub_id = '1449154'
     """
     # where item_id in ('450165','16574')
     # where item_id in (select distinct item_id from {big_table_name} limit 5)

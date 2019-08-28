@@ -8,6 +8,7 @@
     "order_simulation_jar": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/workflow_integration/jar/carrefour_forecast_2.11-simulation.jar ",
     "project_folder": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/workflow_integration",
     "record_folder": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/output",
+    "store_highvalue_order_filename": "Store_HighValue_Order_{0}.xlsx ",
     "store_missing_order_filename": "Store_missing_order_{0}.csv",
     "store_order_file_name": "Store_Order_{0}.xlsx",
     "store_order_filename": "Store_Order_{0}.xlsx",

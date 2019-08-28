@@ -196,7 +196,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.npp,
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
-        cast(dc.qty_per_box as DOUBLE) AS qty_per_box,
+        cast(id.qty_per_unit as DOUBLE) AS qty_per_unit,
         cast(fpsi.npp as INT) itm_npp
     FROM xdock_items osi
     LEFT JOIN vartefact.forecast_xdock_orders ord
@@ -215,10 +215,11 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
         and  ord.dept_code = sl.dept_code
-    JOIN vartefact.forecast_dc_item_details dc 
-        ON ord.item_code = dc.item_code
-        AND ord.sub_code = dc.sub_code
-        AND ord.dept_code = dc.dept_code
+    JOIN vartefact.forecast_store_item_details id 
+        ON ord.item_code = id.item_code
+        AND ord.sub_code = id.sub_code
+        AND ord.dept_code = id.dept_code
+        AND ord.store_code = id.store_code
     LEFT JOIN vartefact.forecast_p4cm_store_item fpsi
         on ord.item_code = fpsi.item_code
         and ord.sub_code = fpsi.sub_code
@@ -246,8 +247,8 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     xdock_order['order_qty_with_sl'] = np.round(xdock_order['order_qty'] * (2 - xdock_order['service_level']), 2)
 
-    xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_box']) * xdock_order[
-        'qty_per_box'] + xdock_order['dm_order_qty']
+    xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_unit']) * xdock_order[
+        'qty_per_unit'] + xdock_order['dm_order_qty']
     
     xdock_order['itm_npp'] = xdock_order['itm_npp'].fillna(1)
 

@@ -1,0 +1,15 @@
+{
+    "dc_missing_order_filename": "DC_missing_order_{0}.csv ",
+    "dc_order_filename": "DC_Order_{0}.xlsx",
+    "forecast_output_folder": "/NFSdata/output/weekly_forecast",
+    "log_folder": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/logs ",
+    "order_output_folder": "/NFSdata/output/daily_order",
+    "order_process_jar": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/workflow_integration/jar/carrefour_forecast_2.11-0.1.jar",
+    "order_simulation_jar": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/workflow_integration/jar/carrefour_forecast_2.11-simulation.jar ",
+    "project_folder": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/workflow_integration",
+    "record_folder": "/data/jupyter/Carrefour-China-Supply-Chain-Forecast/output",
+    "store_missing_order_filename": "Store_missing_order_{0}.csv",
+    "store_order_file_name": "Store_Order_{0}.xlsx",
+    "store_order_filename": "Store_Order_{0}.xlsx",
+    "weekly_forecast_filename": "Carrefour_Order_Forecast_DC_level_{0}_{1}.xlsx"
+}

@@ -269,11 +269,17 @@ object StoreQueries {
         case when
           fcst.daily_sales_prediction < 0.2 and itmd.rotation != 'A'
         then 0
+        when
+          fcst.daily_sales_prediction < 0
+        then 0
         else fcst.daily_sales_prediction
         end ) as max_predict_sales,
         sum (
         case when
           fcst.daily_sales_prediction_original < 0.2 and itmd.rotation != 'A'
+        then 0
+        when
+          fcst.daily_sales_prediction_original < 0
         then 0
         else fcst.daily_sales_prediction_original
         end ) as daily_sales_prediction

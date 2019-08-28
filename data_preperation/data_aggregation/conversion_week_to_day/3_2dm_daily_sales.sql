@@ -38,6 +38,7 @@ FROM {database}.forecast_sprint4_add_dm_to_daily
 WHERE date_key >= '{starting_date}' 
 -- AND date_key < '{ending_date}' 
 AND current_dm_theme_id IS NOT NULL
+AND daily_sales_sum >= 0 
 ),
 add_dm_info AS (
 SELECT 

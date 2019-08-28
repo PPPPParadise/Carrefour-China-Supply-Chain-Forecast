@@ -91,6 +91,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.npp,
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
+        id.qty_per_unit,
         cast(fpsi.npp as INT) itm_npp
     FROM onstock_store_items osi
     LEFT JOIN vartefact.forecast_onstock_orders ord
@@ -107,8 +108,13 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         AND dm.first_order_date = '{0}'
     LEFT JOIN vartefact.service_level_safety2_vinc sl
         on ord.item_code = sl.item_code
-        and  ord.sub_code = sl.sub_code
-        and  ord.dept_code = sl.dept_code
+        and ord.sub_code = sl.sub_code
+        and ord.dept_code = sl.dept_code
+    JOIN vartefact.forecast_store_item_details id 
+        ON ord.item_code = id.item_code
+        AND ord.sub_code = id.sub_code
+        AND ord.dept_code = id.dept_code
+        AND ord.store_code = id.store_code
     LEFT JOIN vartefact.forecast_p4cm_store_item fpsi
         on ord.item_code = fpsi.item_code
         and ord.sub_code = fpsi.sub_code
@@ -141,6 +147,8 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     onstock_store['itm_npp'] = onstock_store['itm_npp'].fillna(1)
 
     onstock_store['order_value'] = onstock_store['itm_npp'] * onstock_store['total_order'] 
+    
+    onstock_store['single_unit_value'] = onstock_store['itm_npp'] * onstock_store['qty_per_unit'] 
     # -
 
     xdock_items_sql = """
@@ -196,7 +204,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.npp,
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
-        cast(id.qty_per_unit as DOUBLE) AS qty_per_unit,
+        id.qty_per_unit,
         cast(fpsi.npp as INT) itm_npp
     FROM xdock_items osi
     LEFT JOIN vartefact.forecast_xdock_orders ord
@@ -253,6 +261,8 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     xdock_order['itm_npp'] = xdock_order['itm_npp'].fillna(1)
 
     xdock_order['order_value'] = xdock_order['itm_npp'] * xdock_order['total_order'] 
+    
+    xdock_order['single_unit_value'] = xdock_order['itm_npp'] * xdock_order['qty_per_unit'] 
 
     # +
     wb = Workbook()
@@ -285,19 +295,19 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     ws2 = wb2.active
     ws2.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 'Sub_code', 'Order_Qty', 'Order_Value', 'Delv_yyyymmdd',
                'Regular_Order', 'Regular_Order_Without_PCB', 'DM_Order', 'DM_Order_Without_PCB',
-               'PPP', 'NPP', '4_Weeks_After_DM_Order'])
+               'PPP', 'NPP', '4_Weeks_After_DM_Order',' Order_Qty_Per_Unit', ' Order_Value_Per_Unit'])
 
     for index, ord in high_onstock_value_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
                    ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
                    ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                   ord.ppp, ord.npp, ord.four_weeks_after_dm])
+                   ord.ppp, ord.itm_npp, ord.four_weeks_after_dm, ord.qty_per_unit, ord.single_unit_value])
 
     for index, ord in high_xdock_value_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
                    ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
                    ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                   ord.ppp, ord.npp, ord.four_weeks_after_dm])
+                   ord.ppp, ord.itm_npp, ord.four_weeks_after_dm, ord.qty_per_unit, ord.single_unit_value])
 
     wb2.save(record_folder + '/' + store_highvalue_order_filename)
     

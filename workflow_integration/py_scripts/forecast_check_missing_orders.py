@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import os
+import pandas as pd
 from datetime import timedelta
 from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
@@ -104,24 +105,19 @@ def store_missing_order_process (date_str, record_folder, output_path, store_mis
     missing_store_orders = missing_onstock_orders.union(missing_xdock_orders)
     
     missing_store_orders_df = missing_store_orders.toPandas()
+    
+    missing_orders = missing_store_orders_df[['rotation', 'dept_code', 'item_code', 'sub_code', 'cn_name', 'store_code', 
+               'con_holding', 'ds_supplier_code', 'dc_supplier_code', 'reason']]
 
-    wb = Workbook()
-
-    ws = wb.active
-
-    ws.append(['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Store_Code', 
-               'Con_holding', 'DS_supplier', 'DC_supplier', 'Missing_reason'])
-
-    for index, ord in missing_store_orders_df.iterrows():
-        ws.append([ord.rotation, ord.dept_code, ord.item_code, ord.sub_code, ord.cn_name, ord.store_code, 
-                   ord.con_holding, ord.ds_supplier_code, ord.dc_supplier_code, ord.reason])
-        
     if len(missing_store_orders_df) == 0:
-        ws.append(["No missing orders found. All item stores have orders generated."])
-    
-    wb.save(record_folder + '/' + store_missing_file)
-    
-    wb.save(output_path + '/' + store_missing_file)
+        missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
+        missing_orders.to_csv(record_folder + '/' + store_missing_file ,mode='w',index=False, header=False)
+        missing_orders.to_csv(output_path + '/' + store_missing_file ,mode='w',index=False, header=False)
+    else:
+        missing_orders.columns=['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Store_Code', 
+               'Con_holding', 'DS_supplier', 'DC_supplier', 'Missing_reason']
+        missing_orders.to_csv(record_folder + '/' + store_missing_file ,mode='w',index=False, header=True)
+        missing_orders.to_csv(output_path + '/' + store_missing_file ,mode='w',index=False, header=True)
     
     sc.stop()
     
@@ -199,23 +195,19 @@ def dc_missing_order_process (date_str, record_folder, output_path, dc_missing_f
     missing_dc_order = sqlc.sql(dc_order_check_sql)
     
     missing_dc_order_df = missing_dc_order.toPandas()
+    
+    missing_orders = missing_dc_order_df[['rotation', 'dept_code', 'item_code', 'sub_code', 'item_name_local', 
+                   'current_warehouse', 'holding_code', 'primary_ds_supplier', 'reason']]
 
-    wb = Workbook()
-
-    ws = wb.active
-
-    ws.append(['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Warehouse', 
-               'Con_holding', 'DS_supplier', 'Missing_reason'])
-
-    for index, ord in missing_dc_order_df.iterrows():
-        ws.append([ord.rotation, ord.dept_code, ord.item_code, ord.sub_code, ord.item_name_local, ord.current_warehouse, 
-                   ord.holding_code, ord.primary_ds_supplier, ord.reason])
-        
     if len(missing_dc_order_df) == 0:
-        ws.append(["No missing orders found. All item DC have orders generated."])
-    
-    wb.save(record_folder + '/' + dc_missing_file)
-    
-    wb.save(output_path + '/' + dc_missing_file)
+        missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
+        missing_orders.to_csv(record_folder + '/' + dc_missing_file,mode='w',index=False, header=False)
+        missing_orders.to_csv(output_path + '/' + dc_missing_file,mode='w',index=False, header=False)
+    else:
+        missing_orders.columns=['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Warehouse', 
+                   'Con_holding', 'DS_supplier', 'Missing_reason']
+
+        missing_orders.to_csv(record_folder + '/' + dc_missing_file,mode='w',index=False, header=True)
+        missing_orders.to_csv(output_path + '/' + dc_missing_file,mode='w',index=False, header=False)
     
     sc.stop()

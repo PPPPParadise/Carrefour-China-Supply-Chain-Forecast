@@ -21,6 +21,8 @@ from py_scripts.forecast_check_missing_orders import dc_missing_order_process
 
 
 project_folder = Variable.get("project_folder").strip()
+record_folder = Variable.get("record_folder").strip()
+log_folder = Variable.get("log_folder").strip()
 order_output_folder = Variable.get("order_output_folder").strip()
 forecast_output_folder = Variable.get("forecast_output_folder").strip()
 store_order_filename = Variable.get("store_order_filename").strip()
@@ -38,14 +40,14 @@ default_args = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': datetime.timedelta(minutes=15)
+    'retry_delay': datetime.timedelta(minutes=5)
 }
 
 
 forecast_orderflow = DAG('forecast_orderflow',
-          schedule_interval='00 23 * * *',
+          schedule_interval='30 23 * * *',
           max_active_runs = 1,
-          default_args=default_args, catchup=True)
+          default_args=default_args, catchup=False)
 
 def get_order_day(tomorrow_ds):
     true_tomorrow = datetime.datetime.strptime(tomorrow_ds, '%Y%m%d').date() + timedelta(days=1)
@@ -70,25 +72,25 @@ def python_dm_order(ds, **kwargs):
     
 def python_store_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_order_file_process(order_day, project_folder + "/order_files", order_output_folder, store_order_filename.format(order_day))
+    store_order_file_process(order_day, record_folder + "/order_files", order_output_folder, store_order_filename.format(order_day))
     
     
 def python_dc_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dc_order_file_process(order_day, project_folder + "/order_files", order_output_folder, dc_order_filename.format(order_day))
+    dc_order_file_process(order_day, record_folder + "/order_files", order_output_folder, dc_order_filename.format(order_day))
     
 def python_store_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_missing_order_process(order_day, project_folder + "/order_checks", order_output_folder, store_missing_order_filename.format(order_day))
+    store_missing_order_process(order_day, record_folder + "/order_checks", order_output_folder, store_missing_order_filename.format(order_day))
     
     
 def python_dc_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dc_missing_order_process(order_day, project_folder + "/order_checks", order_output_folder, dc_missing_order_filename.format(order_day))
+    dc_missing_order_process(order_day, record_folder + "/order_checks", order_output_folder, dc_missing_order_filename.format(order_day))
 
 
 def show_dag_args(ds, **kwargs):
-    logFile = open(f'{project_folder}/logs/forecast_orderflow/ds_{ds}/run_parameter.log', "a")
+    logFile = open(f'{log_folder}/forecast_orderflow/ds_{ds}/run_parameter.log', "a")
     
     logFile.write(datetime.datetime.now().strftime("%Y%m%d %H:%M:%S"))
     logFile.write(" ds is ")
@@ -120,7 +122,7 @@ calculate_service_level = PythonOperator(task_id='calculate_service_level',
 run_onstock_store_order = BashOperator(
     task_id='run_onstock_store_order',
     wait_for_downstream=True,
-    bash_command='spark-submit --class "carrefour.forecast.process.OnStockForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1',
+    bash_command='spark-submit --class "carrefour.forecast.process.OnStockForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_onstock_store_order.log',
     dag=forecast_orderflow,
 )
 
@@ -128,7 +130,7 @@ run_onstock_store_order = BashOperator(
 run_xdock_order = BashOperator(
     task_id='run_xdock_order',
     wait_for_downstream=True,
-    bash_command='spark-submit --class "carrefour.forecast.process.XDockingForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1',
+    bash_command='spark-submit --class "carrefour.forecast.process.XDockingForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_xdock_order.log',
     dag=forecast_orderflow,
 )
 
@@ -136,7 +138,7 @@ run_xdock_order = BashOperator(
 run_dc_order = BashOperator(
     task_id='run_dc_order',
     wait_for_downstream=True,
-    bash_command='spark-submit --class "carrefour.forecast.process.DcForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1',
+    bash_command='spark-submit --class "carrefour.forecast.process.DcForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_dc_order.log',
     dag=forecast_orderflow,
 )
 

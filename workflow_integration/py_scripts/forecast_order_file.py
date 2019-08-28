@@ -140,7 +140,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     
     onstock_store['itm_npp'] = onstock_store['itm_npp'].fillna(1)
 
-    onstock_store['order_value'] = onstock_store['itm_npp'] * onstock_store['order_qty'] 
+    onstock_store['order_value'] = onstock_store['itm_npp'] * onstock_store['total_order'] 
     # -
 
     xdock_items_sql = """
@@ -251,7 +251,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     
     xdock_order['itm_npp'] = xdock_order['itm_npp'].fillna(1)
 
-    xdock_order['order_value'] = xdock_order['itm_npp'] * xdock_order['order_qty'] 
+    xdock_order['order_value'] = xdock_order['itm_npp'] * xdock_order['total_order'] 
 
     # +
     wb = Workbook()
@@ -268,7 +268,7 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     for index, ord in xdock_order.iterrows():
         ws.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.delivery_day, ord.order_qty,
+                   ord.sub_code, ord.total_order, ord.order_qty, ord.delivery_day,
                    ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
                    ord.ppp, ord.npp, ord.four_weeks_after_dm])
 
@@ -288,13 +288,13 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     for index, ord in high_onstock_value_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.delivery_day, ord.order_qty, ord.order_value,
+                   ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
                    ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
                    ord.ppp, ord.npp, ord.four_weeks_after_dm])
 
     for index, ord in high_xdock_value_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.delivery_day, ord.order_qty, ord.order_value,
+                   ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
                    ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
                    ord.ppp, ord.npp, ord.four_weeks_after_dm])
 

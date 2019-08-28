@@ -26,6 +26,7 @@ log_folder = Variable.get("log_folder").strip()
 order_output_folder = Variable.get("order_output_folder").strip()
 forecast_output_folder = Variable.get("forecast_output_folder").strip()
 store_order_filename = Variable.get("store_order_filename").strip()
+store_highvalue_order_filename = Variable.get("store_highvalue_order_filename").strip()
 dc_order_filename = Variable.get("dc_order_filename").strip()
 store_missing_order_filename = Variable.get("store_missing_order_filename").strip()
 dc_missing_order_filename = Variable.get("dc_missing_order_filename").strip()
@@ -72,7 +73,7 @@ def python_dm_order(ds, **kwargs):
     
 def python_store_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_order_file_process(order_day, record_folder + "/order_files", order_output_folder, store_order_filename.format(order_day))
+    store_order_file_process(order_day, record_folder + "/order_files", order_output_folder, store_order_filename.format(order_day), store_highvalue_order_filename.format(order_day))
     
     
 def python_dc_order_file(ds, **kwargs):

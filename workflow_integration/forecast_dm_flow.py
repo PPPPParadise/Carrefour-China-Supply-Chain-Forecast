@@ -76,7 +76,7 @@ default_args = {
 
 
 dag = DAG('forecast_dm_flow',
-schedule_interval='0 2 * * 2 0',
+schedule_interval='0 2 * * 0 0',
    default_args=default_args, catchup=False)
 
 

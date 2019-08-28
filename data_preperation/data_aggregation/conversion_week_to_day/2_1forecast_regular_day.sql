@@ -46,6 +46,7 @@ add_week_key as (
     from {database}.forecast_sprint4_add_dm_to_daily a
     left join week_day b
     on b.date_key = a.date_key
+    and a.daily_sales_sum >= 0 
 ),
 
 week_to_regular_day as (

@@ -184,6 +184,18 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
                           'predict_sales_error_squared': [],
                           'predict_sales_max_confidence_interval': [],
                           'order_prediction': []}
+                          
+        else:
+            score_dict = {'full_item': [], 'store_code': [],
+                          'week': [], 'train_mape_score': [],
+                          'predict_mape_score': [],
+                          'cumul/somme': [],
+                          'rel_error': [],
+                          'actual_sales': [],
+                          'predict_sales': [],
+                          'predict_sales_error_squared': [],
+                          'predict_sales_max_confidence_interval': [],
+                          'order_prediction': []}
 
         # get data for item only
         df_oneItem = inputDf[(inputDf['full_item'] == item)]

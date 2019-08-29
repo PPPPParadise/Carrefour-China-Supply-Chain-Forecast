@@ -1,0 +1,12 @@
+# The Script is used to compare the order vs the average sales for the last two weeks.
+# The input tables include:
+  vartefact.v_forecast_weekly_xdock_order_forecast
+  vartefact.v_forecast_weekly_dc_order_forecast
+  vartefact.forecast_sprint4_add_dm_to_daily
+  vartefact.lddb_calendar
+  vartefact.v_forecast_inscope_store_item_details
+# The output includes a graph describing the distribution for difference and a csv including the all the item list and his difference
+# The scipt only take the first week data to compare but you can choose different week by setting different run date
+# The parameters include:
+  output_path:the absolute file path which is used to save the temporary tables and ouput tables
+  run_date: the date is used to choose the start week. The time period is from the run date the the end of this week

@@ -5,7 +5,7 @@
 /*
 Input: 
     {database}.dm_mapping_1719_dates_last_version 
-    nsa.dm_extract_log
+    {database}.forecast_dm_plans_sprint4
     {database}.forecast_trxn_flag_v1_sprint4    
 Output: {database}.last_year_dm_sales_vrai_exact
 */ 
@@ -20,8 +20,8 @@ with psp_period as (
     from {database}.dm_mapping_1719_dates_last_version as a
     left join (
             select *
-            from nsa.dm_extract_log 
-            where extract_order = 50 )as b
+            from {database}.forecast_dm_plans_sprint4
+            )as b
     on cast(a.current_dm_theme_id as int) = b.dm_theme_id
 ),
 

@@ -1,7 +1,7 @@
 # Carrefour-China-Supply-Chain-Forecast
 
 
-Folder Structure 
+Folder Structure
 --------
 
 | File Path                                         | content                                                       |

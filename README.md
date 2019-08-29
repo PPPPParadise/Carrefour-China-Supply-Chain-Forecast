@@ -37,4 +37,3 @@ Usage
 
 1. Put the ```forecast_airflow.py``` file in ```./workflow_integration``` into the Airflow Dags folder.
 2. Turn it on at Airflow UI
-3. Test

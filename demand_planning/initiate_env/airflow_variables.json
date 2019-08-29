@@ -12,6 +12,5 @@
     "store_missing_order_filename": "Store_missing_order_{0}.csv",
     "store_order_file_name": "Store_Order_{0}.xlsx",
     "store_order_filename": "Store_Order_{0}.xlsx",
-    "weekly_forecast_filename": "Carrefour_Order_Forecast_DC_level_{0}_{1}.xlsx",
-    "xdock_high_volume_order_filename": "Xdock_HighVolume_Order_{0}.xlsx "
+    "weekly_forecast_filename": "Carrefour_Order_Forecast_DC_level_{0}_{1}.xlsx"
 }

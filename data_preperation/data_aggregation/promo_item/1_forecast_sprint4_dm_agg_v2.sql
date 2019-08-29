@@ -40,10 +40,8 @@ upcoming_dm as (
         dm_theme_id,
         sub_id,
         concat(substring(max(psp_start_date),1,4),substring(max(psp_start_date),6,2),substring(max(psp_start_date),9,2)) as date_key
-    from nsa.dm_extract_log
-    where extract_order = 50 
-    -- 
-    and dm_theme_id in (select dm_theme_id from ods.nsa_dm_theme where theme_status <> '-1')
+    from {database}.forecast_dm_plans_sprint4
+    where dm_theme_id in (select dm_theme_id from ods.nsa_dm_theme where theme_status <> '-1')
     group by item_id, sub_code, city_code, dm_theme_id, sub_id
     having max(psp_start_date) > '{ending_date_withline}' 
 ),
@@ -174,8 +172,7 @@ dm_information as (
             max(slot_type_code) as current_dm_slot_type_code,
             max(slot_type_name) as current_dm_slot_type_name,
             max(page_no) as current_dm_page_no
-        from nsa.dm_extract_log
-        where extract_order = 50
+        from {database}.forecast_dm_plans_sprint4
         group by item_id, sub_code, city_code, dm_theme_id
         ) as b
         on a.item_id = b.item_id

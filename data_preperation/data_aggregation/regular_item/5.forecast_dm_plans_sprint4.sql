@@ -13,7 +13,35 @@ Created: 2019-07-01
 -- drop table if exists {database}.forecast_dm_plans_sprint4;
 
 create table {database}.forecast_dm_plans_sprint4 as
+with extract_order_max as (
 select
+    dm_theme_id,
+    max(extract_order) as latest_extract_order 
+    
+from nsa.dm_extract_log 
+where extract_datetime >= to_timestamp({starting_date}, 'yyyyMMdd')
+and extract_order between 40 and 50
+group by dm_theme_id 
+),
+
+extract_info as (
+select 
+    b.*
+from extract_order_max a 
+left join nsa.dm_extract_log b 
+on a.dm_theme_id = b.dm_theme_id
+and a.latest_extract_order = b.extract_order
+),
+
+active_dm as (
+select  
+    *
+from ods.nsa_dm_theme
+where effective_year >= cast(substr(cast({starting_date} as string), 1, 4) as int)
+and theme_status <> '-1'     -- -1 means not validated
+) 
+
+select 
     a.dm_theme_id as dm_theme,
     a.theme_start_date,
     a.theme_end_date,
@@ -25,20 +53,9 @@ select
     a.theme_pages,
     b.* 
 
-from (
-    select
-        *
-    from ods.nsa_dm_theme
-    where effective_year >= cast(substr(cast({starting_date} as string), 1, 4) as int)
-    and theme_status <> '-1'     -- -1 means not validated
-    ) a
-left join ( select
-                 *
-            from nsa.dm_extract_log
-            where extract_order = 50
-            ) b   -- 50 means V5
+from active_dm a 
+left join extract_info b 
 on a.dm_theme_id = b.dm_theme_id
 ;
-
 
 -- INVALIDATE METADATA {database}.forecast_dm_plans_sprint4;

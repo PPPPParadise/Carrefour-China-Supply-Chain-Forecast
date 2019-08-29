@@ -8,6 +8,7 @@
 -- Input: 
 --  {database}.forecast_trxn_v7_full_item_id_sprint4_promo 
 --  {database}.forecast_sprint4_promo_with_coupon 
+--  {database}.forecast_dm_plans_sprint4
 -- Output: {database}.forecast_sprint4_promo_mecha_v4 
    
 -- Usage: compute the average discount per slot type
@@ -23,8 +24,7 @@ with forecast_trxn_v7_full_item_id_sprint4_promo as (
             city_code,
             max(slot_type_name) as slot_type_name
             
-        from nsa.dm_extract_log
-        where extract_order = 50 
+        from {database}.forecast_dm_plans_sprint4
         and dm_theme_id in (select distinct current_dm_theme_id
                             from {database}.forecast_trxn_v7_full_item_id_sprint4)
         and item_id in (select distinct item_id 

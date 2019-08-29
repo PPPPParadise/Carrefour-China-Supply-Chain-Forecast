@@ -111,12 +111,12 @@ def store_missing_order_process (date_str, record_folder, output_path, store_mis
 
     if len(missing_store_orders_df) == 0:
         missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
-        missing_orders.to_csv(record_folder + '/' + store_missing_file ,mode='w',index=False, header=False)
+        missing_orders.to_csv(record_folder + '/order_checks/' + store_missing_file ,mode='w',index=False, header=False)
         missing_orders.to_csv(output_path + '/' + store_missing_file ,mode='w',index=False, header=False)
     else:
         missing_orders.columns=['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Store_Code', 
                'Con_holding', 'DS_supplier', 'DC_supplier', 'Missing_reason']
-        missing_orders.to_csv(record_folder + '/' + store_missing_file ,mode='w',index=False, header=True)
+        missing_orders.to_csv(record_folder + '/order_checks/' + store_missing_file ,mode='w',index=False, header=True)
         missing_orders.to_csv(output_path + '/' + store_missing_file ,mode='w',index=False, header=True)
     
     sc.stop()
@@ -201,13 +201,13 @@ def dc_missing_order_process (date_str, record_folder, output_path, dc_missing_f
 
     if len(missing_dc_order_df) == 0:
         missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
-        missing_orders.to_csv(record_folder + '/' + dc_missing_file,mode='w',index=False, header=False)
+        missing_orders.to_csv(record_folder + '/order_checks/' + dc_missing_file,mode='w',index=False, header=False)
         missing_orders.to_csv(output_path + '/' + dc_missing_file,mode='w',index=False, header=False)
     else:
         missing_orders.columns=['Rotation', 'Dept_Code', 'Item_Code','CN_Name', 'Sub_code', 'Warehouse', 
                    'Con_holding', 'DS_supplier', 'Missing_reason']
 
-        missing_orders.to_csv(record_folder + '/' + dc_missing_file,mode='w',index=False, header=True)
+        missing_orders.to_csv(record_folder + '/order_checks/' + dc_missing_file,mode='w',index=False, header=True)
         missing_orders.to_csv(output_path + '/' + dc_missing_file,mode='w',index=False, header=False)
     
     sc.stop()

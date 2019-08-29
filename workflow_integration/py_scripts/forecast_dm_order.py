@@ -124,7 +124,7 @@ def dm_order_process(date_str):
             AND icis.item_code = fdo.item_code
             AND icis.sub_code = fdo.sub_code
             AND icis.store_code = fdo.store_code
-        WHERE del.extract_order = 50
+        WHERE del.extract_order = 40
             AND ndt.theme_start_date >= '{1}'
             AND ndt.theme_start_date < '{2}'
         """.replace("\n", " ")

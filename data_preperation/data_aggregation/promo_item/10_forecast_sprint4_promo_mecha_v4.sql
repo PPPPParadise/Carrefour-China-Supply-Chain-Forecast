@@ -25,7 +25,7 @@ with forecast_trxn_v7_full_item_id_sprint4_promo as (
             max(slot_type_name) as slot_type_name
             
         from {database}.forecast_dm_plans_sprint4
-        and dm_theme_id in (select distinct current_dm_theme_id
+        where dm_theme_id in (select distinct current_dm_theme_id
                             from {database}.forecast_trxn_v7_full_item_id_sprint4)
         and item_id in (select distinct item_id 
                             from {database}.forecast_trxn_v7_full_item_id_sprint4)

@@ -1,10 +1,11 @@
 package carrefour.forecast.core
 
-import carrefour.forecast.model.{DateRow, ItemEntity, ModelRun}
-import carrefour.forecast.util.LogUtil
-import org.apache.spark.sql.Row
-import java.util.{Calendar, Date}
 import java.text.SimpleDateFormat
+import java.util.{Calendar, Date}
+
+import carrefour.forecast.model.{DateRow, ItemEntity, ModelRun}
+import org.apache.spark.sql.Row
+
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
@@ -18,13 +19,13 @@ object OrderLogic {
     * Generate orders
     * 生成订单
     *
-    * @param ist              Item and store information 商品及门店信息
-    * @param rows             Input data rows. One row per day. 输入数据列。每个自然日对应一行
-    * @param runDateStr       Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
-    * @param modelRun         Job run information 脚本运行信息
-    * @param stockLevelMap    Day end stock level 门店盘点库存量
-    * @param dmOrdersMap      DM order quantity and delivery date / DM 订单订货量及其抵达日期
-    * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
+    * @param ist                   Item and store information 商品及门店信息
+    * @param rows                  Input data rows. One row per day. 输入数据列。每个自然日对应一行
+    * @param runDateStr            Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
+    * @param modelRun              Job run information 脚本运行信息
+    * @param stockLevelMap         Day end stock level 门店盘点库存量
+    * @param dmOrdersMap           DM order quantity and delivery date / DM 订单订货量及其抵达日期
+    * @param onTheWayStockMap      On the way order quantity and delivery date 在途订单订货量及其抵达日期
     * @param pastOrderForecastkMap Previously generated order forecast 过去生成的订单规划
     * @return Order information 订单信息
     */
@@ -65,12 +66,9 @@ object OrderLogic {
       var currentStock = stockLevelMap.getOrElse(ist, modelRun.defaultStockLevel)
       val dmDeliveryMap = getDmDeliveryMap(ist, dmOrdersMap)
 
-      var deliveryMap: Map[String, Double] = Map()
-      if (modelRun.isDcFlow) {
-        dateRowList = processPastDcOrders(dateRowList, ist, pastOrderForecastkMap)
-      } else {
-        deliveryMap = getDeliveryMap(ist, onTheWayStockMap)
-      }
+      var deliveryMap: Map[String, Double] = getDeliveryMap(ist, onTheWayStockMap)
+
+      val orderMap: Map[String, Double] = processPastDcOrders(ist, pastOrderForecastkMap)
 
       var i = 0
       orderD = 0
@@ -161,27 +159,35 @@ object OrderLogic {
             order.minStock = minStockLevel
             order.maxStock = maxStockLevel
 
-            if (futureStock + order.order_qty.doubleValue() > maxStockLevel
-              && isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)) {
+            if (futureStock < minStockLevel) {
+              // Below minimum. Need to order more
+                orderQty = (maxStockLevel + minStockLevel) / 2 - futureStock
+            }
 
-              if (futureStock > minStockLevel) {
-                orderQty = 0
-              } else {
-                orderQty = maxStockLevel - futureStock
+            if (!isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)
+              && orderMap.contains(order.order_day)) {
+              // Within 2 weeks and has previous forecast
+              // Try to keep consistency
+              orderQty = orderMap(order.order_day)
+
+              if (futureStock + orderQty < minStockLevel) {
+                // Past order quantity is not enough
+                // Increase 5% box
+                orderQty = changeOrderQtyWithConsistency(orderQty, 1.05, order)
               }
 
-            } else if (futureStock + order.order_qty.doubleValue() < minStockLevel
-              && isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)) {
-              orderQty = minStockLevel - futureStock
+              if (futureStock + orderQty > maxStockLevel) {
+                // Past order quantity is too much
+                // Decrease 5% box
+                orderQty = changeOrderQtyWithConsistency(orderQty, 0.95, order)
+              }
             }
 
             order.order_without_pcb = orderQty
-
           } else {
             if (futureStock < nextOderDeliver.minimum_stock_required) {
               orderQty = nextOderDeliver.minimum_stock_required - futureStock
               order.order_without_pcb = orderQty
-
             }
           }
 
@@ -281,11 +287,11 @@ object OrderLogic {
 
     if (isDcFlow) {
       DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-        , ist.entity_code, "", "", "", 0.0, "", "", "", 0.0, 0.0
+        , ist.entity_code, "", "", "", 0.0, "", "", "", 0.0, 0.0, 1
       )
     } else {
       DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
-        , "", ist.entity_code, "", "", 0.0, "", "", "", 0.0, 0.0
+        , "", ist.entity_code, "", "", 0.0, "", "", "", 0.0, 0.0, 1
       )
     }
   }
@@ -326,7 +332,8 @@ object OrderLogic {
       row.getAs[String]("delivery_date"),
 
       row.getAs[Double]("max_predict_sales"),
-      row.getAs[Double]("predict_sales")
+      row.getAs[Double]("predict_sales"),
+      row.getAs[Integer]("qty_per_box")
     )
 
     if (null != dateRow.order_day) {
@@ -439,8 +446,8 @@ object OrderLogic {
     * @param pastDcOrdersMap Past DC order results 过去生成的货仓订单
     * @return Past DC order information 过去生成的货仓订单信息
     */
-  private def processPastDcOrders(dateRowList: List[DateRow], ist: ItemEntity,
-                                  pastDcOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): List[DateRow] = {
+  private def processPastDcOrders(ist: ItemEntity,
+                                  pastDcOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var orderMap: Map[String, Double] = Map()
 
     if (pastDcOrdersMap.contains(ist)) {
@@ -448,20 +455,48 @@ object OrderLogic {
         orderMap = orderMap + (pastDcOrder._1 -> pastDcOrder._2)
       }
     }
-    for (dateRow <- dateRowList) {
-      if (dateRow.is_order_day && orderMap.contains(dateRow.order_day)) {
-        dateRow.order_qty = orderMap(dateRow.order_day).intValue()
-      }
-    }
 
-    dateRowList
+    orderMap
   }
 
+  /**
+    * Check if order day is within 2 weeks of run date
+    * 
+    *
+    * @param orderDayStr Order day
+    * @param twoWeeksAfterRunDate 2 weeks date in future
+    * @return
+    */
   private def isAfterTwoWeeks(orderDayStr: String, twoWeeksAfterRunDate: Date): Boolean = {
     val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
     val orderDate = dateKeyFormat.parse(orderDayStr)
 
     orderDate.after(twoWeeksAfterRunDate)
+  }
+
+  /**
+    *
+    * @param orderQty
+    * @param factor
+    * @param order
+    * @return
+    */
+  private def changeOrderQtyWithConsistency(orderQty: Double, factor: Double, order: DateRow): Double = {
+
+    val pastOrderBox = math.ceil(orderQty / order.qty_per_box)
+
+    val newOrderBox = math.ceil(pastOrderBox * factor)
+
+    if (newOrderBox < pastOrderBox) {
+      if (order.qty_per_box == order.pcb) {
+        // Already order per box
+        return newOrderBox * order.qty_per_box
+      } else if ( math.ceil(orderQty / order.pcb) == math.ceil(newOrderBox * order.qty_per_box / order.pcb)) {
+        // New order qty is still in same pallet or layer
+        return newOrderBox * order.qty_per_box
+      }
+    }
+    orderQty
   }
 
 

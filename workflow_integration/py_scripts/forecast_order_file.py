@@ -9,7 +9,11 @@ from os.path import abspath
 import numpy as np
 
 
-def store_order_file_process(date_str, record_folder, output_path, store_order_filename, store_highvalue_order_filename):
+def store_order_file_process(date_str, record_folder, output_path, 
+                             store_order_filename, 
+                             store_highvalue_order_filename,
+                             xdock_high_volume_order_filename):
+    
     warehouse_location = abspath('spark-warehouse')
     os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
 
@@ -92,7 +96,10 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
         id.qty_per_unit,
-        cast(fpsi.npp as INT) itm_npp
+        id.order_by,
+        id.qty_per_pack,
+        id.pack_per_box,
+        cast(fpsi.npp as DOUBLE) itm_npp
     FROM onstock_store_items osi
     LEFT JOIN vartefact.forecast_onstock_orders ord
         ON osi.store_code = ord.store_code
@@ -143,6 +150,8 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     onstock_store['service_level'] = onstock_store['service_level'].fillna(1)
 
     onstock_store['total_order'] = onstock_store['order_qty'] + onstock_store['dm_order_qty']
+    
+    onstock_store['total_order_in_unit'] = onstock_store['total_order'] / onstock_store['qty_per_unit']
     
     onstock_store['itm_npp'] = onstock_store['itm_npp'].fillna(1)
 
@@ -195,7 +204,6 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         osi.supplier_code,
         osi.item_code,
         osi.sub_code,
-        ord.order_qty,
         ord.order_without_pcb,
         ord.delivery_day,
         dm.order_qty as dm_order_qty,
@@ -205,7 +213,10 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
         dm.four_weeks_after_dm,
         cast(sl.service_level as DOUBLE) service_level,
         id.qty_per_unit,
-        cast(fpsi.npp as INT) itm_npp
+        id.order_by,
+        id.qty_per_pack,
+        id.pack_per_box,
+        cast(fpsi.npp as DOUBLE) itm_npp
     FROM xdock_items osi
     LEFT JOIN vartefact.forecast_xdock_orders ord
         ON osi.store_code = ord.store_code
@@ -241,7 +252,6 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     xdock_order = xdock_df.toPandas()
 
     # +
-    xdock_order['order_qty'] = xdock_order['order_qty'].fillna(0)
 
     xdock_order['order_qty_without_pcb'] = xdock_order['order_without_pcb'].fillna(0)
 
@@ -253,10 +263,13 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
 
     xdock_order['service_level'] = xdock_order['service_level'].fillna(1)
 
-    xdock_order['order_qty_with_sl'] = np.round(xdock_order['order_qty'] * (2 - xdock_order['service_level']), 2)
+    xdock_order['order_qty_with_sl'] = np.round(xdock_order['order_without_pcb'] * (2 - xdock_order['service_level']), 2)
+    
+    xdock_order['order_qty'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_unit']) * xdock_order['qty_per_unit']
 
-    xdock_order['total_order'] = np.ceil(xdock_order['order_qty_with_sl'] / xdock_order['qty_per_unit']) * xdock_order[
-        'qty_per_unit'] + xdock_order['dm_order_qty']
+    xdock_order['total_order'] = xdock_order['order_qty'] + xdock_order['dm_order_qty']
+    
+    xdock_order['total_order_in_unit'] = xdock_order['total_order'] / xdock_order['qty_per_unit']
     
     xdock_order['itm_npp'] = xdock_order['itm_npp'].fillna(1)
 
@@ -267,51 +280,77 @@ def store_order_file_process(date_str, record_folder, output_path, store_order_f
     # +
     wb = Workbook()
     ws = wb.active
-    ws.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 'Sub_code', 'Order_Qty', 'Delv_yyyymmdd',
+    ws.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 
+               'Sub_code', 'Order_Qty', 'Free_Goods_Qty', 'Delv_yyyymmdd',
+               'Order_Qty_In_Pieces', 'Order_By', 'Qty_Per_Pack', 'Pack_Per_Box',
                'Regular_Order', 'Regular_Order_Without_PCB', 'DM_Order', 'DM_Order_Without_PCB',
                'PPP', 'NPP', '4_Weeks_After_DM_Order'])
 
+    
     for index, ord in onstock_store.iterrows():
         ws.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.delivery_day, ord.order_qty,
-                   ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
+                   ord.sub_code, ord.total_order_in_unit, 0, ord.delivery_day, 
+                   ord.total_order, ord.order_by, ord.qty_per_pack, ord.pack_per_box,
+                   ord.order_qty, ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
                    ord.ppp, ord.npp, ord.four_weeks_after_dm])
 
     for index, ord in xdock_order.iterrows():
         ws.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.order_qty, ord.delivery_day,
-                   ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
+                   ord.sub_code, ord.total_order_in_unit, 0, ord.delivery_day, 
+                   ord.total_order, ord.order_by, ord.qty_per_pack, ord.pack_per_box,
+                   ord.order_qty, ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
                    ord.ppp, ord.npp, ord.four_weeks_after_dm])
 
-    wb.save(record_folder + '/' + store_order_filename)
+    wb.save(record_folder + '/order_files/' + store_order_filename)
 
     wb.save(output_path + '/' + store_order_filename)
     
-    high_onstock_value_orders = onstock_store[onstock_store['order_value'] >= 2000]
+    high_value_onstock_orders = onstock_store[onstock_store['order_value'] >= 2000]
 
-    high_xdock_value_orders = xdock_order[xdock_order['order_value'] >= 2000]
+    high_value_xdock_orders = xdock_order[xdock_order['order_value'] >= 2000]
     
     wb2 = Workbook()
     ws2 = wb2.active
-    ws2.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 'Sub_code', 'Order_Qty', 'Order_Value', 'Delv_yyyymmdd',
-               'Regular_Order', 'Regular_Order_Without_PCB', 'DM_Order', 'DM_Order_Without_PCB',
-               'PPP', 'NPP', '4_Weeks_After_DM_Order',' Order_Qty_Per_Unit', ' Order_Value_Per_Unit'])
+    ws2.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 
+                'Sub_code', 'Order_Qty_In_Pieces', 'Order_Value', 'Delv_yyyymmdd',
+                'Regular_Order', 'Regular_Order_Without_PCB', 'DM_Order', 'DM_Order_Without_PCB',
+                '4_Weeks_After_DM_Order','Order_Qty_Per_Order_Unit', 'NPP', 'Order_Value_Per_Order_Unit'])
 
-    for index, ord in high_onstock_value_orders.iterrows():
+    for index, ord in high_value_onstock_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
-                   ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                   ord.ppp, ord.itm_npp, ord.four_weeks_after_dm, ord.qty_per_unit, ord.single_unit_value])
+                    ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, 
+                    ord.order_qty, ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
+                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value])
 
-    for index, ord in high_xdock_value_orders.iterrows():
+    for index, ord in high_value_xdock_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                   ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, ord.order_qty,
-                   ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                   ord.ppp, ord.itm_npp, ord.four_weeks_after_dm, ord.qty_per_unit, ord.single_unit_value])
+                    ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day, 
+                    ord.order_qty,ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
+                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value])
 
-    wb2.save(record_folder + '/' + store_highvalue_order_filename)
+    wb2.save(record_folder + '/order_checks/' + store_highvalue_order_filename)
     
     wb2.save(output_path + '/' + store_highvalue_order_filename)
+    
+    high_volume_xdock_orders = xdock_order[xdock_order['total_order_in_unit'] > 1]
+    
+    wb3 = Workbook()
+    ws3 = wb3.active
+    ws3.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 
+                'Sub_code', 'Order_Qty', 'Order_Value', 'Delv_yyyymmdd',
+                'Regular_Order', 'Regular_Order_With_Service_Level', 'Regular_Order_Without_PCB', 'DM_Order', 
+                'DM_Order_Without_PCB','4_Weeks_After_DM_Order','Service_Level' ])
+    
+    for index, ord in high_volume_xdock_orders.iterrows():
+        ws3.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
+                    ord.sub_code, ord.total_order_in_unit, ord.order_value, ord.delivery_day, 
+                    ord.order_qty, ord.order_qty_with_sl, ord.order_without_pcb, ord.dm_order_qty, 
+                    ord.dm_order_qty_without_pcb, ord.four_weeks_after_dm, ord.service_level])
+
+    wb3.save(record_folder + '/order_checks/' + xdock_high_volume_order_filename)
+    
+    wb3.save(output_path + '/' + xdock_high_volume_order_filename)
+    
 
     sc.stop()
 
@@ -349,10 +388,11 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
         dm.npp,
         cast(sl.service_level AS DOUBLE) service_level,
         cast(dc.qty_per_unit AS float) AS qty_per_unit,
-        dc.order_uint,
+        dc.qty_per_box,
         dc.item_name_english,
         dc.item_name_local,
-        dc.current_warehouse
+        dc.current_warehouse,
+        dc.primary_barcode
     FROM vartefact.forecast_dc_orders ord
     LEFT JOIN vartefact.forecast_dm_dc_orders dm ON ord.item_id = dm.item_id
         AND ord.sub_id = dm.sub_id
@@ -378,28 +418,27 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
 
     dc_orders['order_qty_with_sl'] = np.round(dc_orders['order_qty'] * (2 - dc_orders['service_level']), 2)
 
-    dc_orders['order_qty_by_unit'] = np.ceil((dc_orders['order_qty_with_sl'] + dc_orders['dm_order_qty']) / dc_orders['qty_per_unit'])
+    dc_orders['order_qty_by_unit'] = np.ceil((dc_orders['order_qty_with_sl'] + dc_orders['dm_order_qty']) / dc_orders['qty_per_box'])
 
     # +
     wb = Workbook()
     ws = wb.active
     ws.append(
-        ['Supplier Code', 'Warehouse', 'Delivery Date', 'Item Code', 'Item Name', 'Item Name Local', 'POQ quantity',
-         'Purchase Quantity', 'Unit', 'Intend Purchase Qty', 'Qty without service level', 'Qty per Unit',
-         'Regular Order (in Pieces)','DM Order (In Pieces)',
-         'Purchase Price', 'Purchase Amount', 'Unit DC Discount',
-         'Unit % discount', 'Additional free goods', 'NPP', 'Main barcode'])
+        ['Supplier Code', 'Warehouse', 'Delivery Date', 'Item Code', 
+         'Item Name', 'ITEM SUBCODE NAME LOCAL', 'POQ quantity', 'Purchase Quantity', 
+         'Unit', 'Purchase Price', 'Purchase Amount', 'Unit DC Discount',
+         'Unit % discount', 'Additional free goods', 'NPP', 'Main barcode',
+         'Service Level', 'Regular Order (in Pieces)', 'DM Order (In Pieces)'])
 
     for index, ord in dc_orders.iterrows():
-        ws.append([ord.supplier_code, ord.current_warehouse, ord.delivery_day,
-                   ord.dept_code + ord.item_code + ord.sub_code,
-                   ord.item_name_english, ord.item_name_local, '',
-                   ord.order_qty_by_unit, ord.order_uint, ord.order_qty_with_sl,
-                   ord.order_qty, ord.qty_per_unit,
-                   ord.order_qty, ord.dm_order_qty,
-                   '', '', '', '', '', ord.npp, ''])
+        ws.append([ord.dept_code + ord.supplier_code, ord.current_warehouse, 
+                   ord.delivery_day,ord.dept_code + ord.item_code + ord.sub_code,
+                   ord.item_name_english, ord.item_name_local, '', ord.order_qty_by_unit, 
+                   'B', '', '', '', 
+                   '', '', ord.npp, ord.primary_barcode,
+                   ord.service_level, ord.order_qty, ord.dm_order_qty,])
 
-    wb.save(record_folder + '/' + dc_order_filename)
+    wb.save(record_folder + '/order_files/' + dc_order_filename)
 
     wb.save(output_path + '/' + dc_order_filename)
     # -

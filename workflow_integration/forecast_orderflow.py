@@ -19,7 +19,6 @@ from py_scripts.forecast_check_missing_orders import store_missing_order_process
 from py_scripts.forecast_check_missing_orders import dc_missing_order_process
 
 
-
 project_folder = Variable.get("project_folder").strip()
 record_folder = Variable.get("record_folder").strip()
 log_folder = Variable.get("log_folder").strip()
@@ -27,6 +26,7 @@ order_output_folder = Variable.get("order_output_folder").strip()
 forecast_output_folder = Variable.get("forecast_output_folder").strip()
 store_order_filename = Variable.get("store_order_filename").strip()
 store_highvalue_order_filename = Variable.get("store_highvalue_order_filename").strip()
+xdock_high_volume_order_filename = Variable.get("xdock_high_volume_order_filename").strip()
 dc_order_filename = Variable.get("dc_order_filename").strip()
 store_missing_order_filename = Variable.get("store_missing_order_filename").strip()
 dc_missing_order_filename = Variable.get("dc_missing_order_filename").strip()
@@ -62,32 +62,31 @@ def python_load_data(ds, **kwargs):
     
 
 def python_calculate_service_level(ds, **kwargs):
-    order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    
-    calculate_service_level_process(order_day, project_folder)
+    order_day = get_order_day(kwargs['tomorrow_ds_nodash'])  
+    #calculate_service_level_process(order_day, project_folder)
     
 def python_dm_order(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dm_order_process(order_day)
+    #dm_order_process(order_day)
     
     
 def python_store_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_order_file_process(order_day, record_folder + "/order_files", order_output_folder, store_order_filename.format(order_day), store_highvalue_order_filename.format(order_day))
+    store_order_file_process(order_day, record_folder, order_output_folder, store_order_filename.format(order_day), store_highvalue_order_filename.format(order_day), xdock_high_volume_order_filename.format(order_day))
     
     
 def python_dc_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dc_order_file_process(order_day, record_folder + "/order_files", order_output_folder, dc_order_filename.format(order_day))
+    dc_order_file_process(order_day, record_folder, order_output_folder, dc_order_filename.format(order_day))
     
 def python_store_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_missing_order_process(order_day, record_folder + "/order_checks", order_output_folder, store_missing_order_filename.format(order_day))
+    store_missing_order_process(order_day, record_folder, order_output_folder, store_missing_order_filename.format(order_day))
     
     
 def python_dc_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dc_missing_order_process(order_day, record_folder + "/order_checks", order_output_folder, dc_missing_order_filename.format(order_day))
+    dc_missing_order_process(order_day, record_folder, order_output_folder, dc_missing_order_filename.format(order_day))
 
 
 def show_dag_args(ds, **kwargs):
@@ -114,11 +113,11 @@ calculate_service_level = PythonOperator(task_id='calculate_service_level',
                              wait_for_downstream=True,
                              dag=forecast_orderflow)
 
-#run_dm_order = PythonOperator(task_id='run_dm_order',
-#                             python_callable=python_dm_order,
-#                             provide_context=True,
-#                             wait_for_downstream=True,
-#                             dag=forecast_orderflow)
+run_dm_order = PythonOperator(task_id='run_dm_order',
+                             python_callable=python_dm_order,
+                             provide_context=True,
+                             wait_for_downstream=True,
+                             dag=forecast_orderflow)
 
 run_onstock_store_order = BashOperator(
     task_id='run_onstock_store_order',
@@ -177,9 +176,9 @@ show_dag_args = PythonOperator(task_id="show_dag_args",
 
 load_data.set_upstream(show_dag_args)
 calculate_service_level.set_upstream(load_data)
-#run_dm_order.set_upstream(calculate_service_level)
-run_onstock_store_order.set_upstream(calculate_service_level)
-run_xdock_order.set_upstream(calculate_service_level)
+run_dm_order.set_upstream(calculate_service_level)
+run_onstock_store_order.set_upstream(run_dm_order)
+run_xdock_order.set_upstream(run_dm_order)
 run_dc_order.set_upstream(run_onstock_store_order)
 generate_store_order_file.set_upstream(run_onstock_store_order)
 generate_store_order_file.set_upstream(run_xdock_order)

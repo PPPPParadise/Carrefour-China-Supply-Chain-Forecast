@@ -53,7 +53,7 @@ with combine_ordered_received as
         and rec.dc_site = 'DC1'
         and ord.order_status <> 'L'   -- cancelled orders
         -- and ord.mother_warehouse_code not in ('KP01', 'kp01')   -- excluded BPs
-        and ord.mother_warehouse_code = 'KS01'
+        and ord.mother_warehouse_code in ('KS01', 'KX01')
         and rec.date_key between "{date_start}" and "{date_end}"
     group by
         rec.item_code,

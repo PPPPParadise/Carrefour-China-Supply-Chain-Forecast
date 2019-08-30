@@ -24,6 +24,8 @@ record_folder = Variable.get("record_folder").strip()
 log_folder = Variable.get("log_folder").strip()
 order_output_folder = Variable.get("order_output_folder").strip()
 forecast_output_folder = Variable.get("forecast_output_folder").strip()
+monitoring_output_folder = Variable.get("monitoring_output_folder").strip()
+datachecking_output_folder = Variable.get("datachecking_output_folder").strip()
 store_order_filename = Variable.get("store_order_filename").strip()
 store_highvalue_order_filename = Variable.get("store_highvalue_order_filename").strip()
 xdock_high_volume_order_filename = Variable.get("xdock_high_volume_order_filename").strip()
@@ -48,7 +50,7 @@ default_args = {
 forecast_orderflow = DAG('forecast_orderflow',
           schedule_interval='30 23 * * *',
           max_active_runs = 1,
-          default_args=default_args, catchup=False)
+          default_args=default_args, catchup=True)
 
 def get_order_day(tomorrow_ds):
     true_tomorrow = datetime.datetime.strptime(tomorrow_ds, '%Y%m%d').date() + timedelta(days=1)
@@ -72,7 +74,7 @@ def python_dm_order(ds, **kwargs):
     
 def python_store_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_order_file_process(order_day, record_folder, order_output_folder, store_order_filename.format(order_day), store_highvalue_order_filename.format(order_day), xdock_high_volume_order_filename.format(order_day))
+    store_order_file_process(order_day, record_folder, order_output_folder, datachecking_output_folder, store_order_filename.format(order_day), store_highvalue_order_filename.format(order_day), xdock_high_volume_order_filename.format(order_day))
     
     
 def python_dc_order_file(ds, **kwargs):
@@ -81,12 +83,12 @@ def python_dc_order_file(ds, **kwargs):
     
 def python_store_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    store_missing_order_process(order_day, record_folder, order_output_folder, store_missing_order_filename.format(order_day))
+    store_missing_order_process(order_day, record_folder, datachecking_output_folder, store_missing_order_filename.format(order_day))
     
     
 def python_dc_missing_order_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    dc_missing_order_process(order_day, record_folder, order_output_folder, dc_missing_order_filename.format(order_day))
+    dc_missing_order_process(order_day, record_folder, datachecking_output_folder, dc_missing_order_filename.format(order_day))
 
 
 def show_dag_args(ds, **kwargs):

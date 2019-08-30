@@ -10,6 +10,7 @@ import numpy as np
 
 
 def store_order_file_process(date_str, record_folder, output_path, 
+                             datachecking_output_folder,
                              store_order_filename, 
                              store_highvalue_order_filename,
                              xdock_high_volume_order_filename):
@@ -334,7 +335,7 @@ def store_order_file_process(date_str, record_folder, output_path,
 
     wb2.save(record_folder + '/order_checks/' + store_highvalue_order_filename)
     
-    wb2.save(output_path + '/' + store_highvalue_order_filename)
+    wb2.save(datachecking_output_folder + '/' + store_highvalue_order_filename)
     
     high_volume_xdock_orders = xdock_order[xdock_order['total_order_in_unit'] > 1]
     
@@ -357,7 +358,7 @@ def store_order_file_process(date_str, record_folder, output_path,
 
     wb3.save(record_folder + '/order_checks/' + xdock_high_volume_order_filename)
     
-    wb3.save(output_path + '/' + xdock_high_volume_order_filename)
+    wb3.save(datachecking_output_folder + '/' + xdock_high_volume_order_filename)
     
 
     sc.stop()

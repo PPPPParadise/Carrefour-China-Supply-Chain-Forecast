@@ -50,10 +50,10 @@ def get_qty_per_unit(row):
     return int(row['qty_per_pack']) * int(row['pack_per_box'])      
 
 def get_store_to_dc_day(row):
-    if row['risk_item_unilever'] == 'Y':
-        return int(row["lead_time"]) - 3
+    if row['risk_item_unilever'] == 'Y' and row['lead_time'] == '3':
+        return int(0)
     
-    return int(row["lead_time"]) - 2
+    return int(1) 
 
 
 # -

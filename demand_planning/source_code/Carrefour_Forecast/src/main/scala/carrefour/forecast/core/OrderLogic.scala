@@ -461,7 +461,7 @@ object OrderLogic {
 
   /**
     * Check if order day is within 2 weeks of run date
-    * 
+    *
     *
     * @param orderDayStr Order day
     * @param twoWeeksAfterRunDate 2 weeks date in future
@@ -485,7 +485,10 @@ object OrderLogic {
 
     val pastOrderBox = math.ceil(orderQty / order.qty_per_box)
 
-    val newOrderBox = math.ceil(pastOrderBox * factor)
+    var newOrderBox = math.ceil(pastOrderBox * factor)
+    if (factor > 1) {
+      newOrderBox = math.floor(pastOrderBox * factor)
+    }
 
     if (newOrderBox < pastOrderBox) {
       if (order.qty_per_box == order.pcb) {

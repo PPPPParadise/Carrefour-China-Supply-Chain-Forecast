@@ -50,9 +50,6 @@ def get_qty_per_unit(row):
     return int(row['qty_per_pack']) * int(row['pack_per_box'])      
 
 def get_store_to_dc_day(row):
-    if row['risk_item_unilever'] == 'Y' and row['lead_time'] == '3':
-        return int(0)
-    
     return int(1) 
 
 
@@ -163,9 +160,6 @@ for index, freq in order_x_frequency.iterrows():
         order_x_frequency_mapping.append([freq.store_code, freq.dept_code, freq.item_code, freq.sub_code,
                                         freq.lead_time, freq.dc_to_store_time, freq.order_day, "7", "Sun"])
 # -
-
-
-
 xdock_order_mapping = pd.DataFrame(order_x_frequency_mapping)
 
 xdock_order_mapping.columns = ["store_code", "dept_code", "item_code", "sub_code", "lead_time", 

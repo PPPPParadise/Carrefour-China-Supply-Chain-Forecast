@@ -19,7 +19,7 @@ select
     max(extract_order) as latest_extract_order 
     
 from nsa.dm_extract_log 
-where extract_datetime >= to_timestamp({starting_date}, 'yyyyMMdd')
+where extract_datetime >= to_timestamp(cast({starting_date} as string), 'yyyyMMdd')
 and extract_order between 40 and 50
 group by dm_theme_id 
 ),

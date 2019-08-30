@@ -306,8 +306,12 @@ def store_order_file_process(date_str, record_folder, output_path,
     wb.save(output_path + '/' + store_order_filename)
     
     high_value_onstock_orders = onstock_store[onstock_store['order_value'] >= 2000]
+    
+    high_value_onstock_orders = high_value_onstock_orders.sort_values(by='single_unit_value', ascending=True)
 
     high_value_xdock_orders = xdock_order[xdock_order['order_value'] >= 2000]
+    
+    high_value_xdock_orders = high_value_xdock_orders.sort_values(by='single_unit_value', ascending=True)
     
     wb2 = Workbook()
     ws2 = wb2.active
@@ -334,18 +338,22 @@ def store_order_file_process(date_str, record_folder, output_path,
     
     high_volume_xdock_orders = xdock_order[xdock_order['total_order_in_unit'] > 1]
     
+    high_volume_xdock_orders = high_volume_xdock_orders.sort_values(by='qty_per_unit', ascending=False)
+    
     wb3 = Workbook()
     ws3 = wb3.active
     ws3.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code', 
-                'Sub_code', 'Order_Qty', 'Order_Value', 'Delv_yyyymmdd',
-                'Regular_Order', 'Regular_Order_With_Service_Level', 'Regular_Order_Without_PCB', 'DM_Order', 
-                'DM_Order_Without_PCB','4_Weeks_After_DM_Order','Service_Level' ])
+                'Sub_code', 'Order_Qty', 'Order_Qty_In_Pieces', 'Order_Value', 
+                'Delv_yyyymmdd', 'Regular_Order', 'Regular_Order_With_Service_Level', 'Regular_Order_Without_PCB', 
+                'Qty_Per_Order_Unit', 'DM_Order', 'DM_Order_Without_PCB','4_Weeks_After_DM_Order',
+                'Service_Level' ])
     
     for index, ord in high_volume_xdock_orders.iterrows():
         ws3.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
-                    ord.sub_code, ord.total_order_in_unit, ord.order_value, ord.delivery_day, 
-                    ord.order_qty, ord.order_qty_with_sl, ord.order_without_pcb, ord.dm_order_qty, 
-                    ord.dm_order_qty_without_pcb, ord.four_weeks_after_dm, ord.service_level])
+                    ord.sub_code, ord.total_order_in_unit, ord.total_order, ord.order_value, 
+                    ord.delivery_day, ord.order_qty, ord.order_qty_with_sl, ord.order_without_pcb, 
+                    ord.qty_per_unit,ord.dm_order_qty, ord.dm_order_qty_without_pcb, ord.four_weeks_after_dm, 
+                    ord.service_level])
 
     wb3.save(record_folder + '/order_checks/' + xdock_high_volume_order_filename)
     

@@ -19,7 +19,6 @@ from py_scripts.forecast_check_missing_orders import store_missing_order_process
 from py_scripts.forecast_check_missing_orders import dc_missing_order_process
 
 
-
 project_folder = Variable.get("project_folder").strip()
 record_folder = Variable.get("record_folder").strip()
 log_folder = Variable.get("log_folder").strip()

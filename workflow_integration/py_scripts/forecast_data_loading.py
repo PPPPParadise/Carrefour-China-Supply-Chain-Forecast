@@ -1,5 +1,5 @@
-import warnings
 import datetime
+import warnings
 
 warnings.filterwarnings('ignore')
 from impala.dbapi import connect
@@ -55,16 +55,16 @@ def data_loading_process(run_date, tomorrow_date, project_folder):
     sql = read_sql('forecast_lfms_daily_dcstock.sql', project_folder)
     run_sql_with_impala(sql.format(tomorrow_date))
     record_load_result(tomorrow_date, 'vartefact.forecast_lfms_daily_dcstock')
-    
+
     tomorrow_date_dash = datetime.datetime.strptime(tomorrow_date, '%Y%m%d').date().strftime("%Y-%m-%d")
-    
+
     print('Load forecast_nsa_dm_extract_log')
     sql = read_sql('forecast_nsa_dm_extract_log.sql', project_folder)
     run_sql_with_impala(sql.format(tomorrow_date_dash))
     record_load_result(tomorrow_date, 'vartefact.forecast_nsa_dm_extract_log')
 
     print('All Loaded')
-    
+
 
 def calculate_service_level_process(tomorrow_date, project_folder):
     print('Load service level')
@@ -73,7 +73,7 @@ def calculate_service_level_process(tomorrow_date, project_folder):
     sql = read_sql('forecast_service_level_by_item.sql', project_folder)
     run_sql_with_impala("drop table if exists vartefact.service_level_calculation2")
     run_sql_with_impala(sql)
-    
+
     print('Load service_level_safety2_vinc')
     sql = read_sql('forecast_service_level.sql', project_folder)
     run_sql_with_impala("drop table if exists vartefact.service_level_safety2_vinc")

@@ -16,7 +16,6 @@ from py_scripts.forecast_dm_simulation import dm_order_simulation
 project_folder = Variable.get("project_folder").strip()
 order_simulation_jar = Variable.get("order_simulation_jar").strip()
 
-
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 6, 17),
@@ -28,33 +27,34 @@ default_args = {
     'retries': 1,
     'retry_delay': datetime.timedelta(minutes=15)
 }
-    
+
+
 def python_dm_simulation(ds, **kwargs):
     dm_order_simulation(kwargs['tomorrow_ds_nodash'])
-    
+
+
 def python_end_simulation_progress(ds, **kwargs):
     logFile = open(f'/data/jupyter/ws_house/airflow/simulation_run.txt', "a")
-    
+
     logFile.write(datetime.datetime.now().strftime("%Y%m%d %H:%M:%S"))
     logFile.write(" ds: ")
     logFile.write(ds)
     logFile.write("Finish \n")
-    
+
     logFile.close()
-    
-    
+
+
 forecast_simulation = DAG('forecast_simulation',
-          schedule_interval='30 6 * * *',
-          default_args=default_args, 
-                          max_active_runs = 1,
+                          schedule_interval='30 6 * * *',
+                          default_args=default_args,
+                          max_active_runs=1,
                           catchup=False)
 
-
 run_dm_simulation = PythonOperator(task_id='run_dm_simulation',
-                             python_callable=python_dm_simulation,
-                             provide_context=True,
-                             dag=forecast_simulation,
-                                  wait_for_downstream=True)
+                                   python_callable=python_dm_simulation,
+                                   provide_context=True,
+                                   dag=forecast_simulation,
+                                   wait_for_downstream=True)
 
 run_simulation = BashOperator(
     task_id='run_simulation',
@@ -64,11 +64,10 @@ run_simulation = BashOperator(
 )
 
 end_simulation_progress = PythonOperator(task_id="end_simulation_progress",
-                             python_callable=python_end_simulation_progress,
+                                         python_callable=python_end_simulation_progress,
                                          wait_for_downstream=True,
-                             provide_context=True,
-                             dag=forecast_simulation)
-
+                                         provide_context=True,
+                                         dag=forecast_simulation)
 
 run_simulation.set_upstream(run_dm_simulation)
 end_simulation_progress.set_upstream(run_simulation)

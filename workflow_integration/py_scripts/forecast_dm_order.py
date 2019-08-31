@@ -357,7 +357,7 @@ def dm_order_process(date_str):
         .withColumn("first_dm_order_qty_without_pcb",
                     F.when(dm_final.rotation != 'X', 0.75 * dm_final.dm_order_qty_without_pcb)
                     .otherwise(dm_final.dm_order_qty_without_pcb))
-    
+
     dm_final = dm_final \
         .withColumn("first_dm_order_qty",
                     F.when(dm_final.first_dm_order_qty_without_pcb > 0.0,
@@ -582,7 +582,7 @@ def dm_order_process(date_str):
     output_line = f"Number of DM DC orders {dm_dc_pcb.count()}"
     print_output(output_line)
     output_str = output_str + output_line
-    
+
     print_output("Write DC order to datalake")
 
     dm_dc_sql = \
@@ -627,4 +627,3 @@ def dm_order_process(date_str):
 
     sc.stop()
     print_output("Job finish")
-

@@ -254,8 +254,9 @@ def dm_order_simulation(date_str):
         """.replace("\n", " ")
 
     dm_prediction = sqlc.sql(dm_sales_predict_sql)
-    
-    dm_prediction.filter("having_dm_prediction = 'no' ").write.mode("overwrite").format("parquet").saveAsTable("vartefact.forecast_no_dm_prediction")
+
+    dm_prediction.filter("having_dm_prediction = 'no' ").write.mode("overwrite").format("parquet").saveAsTable(
+        "vartefact.forecast_no_dm_prediction")
 
     dm_prediction.createOrReplaceTempView("dm_prediction")
 
@@ -293,7 +294,8 @@ def dm_order_simulation(date_str):
     agg_dm_regular_sales = dm_regular_sales.groupBy(['item_id', 'sub_id', 'store_code', 'dm_theme_id']). \
         agg(F.sum("sales_prediction").alias("regular_sales_before_dm"))
 
-    dm_with_regular = dm_prediction.join(agg_dm_regular_sales, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'], "left")
+    dm_with_regular = dm_prediction.join(agg_dm_regular_sales, ['item_id', 'sub_id', 'store_code', 'dm_theme_id'],
+                                         "left")
 
     # # For ppp <= 90% npp, get 4 weeks after sales for ROTATION A items
     print_output("DM PPP logic")
@@ -356,14 +358,13 @@ def dm_order_simulation(date_str):
         .withColumn("first_dm_order_qty_without_pcb",
                     F.when(dm_final.rotation != 'X', 0.75 * dm_final.dm_order_qty_without_pcb)
                     .otherwise(dm_final.dm_order_qty_without_pcb))
-    
+
     dm_final = dm_final \
         .withColumn("first_dm_order_qty",
                     F.when(dm_final.first_dm_order_qty_without_pcb > 0.0,
                            F.ceil(dm_final.first_dm_order_qty_without_pcb / dm_final.pcb) * dm_final.pcb)
                     .otherwise(int(0)))
 
-        
     dm_final_pcb = dm_final \
         .withColumn("dm_order_qty",
                     F.when(dm_final.dm_order_qty_without_pcb > 0.0,
@@ -373,7 +374,7 @@ def dm_order_simulation(date_str):
     dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
 
     print_output("Write store order to datalake")
-    
+
     dm_sql = \
         """
         INSERT INTO vartefact.forecast_simulation_dm_orders
@@ -413,7 +414,7 @@ def dm_order_simulation(date_str):
     sqlc.sql(dm_sql)
 
     sqlc.sql("refresh table vartefact.forecast_simulation_dm_orders")
-    
+
     print_output("Finish writing store order to datalake")
 
     print_output("Start generating DC orders")
@@ -462,13 +463,13 @@ def dm_order_simulation(date_str):
                                            end_date.isoformat())
 
     dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
-    
+
     first_dc_dm = dm_item_dc_df. \
         groupBy(['item_id', 'sub_id']). \
         agg(F.min("theme_start_date").alias("theme_start_date"))
 
     dm_item_dc_df = dm_item_dc_df.join(first_dc_dm, ['item_id', 'sub_id', 'theme_start_date'])
-    
+
     output_line = f"Number of item that will have DM order in DC {dm_item_dc_df.count()}"
     print_output(output_line)
     output_str = output_str + output_line + ","
@@ -579,11 +580,11 @@ def dm_order_simulation(date_str):
                     .otherwise(int(0)))
 
     dm_dc_pcb.createOrReplaceTempView("dm_dc_final")
-    
+
     output_line = f"Number of DM DC orders {dm_dc_pcb.count()}"
     print_output(output_line)
     output_str = output_str + output_line
-    
+
     print_output("Write DC order to datalake")
 
     dm_dc_sql = \

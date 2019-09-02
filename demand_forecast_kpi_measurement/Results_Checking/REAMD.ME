@@ -1,0 +1,25 @@
+
+1. The Script "Order_vs_sales_ave_last_2_week.py" is used to compare the order vs the average sales for the last two weeks.
+# The input tables include:
+  vartefact.v_forecast_weekly_xdock_order_forecast
+  vartefact.v_forecast_weekly_dc_order_forecast
+  vartefact.forecast_sprint4_add_dm_to_daily
+  vartefact.lddb_calendar
+  vartefact.v_forecast_inscope_store_item_details
+# The output includes a graph describing the distribution for difference and a csv including the all the item list and his difference
+# The scipt only take the first week data to compare but you can choose different week by setting different run date
+# The parameters include:
+  output_path:the absolute file path which is used to save the temporary tables and ouput tables
+  run_date: the date is used to choose the start week. The time period is from the run date the the end of this week
+
+
+2. The Script "sales_difference_last_next.py" is used to compare the predict sales vs the average sales before.
+# The output includes a graph describing the distribution for difference and a csv including the all the item list and his difference
+# In order to compare the predicted sales for next week or next three weeks with the moving average of last three week or last one week, we should choose the date which should be the day
+  we stand and after we set the time period then we will get the previous week and next weeks.
+# The parameters include:
+  output_path:the absolute file path which is used to save the temporary tables and ouput tables
+  run_date: The date which should be the date we stand.
+# Function :
+  df_next_one_last_three:Used to compare our model's sales prediction for next week and the moving average from the past 3 weeks sales
+  df_next_three_last_three:Used to compare the difference between our model's moving average from next 3 weeks sales prediction and the moving average from the past 3 weeks sales

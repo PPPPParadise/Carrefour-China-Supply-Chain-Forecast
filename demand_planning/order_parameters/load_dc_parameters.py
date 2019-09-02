@@ -57,7 +57,7 @@ def get_conholding(ds_supplier_code):
 # +
 warnings.filterwarnings('ignore')
 
-dc_items = pd.read_excel('East 3 Supps DC Item list 20190820.xlsx', 'Item Detail', header=0, dtype=str).fillna('')
+dc_items = pd.read_excel('East 3 Supps DC Item list 20190830.xlsx', 'Item Detail', header=0, dtype=str).fillna('')
 # -
 
 dc_items.drop("dummy", axis=1, inplace=True)
@@ -115,7 +115,3 @@ dc_items_df.write.mode("overwrite").saveAsTable("vartefact.forecast_dc_item_deta
 # -
 
 sc.stop()
-
-
-
-

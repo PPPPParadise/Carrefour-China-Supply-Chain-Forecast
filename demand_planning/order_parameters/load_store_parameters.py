@@ -60,7 +60,7 @@ def get_store_to_dc_day(row):
 # +
 warnings.filterwarnings('ignore')
 
-excel_input = pd.read_excel('East Parameter 20190820.xlsx', 'Detail', header=0, dtype=str).fillna("")
+excel_input = pd.read_excel('East Parameter 20190902.xlsx', 'Detail', header=0, dtype=str).fillna("")
 # -
 
 # # Get store item list

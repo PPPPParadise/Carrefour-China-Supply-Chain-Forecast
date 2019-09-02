@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
-from pyspark.sql.functions import lpad
+from pyspark.sql.functions import lpad,split
 from impala.dbapi import connect
 import argparse
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--jars /data/jupyter/kudu-spark2_2.11-1.8.0.jar pyspark-shell'
@@ -45,6 +45,20 @@ def impalaexec(sql,create_table=False):
     with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019', database=config['database']) as conn:
         curr = conn.cursor()
         curr.execute(sql)
+
+def download_csv_by_spark(spark,sql_query,file_name):
+    os.system(f'hadoop fs -rm -r {file_name}')
+    os.system(f'hadoop fs -rm -r {file_name}.csv')
+    df_trxn_all = spark.sql(sql_query)
+    df_trxn_all.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv').option("header", "true").save(file_name)
+    os.system(f'hadoop fs -ls {file_name} > out_put.txt')
+    for r in open('out_put.txt'):
+        result = r
+    file_name_on_hdfs = result.split(' ')[-1].strip()
+    os.system(f'hadoop fs -text {file_name_on_hdfs} | hadoop fs -put - {file_name}.csv   ')
+    os.system(f"hadoop fs -get -f {file_name}.csv {config['local_folder']}")
+    print('download success')
+    return pd.read_csv(f"{config['local_folder']}{file_name}.csv")
 
 def main():
     # Download data
@@ -122,6 +136,79 @@ def main():
     spark_df = spark_df.withColumnRenamed('week','week_key')
     spark_df = spark_df.withColumnRenamed('predict_sales','sales_prediction')
     spark_df = spark_df.withColumnRenamed('predict_sales_max_confidence_interval','max_confidence_interval')
+    spark_df.write.mode('overwrite').saveAsTable(f"{config['database']}.result_forecast_10w_on_the_fututre")
+    sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """
+    impalaexec(sql)
+    print('csv saved in the table')
+
+    ############ forecast_sprint3_v10_flag_sprint4 sales information
+    ## get max_week_key min_week_key
+    big_table_name = f"{config['database']}.forecast_sprint3_v10_flag_sprint4"
+    week_numbes_to_roll_median = 4
+    sql_query = f"""
+    select 
+        cast((cast(max(week_key) as int) - {week_numbes_to_roll_median})  as varchar(10)) as min_week_key,
+        max(week_key) as max_week_key
+    from {big_table_name}
+    """
+    week_keys = spark.sql(sql_query).toPandas()
+    max_week = week_keys['max_week_key'].iloc[0]
+    min_week =  week_keys['min_week_key'].iloc[0]
+
+    ## get median median_sales
+    sql_query = f"""
+    select sales_qty_sum, sub_id, week_key, store_code
+    from {big_table_name}
+    where week_key >= {min_week} 
+    """
+    df_from_sql = spark.sql(sql_query).toPandas()
+    df_from_sql['sales_qty_sum'] = df_from_sql['sales_qty_sum'].astype(float)
+    median_df = df_from_sql[['sales_qty_sum', 'sub_id', 'store_code']].groupby(['sub_id', 'store_code']).median().reset_index()
+    median_df = median_df.rename({'sales_qty_sum': 'median_sales'}, axis=1)
+    ############ result_forecast_10w_on_the_fututre_all prediction result information
+    results_table = f"{config['database']}.result_forecast_10w_on_the_fututre"
+    sql_query = f"""
+    select *
+    from {results_table}
+    """
+    file_name = 'results'
+    forecast_df = download_csv_by_spark(spark,sql_query,file_name)
+    print('length before merge: ', len(forecast_df))
+    key_columns = ['sub_id', 'store_code']
+    for col in key_columns:
+        median_df[col] = median_df[col].astype(float)
+        forecast_df[col] = forecast_df[col].astype(float)
+    forecast_df_w_sales = forecast_df.merge(median_df, how='left')
+    print('after merge: ', len(forecast_df_w_sales))
+    forecast_df_w_sales.loc[:, 'forecast_min_median'] = forecast_df_w_sales[['median_sales', 'order_prediction']].max(axis=1)
+    forecast_df_w_sales.loc[(forecast_df_w_sales['sales_prediction'] > 7)
+                            & (forecast_df_w_sales['forecast_min_median'] > forecast_df_w_sales['median_sales']), 
+                            'max_order_3xmedian'] = np.minimum(3 * forecast_df_w_sales['median_sales'], forecast_df_w_sales['forecast_min_median'])
+    df_prediction_final = forecast_df_w_sales.copy()
+    df_prediction_final['max_confidence_interval'] = df_prediction_final[['max_order_3xmedian', 'forecast_min_median']].min(axis=1)
+    df_prediction_final['sales_prediction'] = df_prediction_final[['max_confidence_interval', 'sales_prediction']].min(axis=1)
+    df_prediction_final['order_prediction'] = df_prediction_final[['order_prediction', 'max_confidence_interval']].min(axis=1)
+
+    df_prediction_final= df_prediction_final.drop(
+        ['median_sales', 'forecast_min_median', 'max_order_3xmedian'], axis=1)
+    df_prediction_final.describe().T
+    df_prediction_final.to_csv(config['local_folder']+'df_prediction_final_roger_normal_adhoc.csv', index=False)
+    result_csv_path = f"{config['local_folder']}df_prediction_final_roger_normal_adhoc.csv"
+    os.system(f"hadoop fs -rm df_prediction_final_roger_normal_adhoc.csv")
+    os.system(f"hadoop fs -put -f {result_csv_path}")
+    spark_df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load(f"df_prediction_final_roger_normal_adhoc.csv")
+    split_col = split(spark_df['full_item'], '_')
+    spark_df = spark_df.withColumn('item_id', split_col.getItem(0))
+    spark_df = spark_df.withColumn('sub_id', split_col.getItem(1))
+    spark_df = spark_df.withColumn("item_id", spark_df["item_id"].cast(IntegerType()))
+    spark_df = spark_df.withColumn("sub_id", spark_df["sub_id"].cast(IntegerType()))
+    spark_df = spark_df.withColumn("week_key", spark_df["week_key"].cast(IntegerType()))
+    spark_df = spark_df.withColumn("train_mape_score", spark_df["train_mape_score"].cast(FloatType()))
+    spark_df = spark_df.withColumn("sales_prediction", spark_df["sales_prediction"].cast(FloatType()))
+    spark_df = spark_df.withColumn("predict_sales_error_squared", spark_df["predict_sales_error_squared"].cast(FloatType()))
+    spark_df = spark_df.withColumn("max_confidence_interval", spark_df["max_confidence_interval"].cast(FloatType()))
+    spark_df = spark_df.withColumn("order_prediction", spark_df["order_prediction"].cast(FloatType()))
+    spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'],3,'0'))
     spark_df.write.mode('overwrite').saveAsTable(f"{config['database']}.result_forecast_10w_on_the_fututre")
     spark.stop()
 

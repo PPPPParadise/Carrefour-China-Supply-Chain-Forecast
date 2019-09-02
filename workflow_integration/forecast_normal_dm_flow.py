@@ -1039,10 +1039,10 @@ def step_promo_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   # house table
-   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
-                              set_timeperiod=True,database='config',dropfirst=False)
+   # # house table
+   # execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
+   #                            f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
+   #                            set_timeperiod=True,database='config',dropfirst=False)
                               
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,

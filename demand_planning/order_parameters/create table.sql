@@ -298,16 +298,14 @@ AS
 			AND r.date_key = t.max_run_date
 )
 
-create view vartefact.v_forecast_inscope_store_item_details as (
-    select
-        *
-    from
-        vartefact.forecast_store_item_details
-    where
-        store_status != 'Stop'
-        AND repl_type != '1'
-        AND seasonal = 'No'
-)
+CREATE VIEW vartefact.v_forecast_inscope_store_item_details AS
+SELECT
+    *
+FROM
+    vartefact.forecast_store_item_details
+WHERE
+    store_status != 'Stop'
+    AND item_type not in ('New','Company Purchase','Seasonal')
 
 create view vartefact.v_forecast_inscope_dc_item_details as (
     select

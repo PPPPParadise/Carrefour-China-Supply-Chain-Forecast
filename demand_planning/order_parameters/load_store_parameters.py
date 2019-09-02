@@ -60,20 +60,18 @@ def get_store_to_dc_day(row):
 # +
 warnings.filterwarnings('ignore')
 
-excel_input = pd.read_excel('East Parameter 20190902.xlsx', 'Detail', header=0, dtype=str).fillna("")
+excel_input = pd.read_excel('East Parameter 20190902 2nd ver.xlsx', 'Detail', header=0, dtype=str).fillna("")
 # -
 
 # # Get store item list
 
-store_items = excel_input[["Store", "Dept", "Item code", "sub code", "CN Name", "EN Name", "Store Status",
-                   "Main Supplier", "DS Supplier", "Repl type", "Order day", "LT" ,"Min", "Order by",
-                   "Qty/Pack", "Pack/Box", "DC Status", "Rotation", "Seasonal", "Risk Item (Unilever)"]].drop_duplicates().reset_index(drop=True)
+store_items = excel_input[["Store", "Dept", "Item code", "sub code", "CN Name", "Store Status",
+                   "Main Supplier", "DS Supplier", "Repl type", "Order day", "LT" , "Order by",
+                   "Qty/Pack", "Pack/Box", "DC Status", "Rotation", "Itemtype", "Risk Item (Unilever)"]].drop_duplicates().reset_index(drop=True)
 
-store_items.columns = ["store_code", "dept_code", "item_code", "sub_code", "cn_name", "en_name", "store_status",
-                   "dc_supplier_code", "ds_supplier_code", "repl_type", "order_day", "lead_time", "min_stock", "order_by",
-                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "seasonal", "risk_item_unilever"]
-
-store_items["store_code"] = store_items["store_code"].str[0:3]
+store_items.columns = ["store_code", "dept_code", "item_code", "sub_code", "cn_name", "store_status",
+                   "dc_supplier_code", "ds_supplier_code", "repl_type", "order_day", "lead_time", "order_by",
+                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "item_type", "risk_item_unilever"]
 
 store_items['qty_per_unit'] = store_items.apply(get_qty_per_unit, axis = 1)
 
@@ -187,8 +185,6 @@ store_items_df = store_items_df.withColumn("qty_per_unit", store_items_df["qty_p
 store_items_df = store_items_df.withColumn("pack_per_box", store_items_df["pack_per_box"].cast("Int"))
 
 store_items_df = store_items_df.withColumn("qty_per_pack", store_items_df["qty_per_pack"].cast("Int"))
-
-store_items_df = store_items_df.withColumn("min_stock", store_items_df["min_stock"].cast("Int"))
 
 store_items_df = store_items_df.withColumn("lead_time", store_items_df["lead_time"].cast("Int"))
 

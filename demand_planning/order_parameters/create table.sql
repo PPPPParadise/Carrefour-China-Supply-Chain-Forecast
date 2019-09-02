@@ -65,6 +65,13 @@ CREATE TABLE vartefact.forecast_lfms_daily_dcstock (
 	sub_id INT,
 	holding_code STRING,
 	stock_available_sku DECIMAL(15, 3),
+	stock_shipment_sku DECIMAL(15, 3),
+	stock_in_transit_sku DECIMAL(15, 3),
+	stock_in_block_sku DECIMAL(15, 3),
+	stock_transfer_by_sku DECIMAL(15, 3),
+	last_receiving_date	string,
+	next_receiving_date	string,
+	load_date	timestamp,
 	dc_site STRING,
 	warehouse_code STRING
 	) PARTITIONED BY (date_key STRING) stored AS parquet

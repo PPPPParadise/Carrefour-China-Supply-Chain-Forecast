@@ -42,7 +42,7 @@ default_args = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': datetime.timedelta(minutes=5)
+    'retry_delay': datetime.timedelta(minutes=10)
 }
 
 forecast_orderflow = DAG('forecast_orderflow',
@@ -65,7 +65,7 @@ def python_load_data(ds, **kwargs):
 
 def python_calculate_service_level(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    # calculate_service_level_process(order_day, project_folder)
+    calculate_service_level_process(order_day, project_folder)
 
 
 def python_dm_order(ds, **kwargs):
@@ -114,6 +114,7 @@ load_data = PythonOperator(task_id='load_data',
                            python_callable=python_load_data,
                            provide_context=True,
                            wait_for_downstream=True,
+                           retries=4,
                            dag=forecast_orderflow)
 
 calculate_service_level = PythonOperator(task_id='calculate_service_level',

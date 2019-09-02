@@ -187,8 +187,14 @@ object OrderLogic {
           } else {
             if (futureStock < nextOderDeliver.minimum_stock_required) {
               orderQty = nextOderDeliver.minimum_stock_required - futureStock
-              order.order_without_pcb = orderQty
             }
+
+            if (!isAfterTwoWeeks(order.order_day, twoWeeksAfterRunDate)
+              && orderMap.contains(order.order_day)) {
+              orderQty = orderMap(order.order_day)
+            }
+
+            order.order_without_pcb = orderQty
           }
 
           if (orderQty > 0) {
@@ -475,11 +481,11 @@ object OrderLogic {
   }
 
   /**
-    *
-    * @param orderQty
-    * @param factor
-    * @param order
-    * @return
+    * Change order quantity while keep consistency 在确保consistency的前提下更改订单量
+    * @param orderQty order quantity 订单量
+    * @param factor Change ratio 更改比例
+    * @param order order row 其它订单信息
+    * @return Changed order quantity 更改后的订单量
     */
   private def changeOrderQtyWithConsistency(orderQty: Double, factor: Double, order: DateRow): Double = {
 

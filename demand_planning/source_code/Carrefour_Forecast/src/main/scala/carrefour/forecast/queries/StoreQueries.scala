@@ -359,4 +359,32 @@ object StoreQueries {
         AND ord.order_qty > 0
     """
   }
+
+
+  /**
+    * SQL query to get past generated orders
+    * 查询过去生成的订单规划的SQL
+    *
+    * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
+    * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @param orderTableName
+    * @return SQL with variables filled 拼装好的SQL
+    */
+  def getPastOrdersSql(startDateStr: String, endDateStr: String, viewName: String, orderTableName: String): String = {
+    s"""
+    SELECT ord.item_id,
+        ord.sub_id,
+        ord.store_code as entity_code,
+        ord.order_day,
+        cast(ord.order_qty as double) order_qty
+    FROM ${orderTableName} ord
+    join ${viewName} itmd
+        on ord.item_id = itmd.item_id
+        and ord.sub_id = itmd.sub_id
+        and ord.store_code = itmd.store_code
+    WHERE ord.order_day >= '${startDateStr}'
+        AND ord.order_day <= '${endDateStr}'
+    """
+  }
 }

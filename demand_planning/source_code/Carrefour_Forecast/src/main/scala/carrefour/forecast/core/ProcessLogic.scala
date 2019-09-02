@@ -51,7 +51,7 @@ object ProcessLogic {
       val startDateStr = dateKeyFormat.format(startDate)
 
       cal.setTime(runDate)
-      cal.add(Calendar.DATE, 63)
+      cal.add(Calendar.DATE, 70)
       val endDate = cal.getTime
       val endDateStr = dateKeyFormat.format(endDate)
 
@@ -406,6 +406,10 @@ object ProcessLogic {
       QueryUtil
         .getStoreOrderToDc(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
 
+    } else if (modelRun.isSimulation) {
+      SimulationUtil
+        .getSimulationSalesPrediction(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
+
     } else {
       QueryUtil
         .getSalesPrediction(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
@@ -470,10 +474,10 @@ object ProcessLogic {
         val newEndDateStr = dateKeyFormat.format(endDate)
 
         if (modelRun.isSimulation) {
-          SimulationUtil.getSimulationDcPastOrdersMap(startDateStr, newEndDateStr,
-            modelRun.isDcFlow, modelRun.viewName, spark)
+          SimulationUtil.getSimulationPastOrdersMap(startDateStr, newEndDateStr,
+            modelRun.isDcFlow, modelRun.flowType, modelRun.viewName, spark)
         } else {
-          QueryUtil.getDcPastOrdersMap(startDateStr, newEndDateStr, modelRun.isDcFlow, modelRun.viewName,
+          QueryUtil.getPastOrdersMap(startDateStr, newEndDateStr, modelRun.isDcFlow, modelRun.viewName,
             modelRun.orderTableName, spark)
         }
       }

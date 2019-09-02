@@ -232,8 +232,8 @@ object QueryUtil {
   }
 
   /**
-    * Get past generated orders for DC
-    * 获取过去生成的DC订单规划
+    * Get past generated orders
+    * 获取过去生成的订单规划
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -241,13 +241,17 @@ object QueryUtil {
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @param orderTableName Database and name for order table 订单表的数据库名及表名
     * @param spark Spark session
-    * @return Past generated orders for DC过去生成的DC订单规划
+    * @return Past generated orders 过去生成的订单规划
     */
-  def getDcPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
-                         orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
+  def getPastOrdersMap(startDateStr: String, endDateStr: String, isDcFlow: Boolean, viewName: String,
+                       orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val pastOrdersSql = DcQueries.getDcPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
+    val pastOrdersSql = isDcFlow match {
+      case true => DcQueries.getDcPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
+      case false => StoreQueries.getPastOrdersSql(startDateStr, endDateStr, viewName, orderTableName)
+    }
+
     val pastOrdersDf = spark.sqlContext.sql(pastOrdersSql)
 
     val grouppedDf = pastOrdersDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),

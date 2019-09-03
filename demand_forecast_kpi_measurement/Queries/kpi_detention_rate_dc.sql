@@ -28,6 +28,8 @@ with flow_type as
         rotation
     from 
         {database_name}.forecast_item_details
+    where dc_status = 'Active'
+    group by concat(dept_code, item_code, sub_code), rotation
 ),
 
 dcstock_in_scope as

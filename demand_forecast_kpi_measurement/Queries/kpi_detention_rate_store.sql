@@ -22,14 +22,21 @@ drop table if exists {database_name}.monitor_detention_rate_store;
 
 create table {database_name}.monitor_detention_rate_store as
 
-with store_stock_in_scope as
+with flow_type as (
+    select dept_code, item_code, sub_code, rotation
+    from {database_name}.forecast_store_item_details
+    where store_status = 'Active'
+    group by dept_code, item_code, sub_code, rotation
+),
+
+store_stock_in_scope as
 (
     select
         a.store_code, a.date_key, b.rotation,
         case when balance_qty > 0 then 0 else 1 end  as oos_flag
     from
         fds.p4cm_daily_stock a
-        inner join vartefact.item_details b
+        inner join flow_type b
         on
             a.dept_code = b.dept_code
             and a.item_code = b.item_code

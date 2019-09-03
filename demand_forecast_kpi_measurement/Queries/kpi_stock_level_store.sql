@@ -40,16 +40,23 @@ create table {database_name}.monitor_stock_level_store as
 with item_flag as
 (
     select dept_code, item_code, sub_code, 1 as in_dm
-    from vartefact.forecast_dm_orders
+    from {database_name}.forecast_dm_orders
     where run_date between "{date_start}" and "{date_end}"
     group by dept_code, item_code, sub_code
+),
+store_item_details as (
+    select dept_code, item_code, sub_code, store_code, rotation
+    from {database_name}.forecast_store_item_details
+    where store_status = 'Active'
+    group by dept_code, item_code, sub_code, store_code, rotation
 ),
 
 -- 
 item_store_stock as
 (
     select
-        a.item_id, a.sub_id, a.store_code, a.date_key, c.rotation, a.balance_qty,
+        a.item_id, a.sub_id, a.store_code, a.date_key, c.rotation, 
+        a.balance_qty,
         nvl(b.in_dm, 0) as in_dm
     from
         fds.p4cm_daily_stock a
@@ -58,18 +65,20 @@ item_store_stock as
             a.dept_code = b.dept_code
             and a.item_code = b.item_code
             and a.sub_code = b.sub_code
-        inner join vartefact.forecast_item_details c
+        inner join store_item_details c
         on
             a.dept_code = c.dept_code
             and a.item_code = c.item_code
             and a.sub_code = c.sub_code
+            and a.store_code = c.store_code
     where
         a.date_key between "{date_start}" and "{date_end}"
 )
 
 -- sum of all available_sku of all items, group by DM/non-DM
 select
-    store_code, in_dm, upper(rotation) as rotation, date_key, sum(balance_qty) as stock_level
+    store_code, in_dm, upper(rotation) as rotation, date_key, 
+    sum(balance_qty) as stock_level
 from
     item_store_stock
 group by

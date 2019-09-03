@@ -128,15 +128,15 @@ def train(desc, folder, data_name, target_value, learning_rate, date_stop_train)
     
     sales_prediction_model.fit(X_train, y_train, verbose=False, eval_metric="mae")
                 
-    results[X_train.index] = sales_prediction_model.predict(X_train)
+    results_X_train_index = sales_prediction_model.predict(X_train)
 
-    mape = abs(results[X_train.index] -
+    mape = abs(results_X_train_index -
                y_train.values).sum() / y_train.sum()
                 
     score = mape
 
     # Train the error squared predictor
-    error_y_train = (results[X_train.index] - y_train)**2
+    error_y_train = (results_X_train_index - y_train)**2
 
     sales_prediction_squared_error_model.fit(X_train, error_y_train, 
                                              verbose=False,
@@ -277,7 +277,7 @@ def prediction(desc, folder, data_name, target_value, learning_rate, date_stop_t
     features_predictions_df.loc[:, 'confidence_interval_80_max'] = (
                     features_predictions_df.forecast + 2 * (abs(features_predictions_df.squared_error_predicted)**0.5))
 
-    features_predictions_df.loc[:, 'sales_prediction_cap'] = 3*abs(test.forecast)
+    features_predictions_df.loc[:, 'sales_prediction_cap'] = 3*abs(features_predictions_df.forecast)
 
     features_predictions_df.predict_sales_max_confidence_interval = features_predictions_df[[
                     'confidence_interval_80_max', 'sales_prediction_cap']].min(axis=1)

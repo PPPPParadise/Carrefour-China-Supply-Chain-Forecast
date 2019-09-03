@@ -201,6 +201,31 @@ object DcQueries {
   }
 
   /**
+    * SQL query to get on the way order quantity and delivery date for DC
+    * 查询DC/货仓在途订单订货量及其抵达日期的SQL
+    *
+    * @param dateStr Start date in yyyyMMdd String format 文本格式的日期，为yyyyMMdd格式
+    * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
+    * @return SQL with variables filled 拼装好的SQL
+    */
+  def getDcOnTheWayStockSql(dateStr: String, viewName: String): String = {
+    s"""
+    SELECT itmd.item_id,
+        itmd.sub_id,
+        itmd.con_holding as entity_code,
+        fldd.next_receiving_date as delivery_day,
+        cast(fldd.stock_in_transit_sku as double) order_qty
+    FROM vartefact.forecast_lfms_daily_dcstock fldd
+    join ${viewName} itmd
+        on fldd.item_id = itmd.item_id
+        and fldd.sub_id = itmd.sub_id
+    WHERE fldd.date_key = '${dateStr}'
+        AND fldd.stock_in_transit_sku > 0
+        AND fldd.warehouse_code='KS01'
+    """
+  }
+
+  /**
     * SQL query to get past generated orders for DC
     * 查询过去生成的DC订单规划的SQL
     *

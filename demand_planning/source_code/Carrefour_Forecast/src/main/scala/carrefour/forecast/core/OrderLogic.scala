@@ -244,7 +244,6 @@ object OrderLogic {
           dateRowList(i).con_holding = order.con_holding
           dateRowList(i).supplier_code = order.supplier_code
           dateRowList(i).rotation = order.rotation
-          dateRowList(i).ittreplentyp = order.ittreplentyp
 
           i = i + 1
         }
@@ -348,9 +347,6 @@ object OrderLogic {
         dateRow.average_sales = row.getAs[Double]("average_sales")
         dateRow.minimum_stock_required = dateRow.average_sales
       } else {
-        dateRow.ittreplentyp = row.getAs[Integer]("ittreplentyp")
-        dateRow.ittminunit = row.getAs[Integer]("ittminunit")
-        dateRow.shelf_capacity = row.getAs[String]("shelf_capacity")
         dateRow.minimum_stock_required = getMinimumStoreStock(row)
       }
     }
@@ -376,14 +372,7 @@ object OrderLogic {
     * @return Minimum required stock level 最低门店库存要求
     */
   private def getMinimumStoreStock(row: Row): Double = {
-    var minumumStock: Double = 1
-
-    val ittreplentyp = row.getAs[Integer]("ittreplentyp")
-    if (ittreplentyp == 3) {
-      minumumStock = row.getAs[Int]("ittminunit").doubleValue()
-    } else if (ittreplentyp == 2 || ittreplentyp == 4) {
-      val shelf_capacity = row.getAs[String]("shelf_capacity")
-    }
+    val minumumStock: Double = 1
 
     minumumStock
   }

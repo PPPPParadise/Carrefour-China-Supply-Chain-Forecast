@@ -23,7 +23,7 @@ SELECT DISTINCT psi.store_code,
 	psi.shelf_capacity,
 	psi.date_key
 FROM ods.p4cm_store_item psi
-JOIN vartefact.v_forecast_inscope_store_item_details id ON psi.item_code = id.item_code
+JOIN vartefact.forecast_store_item_details id ON psi.item_code = id.item_code
 	AND psi.sub_code = id.sub_code
 	AND psi.dept_code = id.dept_code
     AND psi.store_code = id.store_code

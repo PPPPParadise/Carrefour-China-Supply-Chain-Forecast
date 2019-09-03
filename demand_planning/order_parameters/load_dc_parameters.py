@@ -74,7 +74,7 @@ dc_items.columns = ['dc', 'dc_site', 'full_item_code', 'dc_status', 'item_name_e
 'rotation', 'box_per_layer_ti', 'layer_per_pallet_hi',
 'stop_start_date', 'stop_reason', 'qty_per_pack', 'pack_per_box',
 'holding_supplier_code', 'holding_code', 'risk_item_unilever',
-'order_uint', 'seasonal', 'dept_code', 'item_code', 'sub_code']
+'order_uint', 'seasonal', 'item_type', 'dept_code', 'item_code', 'sub_code']
 
 dc_items["holding_code"] = dc_items.apply(
     lambda r: get_conholding(r.primary_ds_supplier), axis=1)

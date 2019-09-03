@@ -26,9 +26,7 @@ object StoreQueries {
           id.qty_per_unit as qty_per_box,
           id.dc_supplier_code as supplier_code,
           ord.date_key AS run_date,
-          dsdt.delivery_time,
-          id.repl_type,
-          id.min_stock
+          dsdt.delivery_time
       from vartefact.v_forecast_inscope_store_item_details id
       join vartefact.forecast_onstock_order_delivery_mapping mp
           on id.dept_code = mp.dept_code
@@ -81,10 +79,7 @@ object StoreQueries {
         ord.weekday_short as order_weekday,
         dev.weekday_short as delivery_weekday,
         trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
-        trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date,
-        stp.shelf_capacity,
-        cast(itmd.repl_type as INT) as ittreplentyp,
-        cast(itmd.min_stock as INT) as ittminunit
+        trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date
     from ${viewName} itmd
     join vartefact.forecast_onstock_order_delivery_mapping mp
         on mp.dept_code = itmd.dept_code
@@ -129,9 +124,7 @@ object StoreQueries {
         id.qty_per_unit as qty_per_box,
         id.dc_supplier_code as supplier_code,
         ord.date_key AS run_date,
-        dsdt.delivery_time,
-        id.repl_type,
-        id.min_stock
+        dsdt.delivery_time
     from vartefact.v_forecast_inscope_store_item_details id
     join vartefact.forecast_xdock_order_mapping xo
         on xo.item_code = id.item_code
@@ -190,10 +183,7 @@ object StoreQueries {
         ord.weekday_short as order_weekday,
         "" as delivery_weekday,
         trim(coalesce(stp.item_stop_start_date, '')) as item_stop_start_date,
-        trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date,
-        stp.shelf_capacity,
-        cast(itmd.repl_type as INT) as ittreplentyp,
-        cast(itmd.min_stock as INT) as ittminunit
+        trim(coalesce(stp.item_stop_end_date, '')) as item_stop_end_date
     from ${viewName} itmd
     join vartefact.forecast_xdock_order_mapping xo
         on itmd.item_code = xo.item_code

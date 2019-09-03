@@ -42,7 +42,6 @@ object SimulationUtil {
          END as minimum_stock_required,
          dm_delivery, order_delivery,
          predict_sales, day_end_stock_with_predict, actual_sales, day_end_stock_with_actual,
-         ittreplentyp, shelf_capacity, ittminunit,
          '${modelRun.runDateStr}' as run_date, '${modelRun.flowType}' as flow_type
          from ${simulationView}
         """

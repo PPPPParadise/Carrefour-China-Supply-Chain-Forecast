@@ -107,19 +107,28 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
     missing_store_orders = missing_onstock_orders.union(missing_xdock_orders)
 
     missing_store_orders_df = missing_store_orders.toPandas()
-
-    missing_orders = missing_store_orders_df[['rotation', 'dept_code', 'item_code', 'sub_code', 'cn_name', 'store_code',
-                                              'con_holding', 'ds_supplier_code', 'dc_supplier_code', 'reason']]
-
+ 
+    wb = Workbook()
+    ws = wb.active
+    
+    print(f'Total {len(missing_store_orders_df)} missing store orders found')
+    
     if len(missing_store_orders_df) == 0:
-        missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
-        missing_orders.to_csv(record_folder + '/' + store_missing_file, mode='w', index=False, header=False)
-        missing_orders.to_csv(output_path + '/' + store_missing_file, mode='w', index=False, header=False)
+        ws.append(["No missing orders found. All item stores have orders generated."])
+    
     else:
-        missing_orders.columns = ['Rotation', 'Dept_Code', 'Item_Code', 'CN_Name', 'Sub_code', 'Store_Code',
-                                  'Con_holding', 'DS_supplier', 'DC_supplier', 'Missing_reason']
-        missing_orders.to_csv(record_folder + '/' + store_missing_file, mode='w', index=False, header=True)
-        missing_orders.to_csv(output_path + '/' + store_missing_file, mode='w', index=False, header=True)
+        ws.append(['rotation', 'dept_code', 'item_code', 'sub_code', 
+                   'cn_name', 'store_code', 'con_holding', 'ds_supplier_code', 
+                   'dc_supplier_code', 'reason'])
+        
+        for index, row in missing_store_orders_df.iterrows():
+            ws.append([row.rotation, row.dept_code, row.item_code, row.sub_code,
+                       row.cn_name, row.store_code, row.con_holding, row.ds_supplier_code,
+                       row.dc_supplier_code, row.reason])
+            
+    wb.save(record_folder + '/order_checks/' + store_missing_file)
+
+    wb.save(output_path + '/' + store_missing_file)
 
     sc.stop()
 
@@ -168,6 +177,7 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
             AND fdls.sub_code = itm.sub_code
             AND fdls.dept_code = itm.dept_code
             AND dodm.risk_item_unilever = itm.risk_item_unilever
+            AND dodm.con_holding = itm.holding_code
             AND itm.rotation != 'X'
         JOIN vartefact.forecast_calendar ord
             on ord.date_key = dodm.order_date
@@ -197,19 +207,27 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
     missing_dc_order = sqlc.sql(dc_order_check_sql)
 
     missing_dc_order_df = missing_dc_order.toPandas()
-
-    missing_orders = missing_dc_order_df[['rotation', 'dept_code', 'item_code', 'sub_code', 'item_name_local',
-                                          'current_warehouse', 'holding_code', 'primary_ds_supplier', 'reason']]
-
+    
+    wb = Workbook()
+    ws = wb.active
+    
+    print(f'Total {len(missing_dc_order_df)} missing DC orders found')
+    
     if len(missing_dc_order_df) == 0:
-        missing_orders = pd.DataFrame(["No missing orders found. All item stores have orders generated."])
-        missing_orders.to_csv(record_folder + '/' + dc_missing_file, mode='w', index=False, header=False)
-        missing_orders.to_csv(output_path + '/' + dc_missing_file, mode='w', index=False, header=False)
+        ws.append(["No missing orders found. All items in DC have orders generated."])
+    
     else:
-        missing_orders.columns = ['Rotation', 'Dept_Code', 'Item_Code', 'CN_Name', 'Sub_code', 'Warehouse',
-                                  'Con_holding', 'DS_supplier', 'Missing_reason']
+        ws.append(['rotation', 'dept_code', 'item_code', 'sub_code', 
+                   'item_name_local', 'current_warehouse', 'holding_code', 'primary_ds_supplier', 
+                   'reason'])
+        
+        for index, row in missing_dc_order_df.iterrows():
+            ws.append([row.rotation, row.dept_code, row.item_code, row.sub_code,
+                       row.item_name_local, row.current_warehouse, row.holding_code, row.primary_ds_supplier,
+                       row.reason])
+            
+    wb.save(record_folder + '/order_checks/' + dc_missing_file)
 
-        missing_orders.to_csv(record_folder + '/' + dc_missing_file, mode='w', index=False, header=True)
-        missing_orders.to_csv(output_path + '/' + dc_missing_file, mode='w', index=False, header=False)
+    wb.save(output_path + '/' + dc_missing_file)
 
     sc.stop()

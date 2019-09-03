@@ -440,7 +440,12 @@ object ProcessLogic {
       }
 
       case FlowType.DC => {
-        Map.empty
+        if (modelRun.isSimulation) {
+          Map.empty
+        } else {
+          QueryUtil.getOnTheWayStockMap(startDateStr, endDateStr, modelRun.isDcFlow, modelRun.viewName,
+            modelRun.orderTableName, spark)
+        }
       }
     }
   }

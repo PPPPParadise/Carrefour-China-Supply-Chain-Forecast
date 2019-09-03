@@ -16,7 +16,7 @@ FROM (
 		id.rotation,
 		id.primary_ds_supplier,
 		max(ord.date_key) AS max_date_key
-	FROM vartefact.v_forecast_inscope_dc_item_details id
+	FROM vartefact.forecast_dc_item_details id
 	JOIN lfms.ord ord ON id.item_code = ord.item_code
 		AND id.sub_code = ord.sub_code
 		AND id.dept_code = ord.department_code

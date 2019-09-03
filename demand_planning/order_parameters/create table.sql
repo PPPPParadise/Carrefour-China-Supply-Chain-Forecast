@@ -315,6 +315,7 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
     where
         dc_status != 'Stop'
         AND seasonal = 'No'
+        AND item_type not in ('New','Company Purchase','Seasonal')
 )
 
     
@@ -429,10 +430,7 @@ CREATE TABLE vartefact.forecast_simulation_result (
     predict_sales DOUBLE,
     day_end_stock_with_predict DOUBLE, 
     actual_sales DOUBLE, 
-    day_end_stock_with_actual DOUBLE,
-    ittreplentyp Integer,
-    shelf_capacity String,
-    ittminunit Integer
+    day_end_stock_with_actual DOUBLE
 	) PARTITIONED BY (
 	run_date STRING,
     flow_type STRING

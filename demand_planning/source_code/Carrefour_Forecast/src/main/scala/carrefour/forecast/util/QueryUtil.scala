@@ -157,7 +157,11 @@ object QueryUtil {
                           orderTableName: String, spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     import spark.implicits._
 
-    val onTheWayStockSql = StoreQueries.getOnTheWayStockSql(startDateStr, endDateStr, viewName, orderTableName)
+    var onTheWayStockSql = StoreQueries.getOnTheWayStockSql(startDateStr, endDateStr, viewName, orderTableName)
+
+    if (isDcFlow) {
+      onTheWayStockSql = DcQueries.getDcOnTheWayStockSql(startDateStr, viewName)
+    }
     val onTheWayStockDf = spark.sqlContext.sql(onTheWayStockSql)
 
     val grouppedDf = onTheWayStockDf.groupByKey(row => ItemEntity(row.getAs[Integer]("item_id"),

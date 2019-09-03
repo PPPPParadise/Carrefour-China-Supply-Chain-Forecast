@@ -189,13 +189,23 @@ store_items_df = store_items_df.withColumn("qty_per_pack", store_items_df["qty_p
 store_items_df = store_items_df.withColumn("lead_time", store_items_df["lead_time"].cast("Int"))
 
 store_items_df.write.mode("overwrite").saveAsTable("vartefact.forecast_store_item_details")
-# -
 
+# +
 order_days_mapping_df = sqlc.createDataFrame(order_days_mapping)
+
+order_days_mapping_df = order_days_mapping_df.withColumn("delivery_iso_weekday", order_days_mapping_df["delivery_iso_weekday"].cast("String"))
+
+order_days_mapping_df = order_days_mapping_df.withColumn("week_shift", order_days_mapping_df["week_shift"].cast("Int"))
+
 order_days_mapping_df.write.mode("overwrite").saveAsTable("vartefact.forecast_onstock_order_delivery_mapping")
 
+# +
 xdock_order_mapping_df = sqlc.createDataFrame(xdock_order_mapping)
+
+xdock_order_mapping_df = xdock_order_mapping_df.withColumn("dc_to_store_time", xdock_order_mapping_df["dc_to_store_time"].cast("Int"))
+
 xdock_order_mapping_df.write.mode("overwrite").saveAsTable("vartefact.forecast_xdock_order_mapping")
+# -
 
 sc.stop()
 

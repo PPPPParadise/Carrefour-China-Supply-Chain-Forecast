@@ -11,8 +11,10 @@ def get_current_time():
     return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S")
 
 
-def print_output(output_line):
-    print(get_current_time(), output_line)
+def print_output(output_line, log_file):
+    logFile = open(log_file, "a")
+    logFile.write(get_current_time() + ' ' + output_line + "\n")
+    logFile.close()
 
 
 def insert_script_run(date_str, status, parameter, output_str, info_str, error_str, sqlc):
@@ -27,10 +29,12 @@ def insert_script_run(date_str, status, parameter, output_str, info_str, error_s
     sqlc.sql(sql)
 
 
-def dm_order_process(date_str):
+def dm_order_process(date_str, log_file):
     warehouse_location = abspath('spark-warehouse')
-
-    print_output(f'\n Forecast process for DM start with input date {date_str} \n')
+    
+    
+    
+    print_output(f'\n Forecast process for DM start with input date {date_str} \n', log_file)
 
     # for logging
     output_str = ""
@@ -58,7 +62,7 @@ def dm_order_process(date_str):
     sqlc.setConf("hive.exec.max.dynamic.partitions", "4096")
     sqlc.setConf("hive.exec.max.dynamic.partitions.pernode", "4096")
 
-    print_output('Spark environment loaded')
+    print_output('Spark environment loaded', log_file)
 
     run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
 
@@ -74,7 +78,7 @@ def dm_order_process(date_str):
                 + ", DM start date:" + start_date.strftime("%Y%m%d") \
                 + ", DM end date:" + end_date.strftime("%Y%m%d")
 
-    print_output(f"Load DM items and stores for DM that starts between {start_date} and {end_date}")
+    print_output(f"Load DM items and stores for DM that starts between {start_date} and {end_date}", log_file)
 
     dm_item_store_sql = \
         """
@@ -103,13 +107,15 @@ def dm_order_process(date_str):
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
         JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
-        JOIN vartefact.v_forecast_inscope_store_item_details id ON ps.stostocd = id.store_code
+        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
             AND del.item_code = CONCAT (
                 id.dept_code,
                 id.item_code
                 )
             AND del.sub_code = id.sub_code
             AND del.dept_code = id.dept_code
+            AND id.store_status != 'Stop'
+            AND id.item_type not in ('New','Company Purchase','Seasonal')
         JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
             AND id.item_code = icis.item_code
             AND id.sub_code = icis.sub_code
@@ -123,6 +129,7 @@ def dm_order_process(date_str):
         WHERE del.extract_order = 40
             AND ndt.theme_start_date >= '{1}'
             AND ndt.theme_start_date < '{2}'
+            AND ndt.dm_theme_id = 29733
         """.replace("\n", " ")
 
     dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
@@ -132,15 +139,15 @@ def dm_order_process(date_str):
 
     dm_item_store_df = sqlc.sql(dm_item_store_sql)
 
-    print_output(f"Number of DM item stores in date range {dm_item_store_df.count()}")
+    print_output(f"Number of DM item stores in date range {dm_item_store_df.count()}", log_file)
 
-    print_output("Exclude the DM that already have orders")
+    print_output("Exclude the DM that already have orders", log_file)
 
     dm_item_store_df = dm_item_store_df.filter("past_result is null")
 
     output_line = f"After filtering already calculated DM {dm_item_store_df.count()}"
 
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line + ","
 
     # # Only consider the nearest DM
@@ -153,11 +160,11 @@ def dm_order_process(date_str):
 
     dm_item_store_cnt = dm_item_store_df.count()
 
-    print_output(f"After getting only first DM {dm_item_store_cnt}")
+    print_output(f"After getting only first DM {dm_item_store_cnt}", log_file)
     output_str = output_str + f"After getting only first DM {dm_item_store_cnt}," + ","
 
     if dm_item_store_cnt == 0:
-        print_output(f"skip date {date_str} cause no active order opportunity for today")
+        print_output(f"skip date {date_str} cause no active order opportunity for today", log_file)
         info_str = info_str + f"Job Finish:{get_current_time()},"
         info_str = info_str + f"skip date {date_str} cause no active order opportunity for today"
         insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
@@ -168,7 +175,7 @@ def dm_order_process(date_str):
     dm_item_store_df.createOrReplaceTempView("dm_item_store")
 
     # # The first order day within PPP period
-    print_output("Get first order day within PPP period")
+    print_output("Get first order day within PPP period", log_file)
     onstock_order_sql = \
         """
         SELECT dis.item_id,
@@ -222,12 +229,15 @@ def dm_order_process(date_str):
     xdock_order_deliver_df = sqlc.sql(xdock_order_sql)
 
     order_deliver_df = onstock_order_deliver_df.union(xdock_order_deliver_df)
+    
+    order_deliver_df.cache()
 
     first_order_df = order_deliver_df.groupBy(['item_id', 'sub_id', 'store_code']). \
         agg(F.min("first_order_date").alias("first_order_date"))
+    
+    first_order_df.cache()
 
     first_order_deliver_df = order_deliver_df \
-        .select(['item_id', 'sub_id', 'store_code', 'first_order_date', 'first_delivery_date']) \
         .join(first_order_df, ['item_id', 'sub_id', 'store_code', 'first_order_date'])
     # -
 
@@ -237,7 +247,7 @@ def dm_order_process(date_str):
     dm_item_store_order_df.createOrReplaceTempView("dm_item_store_order")
 
     output_line = f"Number of item stores that will have DM {dm_item_store_order_df.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line + ","
 
     # # Get DM sales prediction
@@ -260,12 +270,16 @@ def dm_order_process(date_str):
     dm_prediction = sqlc.sql(dm_sales_predict_sql)
 
     dm_prediction.createOrReplaceTempView("dm_prediction")
+    
+    dm_prediction.filter("having_dm_prediction = 'no' ") \
+        .write.mode("overwrite").format("parquet") \
+        .saveAsTable("vartefact.forecast_no_dm_prediction")
 
     output_line = f"Number of DM sales prediction {dm_prediction.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line + ","
 
-    print_output("Regular sales before DM")
+    print_output("Regular sales before DM", log_file)
 
     # # Regular sales from first order day to DM start day
     dm_regular_sales_sql = \
@@ -275,9 +289,12 @@ def dm_order_process(date_str):
             dp.store_code,
             dp.dm_theme_id,
             case when
-            fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
-                then 0
-                else fcst.daily_sales_prediction_original
+              fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
+            then 0
+            when
+              fcst.daily_sales_prediction_original < 0
+            then 0
+            else fcst.daily_sales_prediction_original 
             end AS sales_prediction
         FROM vartefact.t_forecast_daily_sales_prediction fcst
         JOIN dm_prediction dp ON fcst.item_id = dp.item_id
@@ -297,7 +314,7 @@ def dm_order_process(date_str):
                                          "left")
 
     # # For ppp <= 90% npp, get 4 weeks after sales for ROTATION A items
-    print_output("DM PPP logic")
+    print_output("DM PPP logic", log_file)
 
     after_fourweek_sql = \
         """
@@ -305,9 +322,13 @@ def dm_order_process(date_str):
             dp.sub_id,
             dp.store_code,
             dp.dm_theme_id,
-            fcst.daily_sales_prediction_original < 0.2 and dp.rotation = 'X'
-                then 0
-                else fcst.daily_sales_prediction_original
+            case when
+              fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
+            then 0
+            when
+              fcst.daily_sales_prediction_original < 0
+            then 0
+            else fcst.daily_sales_prediction_original 
             end AS sales_prediction
         FROM dm_prediction dp
         JOIN vartefact.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
@@ -325,7 +346,7 @@ def dm_order_process(date_str):
         agg(F.sum("sales_prediction").alias("four_weeks_after_dm"))
 
     output_line = f"Number of DM having PPP {agg_after_fourweek_sales.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line + ","
 
     dm_with_fourweek = dm_with_regular.join(agg_after_fourweek_sales,
@@ -338,12 +359,12 @@ def dm_order_process(date_str):
     dm_with_fourweek.cache()
 
     output_line = f"Number of DM store orders {dm_with_fourweek.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line
 
     # # Final calculation
 
-    print_output("Calculate order quantity")
+    print_output("Calculate order quantity", log_file)
     dm_final = dm_with_fourweek.withColumn("dm_order_qty_without_pcb",
                                            dm_with_fourweek.regular_sales_before_dm
                                            + dm_with_fourweek.four_weeks_after_dm
@@ -368,7 +389,7 @@ def dm_order_process(date_str):
 
     dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
 
-    print_output("Write store order to datalake")
+    print_output("Write store order to datalake", log_file)
     dm_sql = \
         """
         INSERT INTO vartefact.forecast_dm_orders
@@ -409,9 +430,9 @@ def dm_order_process(date_str):
 
     sqlc.sql("refresh table vartefact.forecast_dm_orders")
 
-    print_output("Finish writing store order to datalake")
+    print_output("Finish writing store order to datalake", log_file)
 
-    print_output("Start generating DC orders")
+    print_output("Start generating DC orders", log_file)
 
     dm_item_dc_sql = \
         """
@@ -443,12 +464,14 @@ def dm_order_process(date_str):
                 )
             AND del.sub_code = icis.sub_code
             AND del.dept_code = icis.dept_code
-        JOIN vartefact.v_forecast_inscope_dc_item_details dcid ON dcid.item_code =icis.item_code
+        JOIN vartefact.forecast_dc_item_details dcid ON dcid.item_code =icis.item_code
             AND dcid.sub_code = icis.sub_code
             AND dcid.dept_code = icis.dept_code
-            AND dcid.dc_status !='Stop'
+            AND dcid.rotation != 'X'
+            AND dcid.dc_status != 'Stop'
             AND dcid.seasonal = 'No'
-        WHERE del.extract_order = 50
+            AND dcid.item_type not in ('New','Company Purchase','Seasonal')
+        WHERE del.extract_order = 40
             AND ndt.theme_start_date >= '{1}'
             AND ndt.theme_start_date <= '{2}'
         """.replace("\n", " ")
@@ -465,7 +488,7 @@ def dm_order_process(date_str):
     dm_item_dc_df = dm_item_dc_df.join(first_dc_dm, ['item_id', 'sub_id', 'theme_start_date'])
 
     output_line = f"Number of item that will have DM order in DC {dm_item_dc_df.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line + ","
 
     dm_item_dc_df.cache()
@@ -576,10 +599,10 @@ def dm_order_process(date_str):
     dm_dc_pcb.createOrReplaceTempView("dm_dc_final")
 
     output_line = f"Number of DM DC orders {dm_dc_pcb.count()}"
-    print_output(output_line)
+    print_output(output_line, log_file)
     output_str = output_str + output_line
 
-    print_output("Write DC order to datalake")
+    print_output("Write DC order to datalake", log_file)
 
     dm_dc_sql = \
         """
@@ -622,4 +645,4 @@ def dm_order_process(date_str):
     insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
 
     sc.stop()
-    print_output("Job finish")
+    print_output("Job finish", log_file)

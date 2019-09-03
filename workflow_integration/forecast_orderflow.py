@@ -70,7 +70,8 @@ def python_calculate_service_level(ds, **kwargs):
 
 def python_dm_order(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    # dm_order_process(order_day)
+    log_file = f'{log_folder}/forecast_orderflow/ds_{ds}/run_dm_order.log'
+    dm_order_process(order_day, log_file)
 
 
 def python_store_order_file(ds, **kwargs):

@@ -97,13 +97,15 @@ def dm_order_simulation(date_str):
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
         JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
-        JOIN vartefact.v_forecast_inscope_store_item_details id ON ps.stostocd = id.store_code
+        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
             AND del.item_code = CONCAT (
                 id.dept_code,
                 id.item_code
                 )
             AND del.sub_code = id.sub_code
             AND del.dept_code = id.dept_code
+            AND id.store_status != 'Stop'
+            AND id.item_type not in ('New','Company Purchase','Seasonal')
         JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
             AND id.item_code = icis.item_code
             AND id.sub_code = icis.sub_code
@@ -117,6 +119,7 @@ def dm_order_simulation(date_str):
         WHERE del.extract_order = 40
             AND ndt.theme_start_date >= '{1}'
             AND ndt.theme_start_date < '{2}'
+            AND ndt.dm_theme_id = 29733
         """.replace("\n", " ")
 
     dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
@@ -251,8 +254,9 @@ def dm_order_simulation(date_str):
 
     dm_prediction = sqlc.sql(dm_sales_predict_sql)
 
-    dm_prediction.filter("having_dm_prediction = 'no' ").write.mode("overwrite").format("parquet").saveAsTable(
-        "vartefact.forecast_no_dm_prediction")
+    dm_prediction.filter("having_dm_prediction = 'no' ") \
+        .write.mode("overwrite").format("parquet") \
+        .saveAsTable("vartefact.forecast_no_dm_prediction")
 
     dm_prediction.createOrReplaceTempView("dm_prediction")
 
@@ -270,7 +274,7 @@ def dm_order_simulation(date_str):
             dp.store_code,
             dp.dm_theme_id,
             case when
-              fcst.daily_sales_prediction_original < 0.2 and itmd.rotation != 'A'
+              fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
             then 0
             when
               fcst.daily_sales_prediction_original < 0
@@ -303,7 +307,7 @@ def dm_order_simulation(date_str):
             dp.store_code,
             dp.dm_theme_id,
             case when
-              fcst.daily_sales_prediction_original < 0.2 and itmd.rotation != 'A'
+              fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
             then 0
             when
               fcst.daily_sales_prediction_original < 0
@@ -445,10 +449,14 @@ def dm_order_simulation(date_str):
                 )
             AND del.sub_code = icis.sub_code
             AND del.dept_code = icis.dept_code
-        JOIN vartefact.v_forecast_inscope_dc_item_details dcid ON dcid.item_code =icis.item_code
+        JOIN vartefact.forecast_dc_item_details dcid ON dcid.item_code =icis.item_code
             AND dcid.sub_code = icis.sub_code
             AND dcid.dept_code = icis.dept_code
-        WHERE del.extract_order = 50
+            AND dcid.rotation != 'X'
+            AND dcid.dc_status != 'Stop'
+            AND dcid.seasonal = 'No'
+            AND dcid.item_type not in ('New','Company Purchase','Seasonal')
+        WHERE del.extract_order = 40
             AND ndt.theme_start_date >= '{1}'
             AND ndt.theme_start_date <= '{2}'
         """.replace("\n", " ")

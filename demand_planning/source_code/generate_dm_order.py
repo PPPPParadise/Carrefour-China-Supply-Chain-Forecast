@@ -30,7 +30,7 @@ sqlc = SQLContext(sc)
 # +
 print(str(datetime.datetime.now()), "start")
 # The input
-date_str = '20190819'
+date_str = '20190902'
 
 run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
 
@@ -82,7 +82,7 @@ dm_item_store_sql = \
     FROM vartefact.forecast_nsa_dm_extract_log del
     JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
     JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
-    JOIN vartefact.v_forecast_inscope_store_item_details id ON ps.stostocd = id.store_code
+    JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
         AND del.item_code = CONCAT (
             id.dept_code,
             id.item_code
@@ -94,6 +94,8 @@ dm_item_store_sql = \
         AND id.sub_code = icis.sub_code
         AND id.dept_code = icis.dept_code
         AND id.store_code = icis.store_code
+        AND id.store_status != 'Stop'
+        AND id.item_type not in ('New','Company Purchase','Seasonal')
     LEFT JOIN vartefact.forecast_simulation_dm_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
         AND icis.dept_code = fdo.dept_code
         AND icis.item_code = fdo.item_code
@@ -102,6 +104,7 @@ dm_item_store_sql = \
     WHERE del.extract_order = 40
         AND ndt.theme_start_date >= '{1}'
         AND ndt.theme_start_date < '{2}'
+        AND ndt.dm_theme_id = 29733
     """.replace("\n", " ")
 
 dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
@@ -229,7 +232,6 @@ first_order_df = order_deliver_df.groupBy(['item_id', 'sub_id', 'store_code']). 
 # -
 
 first_order_deliver_df = order_deliver_df \
-        .select(['item_id', 'sub_id', 'store_code', 'first_order_date', 'first_delivery_date']) \
         .join(first_order_df, ['item_id', 'sub_id', 'store_code', 'first_order_date'])
 
 dm_item_store_order_df = dm_item_store_df \
@@ -274,9 +276,12 @@ dm_regular_sales_sql = \
         dp.store_code,
         dp.dm_theme_id,
         case when
-        fcst.daily_sales_prediction_original < 0.2
-            then 0
-        else fcst.daily_sales_prediction_original
+          fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
+        then 0
+        when
+          fcst.daily_sales_prediction_original < 0
+        then 0
+        else fcst.daily_sales_prediction_original 
         end AS sales_prediction
     FROM vartefact.t_forecast_daily_sales_prediction fcst
     JOIN dm_prediction dp ON fcst.item_id = dp.item_id
@@ -303,9 +308,12 @@ after_fourweek_sql = \
         dp.store_code,
         dp.dm_theme_id,
         case when
-        fcst.daily_sales_prediction_original < 0.2
-            then 0
-        else fcst.daily_sales_prediction_original
+          fcst.daily_sales_prediction_original < 0.2 and dp.rotation != 'A'
+        then 0
+        when
+          fcst.daily_sales_prediction_original < 0
+        then 0
+        else fcst.daily_sales_prediction_original 
         end AS sales_prediction
     FROM dm_prediction dp
     JOIN vartefact.t_forecast_daily_sales_prediction fcst ON fcst.item_id = dp.item_id
@@ -357,14 +365,11 @@ dm_final_pcb = dm_final \
 dm_final_pcb = dm_final_pcb.withColumn("first_dm_order_qty", dm_final_pcb["first_dm_order_qty"].cast("Int"))
 
 dm_final_pcb = dm_final_pcb.withColumn("dm_order_qty", dm_final_pcb["dm_order_qty"].cast("Int"))
-
-# +
-#print("Number of final result", dm_final_pcb.count())
 # -
 
-dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
+print("Number of final result", dm_final_pcb.count())
 
-dm_final_pcb.write.mode("overwrite").format("parquet").saveAsTable("vartefact.forecast_sep_dm_original")
+dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
 
 dm_sql = \
     """
@@ -441,10 +446,14 @@ dm_item_dc_sql = \
             )
         AND del.sub_code = icis.sub_code
         AND del.dept_code = icis.dept_code
-    JOIN vartefact.v_forecast_inscope_dc_item_details dcid ON dcid.item_code =icis.item_code
+    JOIN vartefact.forecast_dc_item_details dcid ON dcid.item_code =icis.item_code
         AND dcid.sub_code = icis.sub_code
         AND dcid.dept_code = icis.dept_code
-    WHERE del.extract_order = 50
+        AND dcid.rotation != 'X'
+        AND dcid.dc_status != 'Stop'
+        AND dcid.seasonal = 'No'
+        AND dcid.item_type not in ('New','Company Purchase','Seasonal')
+    WHERE del.extract_order = 40
         AND ndt.theme_start_date >= '{1}'
         AND ndt.theme_start_date <= '{2}'
     """.replace("\n", " ")
@@ -457,6 +466,8 @@ dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
 
 # # First order day for DC
 
+print("Items in DC that has DM ", dm_item_dc_df.count())
+
 # +
 first_dc_dm = dm_item_dc_df. \
         groupBy(['item_id', 'sub_id']). \
@@ -467,6 +478,9 @@ dm_item_dc_df = dm_item_dc_df.join(first_dc_dm, ['item_id', 'sub_id', 'theme_sta
 dm_item_dc_df.cache()
 
 dm_item_dc_df.createOrReplaceTempView("dm_item_dc")
+# -
+
+print("After getting only first DM ", dm_item_dc_df.count())
 
 # +
 dc_order_sql = \
@@ -532,10 +546,10 @@ dm_store_to_dc_sql = \
       sum(sod.regular_sales_before_dm) as regular_sales_before_dm,
       sum(sod.four_weeks_after_dm) as four_weeks_after_dm,
       sum(sod.dm_sales) as dm_sales,
-      sum(sod.dm_order_qty) as dm_order_qty_without_pcb,
+      sum(sod.order_qty) as dm_order_qty_without_pcb,
       dm.dm_theme_id
     FROM 
-        vartefact.forecast_sep_dm_original sod
+        vartefact.forecast_simulation_dm_orders sod
     JOIN dm_item_dc_order dm
         on sod.item_id = dm.item_id
         and sod.sub_id = dm.sub_id
@@ -573,8 +587,6 @@ dm_dc_pcb = dm_dc_order \
 
 dm_dc_pcb.createOrReplaceTempView("dm_dc_final")
 # -
-
-dm_dc_pcb.write.mode("overwrite").format("parquet").saveAsTable("vartefact.forecast_sep_dm_dc_original")
 
 dm_dc_sql = \
     """
@@ -615,5 +627,3 @@ dm_dc_sql = \
 sqlc.sql("refresh table vartefact.forecast_simulation_dm_dc_orders")
 
 sc.stop()
-
-

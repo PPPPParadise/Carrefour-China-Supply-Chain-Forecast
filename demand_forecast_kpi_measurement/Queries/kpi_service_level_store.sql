@@ -43,8 +43,8 @@ SELECT
 FROM fds.p4cm_daily_order 
 where order_status = 'C' 
 and order_date between to_timestamp("{date_start}", 'yyyyMMdd') and to_timestamp("{date_end}", 'yyyyMMdd')
-and store_code in (SELECT stostocd from {database}.forecast_store_code_scope_sprint4)
-and item_id in (SELECT DISTINCT item_id from {database}.forecast_itemid_list_threebrands_sprint4)
+and store_code in (SELECT stostocd from {database_name}.forecast_store_code_scope_sprint4)
+and item_id in (SELECT DISTINCT item_id from {database_name}.forecast_itemid_list_threebrands_sprint4)
 ), 
 
 order_qty_clean as (
@@ -94,8 +94,8 @@ SELECT
 FROM lfms.daily_shipment 
 where dc_site = 'DC1'
 and date_key BETWEEN "{date_start}" and "{date_end}"
-and store_code in (SELECT stostocd from {database}.forecast_store_code_scope_sprint4)
-and item_id in (SELECT DISTINCT item_id from {database}.forecast_itemid_list_threebrands_sprint4)
+and store_code in (SELECT stostocd from {database_name}.forecast_store_code_scope_sprint4)
+and item_id in (SELECT DISTINCT item_id from {database_name}.forecast_itemid_list_threebrands_sprint4)
 and rank = 1  
 GROUP BY 
     store_code,
@@ -132,7 +132,7 @@ and s_rec.sub_code = s_ord.sub_code
 and s_rec.supplier_code = s_ord.supplier_code
 and s_rec.order_number = s_ord.order_number 
 
-left join {database}.forecast_itemid_list_threebrands_sprint4 item_list 
+left join {database_name}.forecast_itemid_list_threebrands_sprint4 item_list 
 on item_list.item_id = s_ord.item_id 
 ), 
 
@@ -159,4 +159,3 @@ group by
 
 select * 
 from service_lvl 
-; 

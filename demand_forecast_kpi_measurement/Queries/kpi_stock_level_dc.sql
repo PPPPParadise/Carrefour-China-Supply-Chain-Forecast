@@ -19,9 +19,9 @@ create table {database_name}.monitor_stock_level_dc as
 with item_flag as
 (
     select dept_code, item_code, sub_code, 1 as in_dm
-    from vartefact.forecast_dm_dc_orders
+    from vartefact.forecast_dm_dc_orders 
     where run_date between "{date_start}" and "{date_end}"
-    group by dept_code, item_code, sub_code
+    group by dept_code, item_code, sub_code 
 ),
 
 -- 

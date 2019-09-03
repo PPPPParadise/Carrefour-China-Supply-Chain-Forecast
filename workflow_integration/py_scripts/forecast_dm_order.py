@@ -103,17 +103,13 @@ def dm_order_process(date_str):
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
         JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
-        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
+        JOIN vartefact.v_forecast_inscope_store_item_details id ON ps.stostocd = id.store_code
             AND del.item_code = CONCAT (
                 id.dept_code,
                 id.item_code
                 )
             AND del.sub_code = id.sub_code
             AND del.dept_code = id.dept_code
-            AND id.store_status != 'Stop' 
-            AND id.repl_type != '1' 
-            AND id.seasonal = 'No'
-            AND id.dc_status != 'Stop'
         JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
             AND id.item_code = icis.item_code
             AND id.sub_code = icis.sub_code
@@ -447,7 +443,7 @@ def dm_order_process(date_str):
                 )
             AND del.sub_code = icis.sub_code
             AND del.dept_code = icis.dept_code
-        JOIN vartefact.forecast_dc_item_details dcid ON dcid.item_code =icis.item_code
+        JOIN vartefact.v_forecast_inscope_dc_item_details dcid ON dcid.item_code =icis.item_code
             AND dcid.sub_code = icis.sub_code
             AND dcid.dept_code = icis.dept_code
             AND dcid.dc_status !='Stop'

@@ -11,7 +11,7 @@ Parameters:
 Input:
     * lfms.daily_dcstock
     * vartefact.forecast_itemid_list_threebrands_sprint4
-    * vartefact.forecast_item_details   -- to get item flow type
+    * vartefact.forecast_dc_item_details   -- to get item rotation
 To:
     * vartefact.monitor_detention_rate_dc
 */
@@ -27,9 +27,10 @@ with flow_type as
         concat(dept_code, item_code, sub_code) as item_code_long,
         rotation
     from 
-        {database_name}.forecast_item_details
+        {database_name}.forecast_dc_item_details
     where dc_status = 'Active'
     group by concat(dept_code, item_code, sub_code), rotation
+
 ),
 
 dcstock_in_scope as

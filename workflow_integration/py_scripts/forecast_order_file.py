@@ -4,6 +4,7 @@ import os
 from datetime import timedelta
 from os.path import abspath
 
+import pandas as pd
 import numpy as np
 from openpyxl import Workbook
 from pyspark.sql import SQLContext
@@ -306,6 +307,40 @@ def store_order_file_process(date_str, record_folder, output_path,
     wb.save(record_folder + '/order_files/' + store_order_filename)
 
     wb.save(output_path + '/' + store_order_filename)
+    
+    store_orders = pd.read_excel(record_folder + '/order_files/' + store_order_filename
+                                 , 'Sheet', header=0, dtype=str).fillna('')
+    
+    sqlc.createDataFrame(store_orders).createOrReplaceTempView("store_orders")
+    
+    store_orders_sql = """
+        INSERT OVERWRITE TABLE vartefact.forecast_store_daily_order_files
+        PARTITION (date_key)
+        SELECT 
+            store_code ,
+            dept_code ,
+            supplier_code ,
+            item_code ,
+            sub_code ,
+            order_qty ,
+            free_goods_qty ,
+            delv_yyyymmdd ,
+            order_qty_in_pieces ,
+            order_by ,
+            qty_per_pack ,
+            pack_per_box ,
+            regular_order ,
+            regular_order_without_pcb ,
+            dm_order ,
+            dm_order_without_pcb ,
+            ppp ,
+            npp ,
+            4_weeks_after_dm_order ,
+            {0} as date_key
+        FROM store_orders
+    """.replace("\n", " ").format(run_date.strftime("%Y%m%d"))
+    
+    sqlc.sql(store_orders_sql)
 
     high_value_onstock_orders = onstock_store[onstock_store['order_value'] >= 2000]
 
@@ -428,6 +463,8 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
 
     dc_orders['order_qty_by_unit'] = np.ceil(
         (dc_orders['order_qty_with_sl'] + dc_orders['dm_order_qty']) / dc_orders['qty_per_box'])
+    
+    dc_orders['order_in_pieces'] = dc_orders['order_qty_by_unit'] * dc_orders['qty_per_box']
 
     # +
     wb = Workbook()
@@ -437,7 +474,7 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
          'Item Name', 'ITEM SUBCODE NAME LOCAL', 'POQ quantity', 'Purchase Quantity',
          'Unit', 'Purchase Price', 'Purchase Amount', 'Unit DC Discount',
          'Unit % discount', 'Additional free goods', 'NPP', 'Main barcode',
-         'Service Level', 'Regular Order (in Pieces)', 'DM Order (In Pieces)'])
+         'Total order (in Pieces)', 'Service Level', 'Regular Order (in Pieces)', 'DM Order (In Pieces)'])
 
     for index, ord in dc_orders.iterrows():
         ws.append([ord.dept_code + ord.supplier_code, ord.current_warehouse,
@@ -445,11 +482,57 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
                    ord.item_name_english, ord.item_name_local, '', ord.order_qty_by_unit,
                    'B', '', '', '',
                    '', '', ord.npp, ord.primary_barcode,
-                   ord.service_level, ord.order_qty, ord.dm_order_qty, ])
+                   ord.order_in_pieces, ord.service_level, ord.order_qty, ord.dm_order_qty, ])
 
     wb.save(record_folder + '/order_files/' + dc_order_filename)
 
     wb.save(output_path + '/' + dc_order_filename)
+    
+    dc_orders = pd.read_excel(record_folder + '/order_files/' + dc_order_filename
+                                 , 'Sheet', header=0, dtype=str).fillna('')
+    
+    dc_orders.columns = ["supplier_code", "warehouse", "delivery_date", "item_code",
+                        "item_name", "item_subcode_name_local", "poq_quantity", "purchase_quantity",
+                        "unit", "purchase_price", "purchase_amount", "unit_dc_discount",
+                        "unit_percent_discount", "additional_free_goods", "npp", "main_barcode",
+                        "order_in_pieces", "service_level", "regualr_order_in_pieces", "dm_order_in_pieces"]
+    
+    sqlc.createDataFrame(dc_orders).createOrReplaceTempView("dc_orders")
+    
+    dc_orders_sql = """
+        INSERT OVERWRITE TABLE vartefact.forecast_dc_daily_order_files
+        PARTITION (date_key)
+        SELECT 
+            supplier_code ,
+            warehouse ,
+            delivery_date ,
+            item_code ,
+            
+            item_name ,
+            item_subcode_name_local ,
+            poq_quantity ,
+            purchase_quantity ,
+            
+            unit ,
+            purchase_price ,
+            purchase_amount ,
+            unit_dc_discount ,
+            
+            unit_percent_discount ,
+            additional_free_goods ,
+            npp ,
+            main_barcode ,
+            
+            order_in_pieces,
+            service_level ,
+            regualr_order_in_pieces ,
+            dm_order_in_pieces ,
+            {0} as date_key
+        FROM dc_orders
+    """.replace("\n", " ").format(run_date.strftime("%Y%m%d"))
+    
+    sqlc.sql(dc_orders_sql)
+    
     # -
 
     sc.stop()

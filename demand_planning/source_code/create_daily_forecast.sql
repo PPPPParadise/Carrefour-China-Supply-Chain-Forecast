@@ -27,5 +27,5 @@ LEFT OUTER JOIN vartefact.forecast_daily_dm_view  dm ON reg.item_id = dm.item_id
 	AND reg.store_code = dm.store_code
 	AND reg.date_key = dm.date_key
 	AND reg.date_key > ?
-	AND dm.dm_theme_id = '29733'
+	AND dm.dm_theme_id in ( 29650,29688,29690,29733)
     

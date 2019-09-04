@@ -278,6 +278,53 @@ CREATE TABLE vartefact.t_forecast_daily_sales_prediction (
     daily_sales_prediction_original DOUBLE
 ) PARTITIONED BY (date_key STRING) STORED AS PARQUET 
 
+CREATE TABLE vartefact.forecast_store_daily_order_files (
+    store_code STRING,
+    dept_code STRING,
+    supplier_code STRING,
+    item_code STRING,
+    sub_code STRING,
+    order_qty STRING,
+    free_goods_qty STRING,
+    delv_yyyymmdd STRING,
+    order_qty_in_pieces STRING,
+    order_by STRING,
+    qty_per_pack STRING,
+    pack_per_box STRING,
+    regular_order STRING,
+    regular_order_without_pcb STRING,
+    dm_order STRING,
+    dm_order_without_pcb STRING,
+    ppp STRING,
+    npp STRING,
+    4_weeks_after_dm_order STRING
+) PARTITIONED BY (date_key STRING) 
+  STORED AS PARQUET
+
+CREATE TABLE vartefact.forecast_dc_daily_order_files (
+    supplier_code STRING,
+    warehouse STRING,
+    delivery_date STRING,
+    item_code STRING,
+    item_name STRING,
+    item_subcode_name_local STRING,
+    poq_quantity STRING,
+    purchase_quantity STRING,
+    unit STRING,
+    purchase_price STRING,
+    purchase_amount STRING,
+    unit_dc_discount STRING,
+    unit_percent_discount STRING,
+    additional_free_goods STRING,
+    npp STRING,
+    main_barcode STRING,
+	order_in_pieces STRING,
+    service_level STRING,
+    regualr_order_in_pieces STRING,
+    dm_order_in_pieces STRING
+) PARTITIONED BY (date_key STRING) 
+  STORED AS PARQUET
+
 CREATE VIEW vartefact.v_forecast_latest_service_level_item_dc
 AS
 (

@@ -11,10 +11,10 @@ Parameters:
 Input:
     * fds.p4cm_daily_order 
     * lfms.daily_shipment 
-    * {database}.forecast_store_code_scope_sprint4 
-    * {database}.forecast_itemid_list_threebrands_sprint4   -- items in scope
+    * {database_name}.forecast_store_code_scope_sprint4 
+    * {database_name}.forecast_itemid_list_threebrands_sprint4   -- items in scope
 To:
-    * {database}.monitor_service_level_item_dc
+    * {database_name}.monitor_service_level_item_dc
 */
 
 drop table if exists {database_name}.monitor_service_level_item_store;

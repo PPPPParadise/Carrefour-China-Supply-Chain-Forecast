@@ -39,8 +39,10 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
             itm.*,
             ords.order_qty,
             CASE 
-            when sto.balance_qty is null 
-                then 'Missing stock in table fds.p4cm_daily_stock'
+            when icis.item_id is null 
+                then 'fds.p4cm_daily_stock not loaded at job run time'
+            when stp.item_code is null 
+                then 'ods.p4cm_store_item not loaded at job run time'
             else 'Others'
             END as reason
         from
@@ -50,11 +52,17 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
             and itm.sub_code = ords.sub_code
             and itm.store_code = ords.store_code
             and ords.order_day = '{0}'
-            left join fds.p4cm_daily_stock sto on itm.dept_code = sto.dept_code
-            and itm.item_code = sto.item_code
-            and itm.sub_code = sto.sub_code
-            and itm.store_code = sto.store_code
-            and sto.date_key = '{1}'
+            left join vartefact.forecast_item_code_id_stock icis on itm.dept_code = icis.dept_code
+            and itm.item_code = icis.item_code
+            and itm.sub_code = icis.sub_code
+            and itm.store_code = icis.store_code
+            and icis.date_key = '{1}'
+            left join vartefact.forecast_p4cm_store_item stp
+            on itm.item_code = stp.item_code
+            and itm.sub_code = stp.sub_code
+            and itm.store_code = stp.store_code
+            and itm.dept_code = stp.dept_code
+            and stp.date_key = '{0}'
         where
             itm.order_day = '{0}'
             and ords.order_qty is null
@@ -76,8 +84,10 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
             itm.*,
             ords.order_qty,
             CASE 
-            when sto.balance_qty is null 
-                then 'Missing stock in table fds.p4cm_daily_stock'
+            when icis.item_id is null 
+                then 'fds.p4cm_daily_stock not loaded at job run time'
+            when stp.item_code is null 
+                then 'ods.p4cm_store_item not loaded at job run time'
             else 'Others'
             END as reason
         from
@@ -87,11 +97,17 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
             and itm.sub_code = ords.sub_code
             and itm.store_code = ords.store_code
             and ords.order_day = '{0}'
-            left join fds.p4cm_daily_stock sto on itm.dept_code = sto.dept_code
-            and itm.item_code = sto.item_code
-            and itm.sub_code = sto.sub_code
-            and itm.store_code = sto.store_code
-            and sto.date_key = '{1}'
+            left join vartefact.forecast_item_code_id_stock icis on itm.dept_code = icis.dept_code
+            and itm.item_code = icis.item_code
+            and itm.sub_code = icis.sub_code
+            and itm.store_code = icis.store_code
+            and icis.date_key = '{1}'
+            left join vartefact.forecast_p4cm_store_item stp
+            on itm.item_code = stp.item_code
+            and itm.sub_code = stp.sub_code
+            and itm.store_code = stp.store_code
+            and itm.dept_code = stp.dept_code
+            and stp.date_key = '{0}'
         where
             itm.order_day = '{0}'
             and ords.order_qty is null
@@ -125,6 +141,8 @@ def store_missing_order_process(date_str, record_folder, output_path, store_miss
             ws.append([row.rotation, row.dept_code, row.item_code, row.sub_code,
                        row.cn_name, row.store_code, row.con_holding, row.ds_supplier_code,
                        row.dc_supplier_code, row.reason])
+            
+            print(f'{row.dept_code}, {row.item_code}, {row.sub_code}, {row.store_code}, {row.dc_supplier_code}, {row.reason}')
             
     wb.save(record_folder + '/order_checks/' + store_missing_file)
 
@@ -162,7 +180,7 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
             itm.*,
             ords.order_qty,
             CASE 
-            when sto.balance_qty is null 
+            when icis.item_id is null 
                 then 'Missing stock in table fds.p4cm_daily_stock'
             when ldd.stock_available_sku is null 
                 then 'Missing stock in table lfms.daily_dcstock'
@@ -186,12 +204,16 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
             and itm.sub_code = ords.sub_code
             and itm.holding_code = ords.con_holding
             and ords.order_day = '{0}'
-        LEFT join fds.p4cm_daily_stock sto on itm.dept_code = sto.dept_code
-            and itm.item_code = sto.item_code
-            and itm.sub_code = sto.sub_code
-            and sto.date_key = '{1}'
-        LEFT join vartefact.forecast_lfms_daily_dcstock ldd on sto.item_id = ldd.item_id
-            and sto.sub_id = ldd.sub_id
+        left join 
+            (
+                select distinct dept_code, item_code, sub_code, item_id, sub_id
+                FROM vartefact.forecast_item_code_id_stock
+                where date_key = '{1}'
+            ) icis on itm.dept_code = icis.dept_code
+            and itm.item_code = icis.item_code
+            and itm.sub_code = icis.sub_code
+        LEFT join vartefact.forecast_lfms_daily_dcstock ldd on icis.item_id = ldd.item_id
+            and icis.sub_id = ldd.sub_id
             and ldd.date_key = '{1}'
             and ldd.dc_site = 'DC1'
         where
@@ -225,6 +247,8 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
             ws.append([row.rotation, row.dept_code, row.item_code, row.sub_code,
                        row.item_name_local, row.current_warehouse, row.holding_code, row.primary_ds_supplier,
                        row.reason])
+            
+            print(f'{row.dept_code}, {row.item_code}, {row.sub_code}, {row.current_warehouse}, {row.primary_ds_supplier}, {row.reason}')
             
     wb.save(record_folder + '/order_checks/' + dc_missing_file)
 

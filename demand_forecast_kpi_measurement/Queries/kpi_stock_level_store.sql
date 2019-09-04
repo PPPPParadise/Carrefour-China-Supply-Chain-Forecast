@@ -55,8 +55,7 @@ store_item_details as (
 item_store_stock as
 (
     select
-        a.item_id, a.sub_id, a.store_code, a.date_key, c.rotation, 
-        a.balance_qty,
+        a.item_id, a.sub_id, a.store_code, a.date_key, c.rotation, a.balance_qty,
         nvl(b.in_dm, 0) as in_dm
     from
         fds.p4cm_daily_stock a
@@ -77,8 +76,7 @@ item_store_stock as
 
 -- sum of all available_sku of all items, group by DM/non-DM
 select
-    store_code, in_dm, upper(rotation) as rotation, date_key, 
-    sum(balance_qty) as stock_level
+    store_code, in_dm, upper(rotation) as rotation, date_key, sum(balance_qty) as stock_level
 from
     item_store_stock
 group by

@@ -68,6 +68,10 @@ object ProcessLogic {
 
       // Get in item store that valid for logic
       val inScopeItemEntitySql = getInScopeItemEntitySql(modelRun, startDateStr, stockDateStr)
+      if (modelRun.isDebug) {
+        LogUtil.info("inScopeItemEntitySql")
+        LogUtil.info(inScopeItemEntitySql)
+      }
       var inScopeItemEntityDf = sqlc.sql(inScopeItemEntitySql)
       inScopeItemEntityDf = DataUtil.filterDateFrame(inScopeItemEntityDf, item_id, sub_id, entity_code)
       val itemEntityCnt = inScopeItemEntityDf.count
@@ -86,8 +90,20 @@ object ProcessLogic {
 
       inScopeItemEntityDf.createOrReplaceTempView(modelRun.viewName)
 
+      if (modelRun.isDebug) {
+        inScopeItemEntityDf.write.format("parquet")
+          .mode("overwrite")
+          .saveAsTable(s"vartefact.${modelRun.viewName}")
+
+        LogUtil.info(s"write to table vartefact.${modelRun.viewName}")
+      }
+
       // Get all order and delivery days between start and end date
       val orderDeliverySql = getOrderDeliverySql(modelRun, stockDateStr, startDateStr, endDateStr)
+      if (modelRun.isDebug) {
+        LogUtil.info("orderDeliverySql")
+        LogUtil.info(orderDeliverySql)
+      }
       val orderDeliveryDf = sqlc.sql(orderDeliverySql)
 
       outputLine = s"Number of total order opportunities: ${orderDeliveryDf.count()}"
@@ -120,12 +136,6 @@ object ProcessLogic {
 
       activeItemEntities.cache()
       activeItemEntities.createOrReplaceTempView(modelRun.viewName)
-
-      if (modelRun.isSimulation) {
-        activeItemEntities.write.format("parquet")
-          .mode("overwrite")
-          .saveAsTable("temp." + modelRun.viewName)
-      }
 
       // Find the actual stock level
       val stockLevelMap = getActualStockMap(startDateStr, stockDateStr, modelRun.flowType,

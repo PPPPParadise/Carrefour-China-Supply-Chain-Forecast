@@ -17,6 +17,7 @@ from py_scripts.forecast_order_file import store_order_file_process
 from py_scripts.forecast_order_file import dc_order_file_process
 from py_scripts.forecast_check_missing_orders import store_missing_order_process
 from py_scripts.forecast_check_missing_orders import dc_missing_order_process
+from py_scripts.generate_supplier_forecast import forecast_file_process
 
 project_folder = Variable.get("project_folder").strip()
 record_folder = Variable.get("record_folder").strip()
@@ -31,6 +32,7 @@ xdock_high_volume_order_filename = Variable.get("xdock_high_volume_order_filenam
 dc_order_filename = Variable.get("dc_order_filename").strip()
 store_missing_order_filename = Variable.get("store_missing_order_filename").strip()
 dc_missing_order_filename = Variable.get("dc_missing_order_filename").strip()
+weekly_forecast_filename = Variable.get("weekly_forecast_filename").strip()
 order_process_jar = Variable.get("order_process_jar").strip()
 
 default_args = {
@@ -97,6 +99,10 @@ def python_dc_missing_order_file(ds, **kwargs):
     dc_missing_order_process(order_day, record_folder, datachecking_output_folder,
                              dc_missing_order_filename.format(order_day))
 
+def python_generate_forecast_file(ds, **kwargs):
+    order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
+    forecast_file_process(order_day, record_folder, monitoring_output_folder,
+                             weekly_forecast_filename)
 
 def show_dag_args(ds, **kwargs):
     logFile = open(f'{log_folder}/forecast_orderflow/ds_{ds}/run_parameter.log', "a")
@@ -171,6 +177,11 @@ check_dc_order = PythonOperator(task_id='check_dc_order',
                                 provide_context=True,
                                 dag=forecast_orderflow)
 
+generate_forecast_file = PythonOperator(task_id='generate_forecast_file',
+                                python_callable=python_generate_forecast_file,
+                                provide_context=True,
+                                dag=forecast_orderflow)
+
 show_dag_args = PythonOperator(task_id="show_dag_args",
                                python_callable=show_dag_args,
                                provide_context=True,
@@ -188,3 +199,5 @@ generate_store_order_file.set_upstream(run_xdock_order)
 generate_dc_order_file.set_upstream(run_dc_order)
 check_store_order.set_upstream(generate_store_order_file)
 check_dc_order.set_upstream(generate_dc_order_file)
+generate_forecast_file.set_upstream(check_store_order)
+generate_forecast_file.set_upstream(check_dc_order)

@@ -473,11 +473,11 @@ object ProcessLogic {
   private def getPastOrderForecastMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
                                   spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     modelRun.flowType match {
-      case FlowType.XDocking | FlowType.OnStockStore => {
+      case  FlowType.OnStockStore => {
         Map.empty
       }
 
-      case FlowType.DC => {
+      case FlowType.XDocking | FlowType.DC => {
 
         val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
         val cal = Calendar.getInstance()

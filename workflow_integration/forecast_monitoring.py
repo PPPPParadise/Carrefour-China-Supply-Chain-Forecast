@@ -29,7 +29,7 @@ default_args = {
 
 
 forecast_monitoring = DAG('forecast_monitoring',
-                          schedule_interval='30 0 * * *',
+                          schedule_interval='01 0 * * *',
                           default_args=default_args,
                           max_active_runs=1,
                           catchup=False)

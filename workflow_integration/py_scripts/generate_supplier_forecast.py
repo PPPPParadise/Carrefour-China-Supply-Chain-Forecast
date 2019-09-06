@@ -63,7 +63,7 @@ def write_forecast_file(con_holding, supplier_name, forecast_file,
                    get_order_qty(all_forecast, row, date_str_list[7]), get_dm_qty(all_forecast, row, date_str_list[7]),
                    get_order_qty(all_forecast, row, date_str_list[8]), get_dm_qty(all_forecast, row, date_str_list[8])])
 
-    wb.save(record_folder + '/' + forecast_file)
+    wb.save(record_folder + '/forecast_files/' + forecast_file)
 
 
 def forecast_file_process(date_str, record_folder, output_folder, forecast_file_name):

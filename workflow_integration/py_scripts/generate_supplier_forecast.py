@@ -65,6 +65,7 @@ def write_forecast_file(con_holding, supplier_name, forecast_file,
 
     wb.save(record_folder + '/forecast_files/' + forecast_file)
 
+    wb.save(output_folder + '/' + forecast_file)
 
 def forecast_file_process(date_str, record_folder, output_folder, forecast_file_name):
     run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()

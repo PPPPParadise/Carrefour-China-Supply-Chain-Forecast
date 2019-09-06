@@ -12,6 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 
 project_folder = Variable.get("project_folder").strip()
 record_folder = Variable.get("record_folder").strip()
+monitoring_output_folder = Variable.get("monitoring_output_folder").strip()
 
 default_args = {
     'owner': 'Carrefour',
@@ -36,6 +37,15 @@ forecast_monitoring = DAG('forecast_monitoring',
 run_monitoring = BashOperator(
     task_id='run_monitoring',
     wait_for_downstream=True,
-    bash_command='jupyter nbconvert --execute ' + project_folder + '/a001-auto-monitor-checks.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ tomorrow_ds_nodash }}.html --ExecutePreprocessor.timeout=900 --no-input',
+    bash_command='jupyter nbconvert --execute ' + project_folder + '/monitor_checks.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ tomorrow_ds_nodash }}.html --ExecutePreprocessor.timeout=900 --no-input',
     dag=forecast_monitoring
 )
+
+copy_output = BashOperator(
+    task_id='copy_output',
+    wait_for_downstream=True,
+    bash_command='cp -r ' + record_folder + '/monitoring/*_{{ tomorrow_ds_nodash }}.* ' + monitoring_output_folder,
+    dag=forecast_monitoring
+)
+
+copy_output.set_upstream(run_monitoring)

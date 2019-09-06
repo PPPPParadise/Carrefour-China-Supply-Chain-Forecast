@@ -101,7 +101,7 @@ def python_dc_missing_order_file(ds, **kwargs):
 
 def python_generate_forecast_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
-    forecast_file_process(order_day, record_folder, monitoring_output_folder,
+    forecast_file_process(order_day, record_folder, forecast_output_folder,
                              weekly_forecast_filename)
 
 def show_dag_args(ds, **kwargs):

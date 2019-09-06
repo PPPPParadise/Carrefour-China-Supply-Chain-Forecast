@@ -101,7 +101,10 @@ def store_order_file_process(date_str, record_folder, output_path,
         id.order_by,
         id.qty_per_pack,
         id.pack_per_box,
-        cast(fpsi.npp as DOUBLE) itm_npp
+        cast(fpsi.npp as DOUBLE) itm_npp,
+        ord.item_id,
+        ord.sub_id,
+        id.cn_name
     FROM onstock_store_items osi
     LEFT JOIN vartefact.forecast_onstock_orders ord
         ON osi.store_code = ord.store_code
@@ -218,7 +221,10 @@ def store_order_file_process(date_str, record_folder, output_path,
         id.order_by,
         id.qty_per_pack,
         id.pack_per_box,
-        cast(fpsi.npp as DOUBLE) itm_npp
+        cast(fpsi.npp as DOUBLE) itm_npp,
+        ord.item_id,
+        ord.sub_id,
+        id.cn_name
     FROM xdock_items osi
     LEFT JOIN vartefact.forecast_xdock_orders ord
         ON osi.store_code = ord.store_code
@@ -280,6 +286,10 @@ def store_order_file_process(date_str, record_folder, output_path,
     xdock_order['order_value'] = xdock_order['itm_npp'] * xdock_order['total_order']
 
     xdock_order['single_unit_value'] = xdock_order['itm_npp'] * xdock_order['qty_per_unit']
+    
+    onstock_store.to_csv(record_folder + f'/order_files_debug/onstock_store_{date_str}.csv', header=1)
+    
+    xdock_order.to_csv(record_folder + f'/order_files_debug/xdock_orders_{date_str}.csv', header=1)
 
     # +
     wb = Workbook()
@@ -357,19 +367,22 @@ def store_order_file_process(date_str, record_folder, output_path,
     ws2.append(['Store_Code', 'Dept_Code', 'Supplier_Code', 'Item_Code',
                 'Sub_code', 'Order_Qty_In_Pieces', 'Order_Value', 'Delv_yyyymmdd',
                 'Regular_Order', 'Regular_Order_Without_PCB', 'DM_Order', 'DM_Order_Without_PCB',
-                '4_Weeks_After_DM_Order', 'Order_Qty_Per_Order_Unit', 'NPP', 'Order_Value_Per_Order_Unit'])
+                '4_Weeks_After_DM_Order', 'Order_Qty_Per_Order_Unit', 'NPP', 'Order_Value_Per_Order_Unit',
+                'Item_id', 'Sub_id', 'CN_name'])
 
     for index, ord in high_value_onstock_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
                     ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day,
                     ord.order_qty, ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value])
+                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value,
+                    ord.item_id, ord.sub_id, ord.cn_name])
 
     for index, ord in high_value_xdock_orders.iterrows():
         ws2.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
                     ord.sub_code, ord.total_order, ord.order_value, ord.delivery_day,
                     ord.order_qty, ord.order_without_pcb, ord.dm_order_qty, ord.dm_order_qty_without_pcb,
-                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value])
+                    ord.four_weeks_after_dm, ord.qty_per_unit, ord.itm_npp, ord.single_unit_value,
+                    ord.item_id, ord.sub_id, ord.cn_name])
 
     wb2.save(record_folder + '/order_checks/' + store_highvalue_order_filename)
 
@@ -385,14 +398,14 @@ def store_order_file_process(date_str, record_folder, output_path,
                 'Sub_code', 'Order_Qty', 'Order_Qty_In_Pieces', 'Order_Value',
                 'Delv_yyyymmdd', 'Regular_Order', 'Regular_Order_With_Service_Level', 'Regular_Order_Without_PCB',
                 'Qty_Per_Order_Unit', 'DM_Order', 'DM_Order_Without_PCB', '4_Weeks_After_DM_Order',
-                'Service_Level'])
+                'Service_Level', 'Item_id', 'Sub_id', 'CN_name'])
 
     for index, ord in high_volume_xdock_orders.iterrows():
         ws3.append([ord.store_code, ord.dept_code, ord.supplier_code, ord.item_code,
                     ord.sub_code, ord.total_order_in_unit, ord.total_order, ord.order_value,
                     ord.delivery_day, ord.order_qty, ord.order_qty_with_sl, ord.order_without_pcb,
                     ord.qty_per_unit, ord.dm_order_qty, ord.dm_order_qty_without_pcb, ord.four_weeks_after_dm,
-                    ord.service_level])
+                    ord.service_level, ord.item_id, ord.sub_id, ord.cn_name])
 
     wb3.save(record_folder + '/order_checks/' + xdock_high_volume_order_filename)
 

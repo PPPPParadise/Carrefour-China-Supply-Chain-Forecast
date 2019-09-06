@@ -132,7 +132,12 @@ object OrderLogic {
 
           // expected stock on delivery day of next order
           while (dateRowList(futureD).date_key < deliveryDay) {
-            futureStock = futureStock - dateRowList(futureD).max_predict_sales
+            if (order.rotation.equalsIgnoreCase("A")) {
+              futureStock = futureStock - dateRowList(futureD).max_predict_sales
+            } else {
+              futureStock = futureStock - dateRowList(futureD).predict_sales
+            }
+
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             order.matched_sales_end_date = dateRowList(futureD).date_key
@@ -140,7 +145,12 @@ object OrderLogic {
           }
 
           if ("AfterStoreOpen".equalsIgnoreCase(order.delivery_time)) {
-            futureStock = futureStock - dateRowList(futureD).max_predict_sales
+            if (order.rotation.equalsIgnoreCase("A")) {
+              futureStock = futureStock - dateRowList(futureD).max_predict_sales
+            } else {
+              futureStock = futureStock - dateRowList(futureD).predict_sales
+            }
+
             futureStock = futureStock + dmDeliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             futureStock = futureStock + deliveryMap.getOrElse(dateRowList(futureD).date_key, 0.0)
             order.matched_sales_end_date = dateRowList(futureD).date_key

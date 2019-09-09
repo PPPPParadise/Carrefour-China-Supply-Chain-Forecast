@@ -1,4 +1,4 @@
-insert into vartefact.t_forecast_daily_sales_prediction 
+insert overwrite table vartefact.t_forecast_daily_sales_prediction 
 partition(date_key)
 SELECT reg.item_id,
 	reg.sub_id,

@@ -56,3 +56,28 @@ from
     and id.sub_code = dc.sub_code
     and id.dept_code = dc.dept_code
     and id.rotation != dc.rotation
+
+
+
+select
+    distinct concat_ws(dc.dept_code, dc.item_code, dc.sub_code) as dc_item,
+    concat_ws(
+        store.dept_code,
+        store.item_code,
+        store.sub_code
+    ) as store_item,
+    dc.dc_status as dc_dc_status,
+    store.dc_status as store_dc_status,
+    store.store_status as store_status,
+    dc.item_type as dc_item_type,
+    store.item_type as store_item_type
+from
+    vartefact.forecast_dc_item_details dc
+    left join vartefact.forecast_store_item_details store on dc.dept_code = store.dept_code
+    and dc.item_code = store.item_code
+    and dc.sub_code = store.sub_code
+where
+    dc.dc_status != 'Stop'
+    AND dc.seasonal = 'No'
+    AND dc.item_type not in ('New', 'Company Purchase', 'Seasonal')
+    and store.dc_status is null

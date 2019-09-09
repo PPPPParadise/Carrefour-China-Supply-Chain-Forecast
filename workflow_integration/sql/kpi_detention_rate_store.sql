@@ -23,7 +23,7 @@ drop table if exists {database_name}.monitor_detention_rate_store;
 create table {database_name}.monitor_detention_rate_store as
 
 with flow_type as (
-    select dept_code, item_code, sub_code, rotation
+    select dept_code, item_code, sub_code, upper(rotation) as rotation
     from {database_name}.forecast_store_item_details
     where store_status = 'Active'
     group by dept_code, item_code, sub_code, rotation
@@ -56,7 +56,7 @@ store_stock_in_scope as
             and a.store_code like '1%'
         )
         -- exclude xdocking
-        and lower( b.rotation ) <> 'x'
+        -- and lower( b.rotation ) <> 'x'
 )
 
 select

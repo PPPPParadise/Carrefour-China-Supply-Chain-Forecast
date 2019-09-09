@@ -8,8 +8,7 @@ with flow_type as
         concat(dept_code, item_code, sub_code) as item_code_long,
         rotation
     from 
-        {database_name}.forecast_dc_item_details
-    where dc_status = 'Active'
+        {database_name}.v_forecast_inscope_dc_item_details 
     group by concat(dept_code, item_code, sub_code), rotation
 
 ),

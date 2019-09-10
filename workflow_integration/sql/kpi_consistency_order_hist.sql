@@ -16,11 +16,6 @@ Input:
 To:
     * vartefact.monitor_detention_rate_store
 */
-
-create table if exists {database_name}.monitor_consistency_order_hist;
-
-create table {database_name}.monitor_consistency_order_hist as
-
 with dc_AB as (
 select
     a.sub_id, a.item_id, concat(a.dept_code, a.item_code, a.sub_code) as item_code, a.con_holding,

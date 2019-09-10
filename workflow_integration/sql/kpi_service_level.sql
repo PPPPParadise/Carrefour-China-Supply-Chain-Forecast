@@ -16,10 +16,6 @@ To:
     * vartefact.monitor_service_level_item_dc
 */
 
-drop table if exists {database_name}.monitor_service_level_item_dc;
-
-create table {database_name}.monitor_service_level_item_dc as
-
 with combine_ordered_received as
 (
     select

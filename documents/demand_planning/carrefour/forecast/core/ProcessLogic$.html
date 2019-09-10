@@ -49,7 +49,24 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class contains logic for system flow. It contains below steps<br />
+1. Load items that may have order today<br />
+2. Load item stop period information. For each item load on what days they should not be ordered. <br />
+3. Load sales prediction<br />
+4. Load current stock level<br />
+5. Load DM orders<br />
+6. Load past generated orders<br />
+7. Submit all data to OrderLogic to calculate order quantity<br />
+8. Store order quantity to datalake<br /></p><p>此类包含了系统工作逻辑, 有如下步骤<br />
+1. 读取所有以系统运行日为订单日的单品<br />
+2. 读取单品停止订货信息，确定单品可以和不可以订货的时间段 <br />
+3. 读取每日销量预测<br />
+4. 读取当前库存水平<br />
+5. 读取DM订单<br />
+6. 读取过去生成的订单<br />
+7. 将订单提交到OrderLogic类来计算订单量<br />
+8. 将生成的订单量储存在数据池<br />
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -219,6 +236,48 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#extractActiveItem" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="extractActiveItem(df:org.apache.spark.sql.DataFrame):org.apache.spark.sql.DataFrame"></a>
+      <a id="extractActiveItem(DataFrame):DataFrame"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">extractActiveItem</span><span class="params">(<span name="df">df: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@extractActiveItem(df:org.apache.spark.sql.DataFrame):org.apache.spark.sql.DataFrame" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get information for items that can be ordered
+获取可以订货的单品的信息
+</p><div class="fullcomment"><div class="comment cmt"><p>Get information for items that can be ordered
+获取可以订货的单品的信息
+</p></div><dl class="paramcmts block"><dt class="param">df</dt><dd class="cmt"><p>Order days 订单日期</p></dd><dt>returns</dt><dd class="cmt"><p>Item information 单品信息</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#extractActiveOrderOpportunities" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="extractActiveOrderOpportunities(df:org.apache.spark.sql.DataFrame,modelRun:carrefour.forecast.model.ModelRun,sqlc:org.apache.spark.sql.SQLContext):org.apache.spark.sql.DataFrame"></a>
+      <a id="extractActiveOrderOpportunities(DataFrame,ModelRun,SQLContext):DataFrame"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">extractActiveOrderOpportunities</span><span class="params">(<span name="df">df: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>, <span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="sqlc">sqlc: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@extractActiveOrderOpportunities(df:org.apache.spark.sql.DataFrame,modelRun:carrefour.forecast.model.ModelRun,sqlc:org.apache.spark.sql.SQLContext):org.apache.spark.sql.DataFrame" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get order days that not in stop period
+获取不在停止订货日期内的订单日
+</p><div class="fullcomment"><div class="comment cmt"><p>Get order days that not in stop period
+获取不在停止订货日期内的订单日
+</p></div><dl class="paramcmts block"><dt class="param">df</dt><dd class="cmt"><p>All order days 全部订单日期</p></dd><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">sqlc</dt><dd class="cmt"><p>Spark SQL context</p></dd><dt>returns</dt><dd class="cmt"><p>Order days that not in stop period 不在停止订货日期内的订单日</p></dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -262,7 +321,7 @@
 获取当前库存
 </p><div class="fullcomment"><div class="comment cmt"><p>Get Actual stock level
 获取当前库存
-</p></div><dl class="paramcmts block"><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt class="param">isSimulation</dt><dd class="cmt"><p>Whether it is simulation process 是否为模拟运行</p></dd><dt>returns</dt><dd class="cmt"><p>Current stock level 当前库存</p></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算大仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt class="param">isSimulation</dt><dd class="cmt"><p>Whether it is simulation process 是否为模拟运行</p></dd><dt>returns</dt><dd class="cmt"><p>Current stock level 当前库存</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -280,6 +339,111 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#getInScopeItemEntitySql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getInScopeItemEntitySql(modelRun:carrefour.forecast.model.ModelRun,orderDateStr:String,stockDateStr:String):String"></a>
+      <a id="getInScopeItemEntitySql(ModelRun,String,String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getInScopeItemEntitySql</span><span class="params">(<span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="orderDateStr">orderDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="stockDateStr">stockDateStr: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@getInScopeItemEntitySql(modelRun:carrefour.forecast.model.ModelRun,orderDateStr:String,stockDateStr:String):String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">SQL query to get in scope items for this job run
+生成查询运行中应包括的单品的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get in scope items for this job run
+生成查询运行中应包括的单品的SQL
+</p></div><dl class="paramcmts block"><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">orderDateStr</dt><dd class="cmt"><p>Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式</p></dd><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt>returns</dt><dd class="cmt"><p>SQL query</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#getOnTheWayStockMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getOnTheWayStockMap(modelRun:carrefour.forecast.model.ModelRun,startDateStr:String,endDateStr:String,spark:org.apache.spark.sql.SparkSession):Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]"></a>
+      <a id="getOnTheWayStockMap(ModelRun,String,String,SparkSession):Map[ItemEntity,List[(String,Double)]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getOnTheWayStockMap</span><span class="params">(<span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="startDateStr">startDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="endDateStr">endDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spark">spark: <span class="extype" name="org.apache.spark.sql.SparkSession">SparkSession</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a>, <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>)]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@getOnTheWayStockMap(modelRun:carrefour.forecast.model.ModelRun,startDateStr:String,endDateStr:String,spark:org.apache.spark.sql.SparkSession):Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get on the way order quantity and delivery date
+获取在途订单订货量及其抵达日期
+</p><div class="fullcomment"><div class="comment cmt"><p>Get on the way order quantity and delivery date
+获取在途订单订货量及其抵达日期
+</p></div><dl class="paramcmts block"><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>On the way order 在途订单</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#getOrderDeliverySql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getOrderDeliverySql(modelRun:carrefour.forecast.model.ModelRun,stockDateStr:String,startDateStr:String,endDateStr:String):String"></a>
+      <a id="getOrderDeliverySql(ModelRun,String,String,String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getOrderDeliverySql</span><span class="params">(<span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="stockDateStr">stockDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="startDateStr">startDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="endDateStr">endDateStr: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@getOrderDeliverySql(modelRun:carrefour.forecast.model.ModelRun,stockDateStr:String,startDateStr:String,endDateStr:String):String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">SQL query to get all order days for this job run
+生成查询周期中包括的全部订单日的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get all order days for this job run
+生成查询周期中包括的全部订单日的SQL
+</p></div><dl class="paramcmts block"><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式</p></dd><dt>returns</dt><dd class="cmt"><p>SQL query</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#getPastOrderForecastMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getPastOrderForecastMap(modelRun:carrefour.forecast.model.ModelRun,startDateStr:String,endDateStr:String,spark:org.apache.spark.sql.SparkSession):Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]"></a>
+      <a id="getPastOrderForecastMap(ModelRun,String,String,SparkSession):Map[ItemEntity,List[(String,Double)]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getPastOrderForecastMap</span><span class="params">(<span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="startDateStr">startDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="endDateStr">endDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spark">spark: <span class="extype" name="org.apache.spark.sql.SparkSession">SparkSession</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a>, <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>)]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@getPastOrderForecastMap(modelRun:carrefour.forecast.model.ModelRun,startDateStr:String,endDateStr:String,spark:org.apache.spark.sql.SparkSession):Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get previously generated order forecast
+获取过去生成的订单规划
+</p><div class="fullcomment"><div class="comment cmt"><p>Get previously generated order forecast
+获取过去生成的订单规划
+</p></div><dl class="paramcmts block"><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>On the way order 在途订单</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic#getSalesPrediction" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getSalesPrediction(modelRun:carrefour.forecast.model.ModelRun,dateMapDf:org.apache.spark.sql.DataFrame,startDateStr:String,endDateStr:String,sqlc:org.apache.spark.sql.SQLContext):org.apache.spark.sql.DataFrame"></a>
+      <a id="getSalesPrediction(ModelRun,DataFrame,String,String,SQLContext):DataFrame"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getSalesPrediction</span><span class="params">(<span name="modelRun">modelRun: <a href="../model/ModelRun.html" class="extype" name="carrefour.forecast.model.ModelRun">ModelRun</a></span>, <span name="dateMapDf">dateMapDf: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>, <span name="startDateStr">startDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="endDateStr">endDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sqlc">sqlc: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.sql.DataFrame">DataFrame</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.ProcessLogic$@getSalesPrediction(modelRun:carrefour.forecast.model.ModelRun,dateMapDf:org.apache.spark.sql.DataFrame,startDateStr:String,endDateStr:String,sqlc:org.apache.spark.sql.SQLContext):org.apache.spark.sql.DataFrame" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get sales predictions
+获取销量预测
+</p><div class="fullcomment"><div class="comment cmt"><p>Get sales predictions
+获取销量预测
+</p></div><dl class="paramcmts block"><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">dateMapDf</dt><dd class="cmt"><p>Item information and date 商品及日期信息</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">sqlc</dt><dd class="cmt"><p>Spark SQL context</p></dd><dt>returns</dt><dd class="cmt"><p>Sales prediction 销量预测</p></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>

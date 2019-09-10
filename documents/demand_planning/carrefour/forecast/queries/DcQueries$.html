@@ -49,7 +49,8 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>SQL queries for DC order
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class is used to store SQL queries for DC order process <br />
+用于储存大仓订单需要的SQL查询语句
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -276,10 +277,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get current stock level for DC
-查询DC/货仓当前库存的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get current stock level for DC
-查询DC/货仓当前库存的SQL
+      <p class="shortcomment cmt">SQL query to get current stock level for DC <br />
+查询大仓当前库存的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get current stock level for DC <br />
+查询大仓当前库存的SQL
 </p></div><dl class="paramcmts block"><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getDcOnTheWayStockSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDcOnTheWayStockSql(dateStr:String,viewName:String):String"></a>
@@ -297,10 +298,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get on the way order quantity and delivery date for DC
-查询DC/货仓在途订单订货量及其抵达日期的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get on the way order quantity and delivery date for DC
-查询DC/货仓在途订单订货量及其抵达日期的SQL
+      <p class="shortcomment cmt">SQL query to get on the way order quantity and delivery date for DC <br />
+查询大仓在途订单订货量及其抵达日期的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get on the way order quantity and delivery date for DC <br />
+查询大仓在途订单订货量及其抵达日期的SQL
 </p></div><dl class="paramcmts block"><dt class="param">dateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getDcPastOrdersSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDcPastOrdersSql(startDateStr:String,endDateStr:String,viewName:String,orderTableName:String):String"></a>
@@ -318,10 +319,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get past generated orders for DC
-查询过去生成的DC订单规划的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get past generated orders for DC
-查询过去生成的DC订单规划的SQL
+      <p class="shortcomment cmt">SQL query to get past generated orders for DC <br />
+查询过去生成的大仓订单规划的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get past generated orders for DC <br />
+查询过去生成的大仓订单规划的SQL
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getDmDcOrdersSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDmDcOrdersSql(startDateStr:String,endDateStr:String,viewName:String):String"></a>
@@ -339,9 +340,9 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get orders from DM process
+      <p class="shortcomment cmt">SQL query to get orders from DM process <br />
 查询DM订单系统生成的DM订单的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get orders from DM process
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get orders from DM process <br />
 查询DM订单系统生成的DM订单的SQL
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getOnStockDcInScopeOrderDaysSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -360,10 +361,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get all order days for DC job run
-DC/货仓脚本查询周期中包括的全部订单日的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get all order days for DC job run
-DC/货仓脚本查询周期中包括的全部订单日的SQL
+      <p class="shortcomment cmt">SQL query to get all order days for DC job run <br />
+大仓脚本查询周期中包括的全部订单日的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get all order days for DC job run <br />
+大仓脚本查询周期中包括的全部订单日的SQL
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getOnStockDcItemsSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getOnStockDcItemsSql(orderDateStr:String,stockDateStr:String):String"></a>
@@ -381,10 +382,10 @@ DC/货仓脚本查询周期中包括的全部订单日的SQL
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get in scope items for this job run for DC flow
-查询货仓订单流程中应包括的商品的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get in scope items for this job run for DC flow
-查询货仓订单流程中应包括的商品的SQL
+      <p class="shortcomment cmt">SQL query to get in scope items for this job run for DC flow <br />
+查询大仓订单流程中应包括的商品的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get in scope items for this job run for DC flow <br />
+查询大仓订单流程中应包括的商品的SQL
 </p></div><dl class="paramcmts block"><dt class="param">orderDateStr</dt><dd class="cmt"><p>Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式</p></dd><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="carrefour.forecast.queries.DcQueries#getStoreOrderToDcSql" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getStoreOrderToDcSql(startDateStr:String,endDateStr:String,viewName:String):String"></a>
@@ -402,10 +403,10 @@ DC/货仓脚本查询周期中包括的全部订单日的SQL
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">SQL query to get future store orders to DC
-查询门店向DC/货仓未来订货量的SQL
-</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get future store orders to DC
-查询门店向DC/货仓未来订货量的SQL
+      <p class="shortcomment cmt">SQL query to get future store orders to DC <br />
+查询门店向大仓未来订货量的SQL
+</p><div class="fullcomment"><div class="comment cmt"><p>SQL query to get future store orders to DC <br />
+查询门店向大仓未来订货量的SQL
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt>returns</dt><dd class="cmt"><p>SQL with variables filled 拼装好的SQL</p></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>

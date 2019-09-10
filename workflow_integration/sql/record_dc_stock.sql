@@ -1,4 +1,15 @@
-with item_flag as
+with dc_stock as (
+    select 
+        from_timestamp(date_add(to_timestamp(date_key, 'yyyyMMdd'), -1), 'yyyyMMdd') as date_key,
+        dc_site,
+        stock_available_sku,
+        item_code
+    from lfms.daily_dcstock 
+    where
+        dc_site = 'DC1'
+        and warehouse_code='KS01'
+),
+item_flag as
 (
     select dept_code, item_code, sub_code, 1 as in_dm
     from vartefact.forecast_dm_dc_orders
@@ -12,7 +23,7 @@ dc_stock_in_scope as
         nvl(b.in_dm, 0) as in_dm,
         case when stock_available_sku > 0 then 0 else 1 end  as oos_flag
     from
-        lfms.daily_dcstock ldd
+        dc_stock ldd
         join vartefact.v_forecast_inscope_dc_item_details dc
         on
             concat(dc.dept_code, dc.item_code, dc.sub_code) = ldd.item_code
@@ -21,9 +32,7 @@ dc_stock_in_scope as
         on
             concat(b.dept_code, b.item_code, b.sub_code) = ldd.item_code
     where
-        ldd.dc_site = 'DC1'
-        and ldd.warehouse_code='KS01'
-        and ldd.date_key between "{date_start}" and "{date_end}"
+        ldd.date_key between "{date_start}" and "{date_end}"
 )
 insert overwrite table vartefact.foreacst_dc_monitor 
 partition (run_date)

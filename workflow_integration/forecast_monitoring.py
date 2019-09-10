@@ -37,7 +37,7 @@ forecast_monitoring = DAG('forecast_monitoring',
 run_monitoring = BashOperator(
     task_id='run_monitoring',
     wait_for_downstream=True,
-    bash_command='jupyter nbconvert --execute ' + project_folder + '/monitor_checks.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ tomorrow_ds_nodash }}.html --ExecutePreprocessor.timeout=900 --no-input',
+    bash_command="MONITOR_RUN_DATE='{{ tomorrow_ds_nodash }}' jupyter nbconvert --execute " + project_folder + '/monitor_checks.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ tomorrow_ds_nodash }}.html --ExecutePreprocessor.timeout=900 --no-input',
     dag=forecast_monitoring
 )
 

@@ -16,7 +16,7 @@ with dcstock_in_scope as
     on
         a.item_code = concat(b.dept_code, b.item_code, b.sub_code)
     where
-        a.date_key = "{oos_check_date}"
+        a.date_key = date_format(date_add(to_timestamp("{oos_check_date}", 'yyyyMMdd'), 1), 'yyyyMMdd')
         -- item_id in scope
         and a.item_id in (
             select item_id

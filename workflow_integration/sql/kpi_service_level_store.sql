@@ -17,10 +17,6 @@ To:
     * {database_name}.monitor_service_level_item_dc
 */
 
-drop table if exists {database_name}.monitor_service_level_item_store;
-
-create table {database_name}.monitor_service_level_item_store as
-
 with order_qty_tb as (
 SELECT 
     date_key,

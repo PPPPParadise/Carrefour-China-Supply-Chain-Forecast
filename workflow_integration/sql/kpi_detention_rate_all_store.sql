@@ -1,6 +1,6 @@
 /* =======================================================
                       Module KPI Monitor
-                        Detention rate DC
+                     Detention rate store
 ==========================================================
 */
 
@@ -9,17 +9,17 @@ Parameters:
     * database_name, e.g. vartefact
     * date_start & date_end, date range, e.g. '20190101' & '20190830'
 Input:
-    * vartefact.foreacst_dc_monitor
+    * vartefact.foreacst_store_monitor   -- to get item flow type
 */
 
 select
-    dc_site, date_key, rotation,
+    rotation, date_key,
     sum(n_not_oos_items) / sum(n_items) as detention_rate
 from
-    {database}.foreacst_dc_monitor
+    {database}.foreacst_store_monitor
 where 
     run_date = {run_date}
 group by
-    dc_site, rotation, date_key
+    rotation, date_key
 order by
-    date_key, dc_site, rotation
+    date_key, rotation

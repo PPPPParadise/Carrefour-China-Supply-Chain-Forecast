@@ -49,8 +49,23 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Logic to calculate order quantity for each order day
-计算每个订单日订货量的逻辑
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class contains logic to calculate order quantity for each order day<br />
+System uses below input to calculate stock level in future dates.<br />
+1 Current stock level<br />
+2. Daily sales forecast<br />
+3. On the way stock<br />
+4. DM orders<br />
+Compare it with minimum required stock to decide whether order is needed and order quantity<br />
+Order quantity will be transformed into order unit<br />
+Previously generated orders are included to keep consistency for the forecast for suppliers<br /></p><p>此类包含了计算每个订单日需要的订货量的逻辑<br />
+系统使用下列输入数据区计算未来每日库存水平<br />
+1. 当前真实库存<br />
+2. 每日销量预测<br />
+3. 在途订单<br />
+4. DM订单<br />
+系统通过比较未来库存水平和最低库存要求来决定是否下单和单量<br />
+订单量会转化为单位订单量的整数倍<br />
+过去生成的订单预测也会被引入，用以维持提供给供应商预测的准确性<br />
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -164,6 +179,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#changeOrderQtyWithConsistency" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="changeOrderQtyWithConsistency(orderQty:Double,factor:Double,order:carrefour.forecast.model.DateRow):Double"></a>
+      <a id="changeOrderQtyWithConsistency(Double,Double,DateRow):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">changeOrderQtyWithConsistency</span><span class="params">(<span name="orderQty">orderQty: <span class="extype" name="scala.Double">Double</span></span>, <span name="factor">factor: <span class="extype" name="scala.Double">Double</span></span>, <span name="order">order: <a href="../model/DateRow.html" class="extype" name="carrefour.forecast.model.DateRow">DateRow</a></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@changeOrderQtyWithConsistency(orderQty:Double,factor:Double,order:carrefour.forecast.model.DateRow):Double" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Change order quantity while keep consistency 在确保consistency的前提下更改订单量<br /></p><div class="fullcomment"><div class="comment cmt"><p>Change order quantity while keep consistency 在确保consistency的前提下更改订单量<br /></p></div><dl class="paramcmts block"><dt class="param">orderQty</dt><dd class="cmt"><p>order quantity 订单量</p></dd><dt class="param">factor</dt><dd class="cmt"><p>Change ratio 更改比例</p></dd><dt class="param">order</dt><dd class="cmt"><p>order row 其它订单信息</p></dd><dt>returns</dt><dd class="cmt"><p>Changed order quantity 更改后的订单量</p></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -260,11 +292,11 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Generate orders
-生成订单
-</p><div class="fullcomment"><div class="comment cmt"><p>Generate orders
-生成订单
-</p></div><dl class="paramcmts block"><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 商品及门店信息</p></dd><dt class="param">rows</dt><dd class="cmt"><p>Input data rows. One row per day. 输入数据列。每个自然日对应一行</p></dd><dt class="param">runDateStr</dt><dd class="cmt"><p>Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式</p></dd><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">stockLevelMap</dt><dd class="cmt"><p>Day end stock level 门店盘点库存量</p></dd><dt class="param">dmOrdersMap</dt><dd class="cmt"><p>DM order quantity and delivery date / DM 订单订货量及其抵达日期</p></dd><dt class="param">onTheWayStockMap</dt><dd class="cmt"><p>On the way order quantity and delivery date 在途订单订货量及其抵达日期</p></dd><dt class="param">pastOrderForecastkMap</dt><dd class="cmt"><p>Previously generated order forecast 过去生成的订单规划</p></dd><dt>returns</dt><dd class="cmt"><p>Order information 订单信息</p></dd></dl></div>
+      <p class="shortcomment cmt">Logic to calculate order quantity for each order day<br />
+计算每个订单日订货量的逻辑
+</p><div class="fullcomment"><div class="comment cmt"><p>Logic to calculate order quantity for each order day<br />
+计算每个订单日订货量的逻辑
+</p></div><dl class="paramcmts block"><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 单品及门店信息</p></dd><dt class="param">rows</dt><dd class="cmt"><p>Input data rows. One row per day. 输入数据列。每个自然日对应一行</p></dd><dt class="param">runDateStr</dt><dd class="cmt"><p>Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式</p></dd><dt class="param">modelRun</dt><dd class="cmt"><p>Job run information 脚本运行信息</p></dd><dt class="param">stockLevelMap</dt><dd class="cmt"><p>Day end stock level 门店盘点库存量</p></dd><dt class="param">dmOrdersMap</dt><dd class="cmt"><p>DM order quantity and delivery date / DM 订单订货量及其抵达日期</p></dd><dt class="param">onTheWayStockMap</dt><dd class="cmt"><p>On the way order quantity and delivery date 在途订单订货量及其抵达日期</p></dd><dt class="param">pastOrderForecastkMap</dt><dd class="cmt"><p>Previously generated order forecast 过去生成的订单规划</p></dd><dt>returns</dt><dd class="cmt"><p>Order information 订单信息</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -282,6 +314,90 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#getDeliveryMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDeliveryMap(ist:carrefour.forecast.model.ItemEntity,onTheWayStockMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <a id="getDeliveryMap(ItemEntity,Map[ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDeliveryMap</span><span class="params">(<span name="ist">ist: <a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a></span>, <span name="onTheWayStockMap">onTheWayStockMap: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a>, <span class="extype" name="scala.collection.immutable.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>)]]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@getDeliveryMap(ist:carrefour.forecast.model.ItemEntity,onTheWayStockMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get on the way order for this item and store<br />
+获取当前单品和门店的在途订单
+</p><div class="fullcomment"><div class="comment cmt"><p>Get on the way order for this item and store<br />
+获取当前单品和门店的在途订单
+</p></div><dl class="paramcmts block"><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 单品及门店信息</p></dd><dt class="param">onTheWayStockMap</dt><dd class="cmt"><p>On the way order quantity and delivery date 在途订单订货量及其抵达日期</p></dd><dt>returns</dt><dd class="cmt"><p>On the way order quantity and delivery date 在途订单订货量及其抵达日期</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#getDmDeliveryMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDmDeliveryMap(ist:carrefour.forecast.model.ItemEntity,dmOrdersMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <a id="getDmDeliveryMap(ItemEntity,Map[ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDmDeliveryMap</span><span class="params">(<span name="ist">ist: <a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a></span>, <span name="dmOrdersMap">dmOrdersMap: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a>, <span class="extype" name="scala.collection.immutable.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>)]]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@getDmDeliveryMap(ist:carrefour.forecast.model.ItemEntity,dmOrdersMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get DM orders for this item and store<br />
+获取当前单品和门店的DM订单
+</p><div class="fullcomment"><div class="comment cmt"><p>Get DM orders for this item and store<br />
+获取当前单品和门店的DM订单
+</p></div><dl class="paramcmts block"><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 单品及门店信息</p></dd><dt class="param">dmOrdersMap</dt><dd class="cmt"><p>DM order quantity and delivery date / DM 订单订货量及其抵达日期</p></dd><dt>returns</dt><dd class="cmt"><p>DM order quantity and delivery date / DM 订单订货量及其抵达日期</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#getEmptyOrder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getEmptyOrder(runDateStr:String,ist:carrefour.forecast.model.ItemEntity,isDcFlow:Boolean):carrefour.forecast.model.DateRow"></a>
+      <a id="getEmptyOrder(String,ItemEntity,Boolean):DateRow"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getEmptyOrder</span><span class="params">(<span name="runDateStr">runDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ist">ist: <a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a></span>, <span name="isDcFlow">isDcFlow: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="../model/DateRow.html" class="extype" name="carrefour.forecast.model.DateRow">DateRow</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@getEmptyOrder(runDateStr:String,ist:carrefour.forecast.model.ItemEntity,isDcFlow:Boolean):carrefour.forecast.model.DateRow" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Generate empty order<br />
+生成空订单
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate empty order<br />
+生成空订单
+</p></div><dl class="paramcmts block"><dt class="param">runDateStr</dt><dd class="cmt"><p>Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式</p></dd><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 商品及门店信息</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算大仓订单</p></dd><dt>returns</dt><dd class="cmt"><p>Empty order 空订单</p></dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#getMinimumStoreStock" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getMinimumStoreStock(row:org.apache.spark.sql.Row):Double"></a>
+      <a id="getMinimumStoreStock(Row):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getMinimumStoreStock</span><span class="params">(<span name="row">row: <span class="extype" name="org.apache.spark.sql.Row">Row</span></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@getMinimumStoreStock(row:org.apache.spark.sql.Row):Double" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get minimum required store stock level<br />
+获取最低门店库存要求
+</p><div class="fullcomment"><div class="comment cmt"><p>Get minimum required store stock level<br />
+获取最低门店库存要求
+</p></div><dl class="paramcmts block"><dt class="param">row</dt><dd class="cmt"><p>Input data row.  输入数据列</p></dd><dt>returns</dt><dd class="cmt"><p>Minimum required stock level 最低门店库存要求</p></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -299,6 +415,27 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#isAfterTwoWeeks" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isAfterTwoWeeks(orderDayStr:String,twoWeeksAfterRunDate:java.util.Date):Boolean"></a>
+      <a id="isAfterTwoWeeks(String,Date):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isAfterTwoWeeks</span><span class="params">(<span name="orderDayStr">orderDayStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="twoWeeksAfterRunDate">twoWeeksAfterRunDate: <span class="extype" name="java.util.Date">Date</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@isAfterTwoWeeks(orderDayStr:String,twoWeeksAfterRunDate:java.util.Date):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Check if order day is within 2 weeks of run date<br />
+检测订单日是否在当前运行时间的两周后
+</p><div class="fullcomment"><div class="comment cmt"><p>Check if order day is within 2 weeks of run date<br />
+检测订单日是否在当前运行时间的两周后
+</p></div><dl class="paramcmts block"><dt class="param">orderDayStr</dt><dd class="cmt"><p>Order day 订单日</p></dd><dt class="param">twoWeeksAfterRunDate</dt><dd class="cmt"><p>2 weeks date in future 当前运行时间的两周后</p></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -316,6 +453,27 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#mapDateRow" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="mapDateRow(runDateStr:String,ist:carrefour.forecast.model.ItemEntity,row:org.apache.spark.sql.Row,isSimulation:Boolean,isDcFlow:Boolean):carrefour.forecast.model.DateRow"></a>
+      <a id="mapDateRow(String,ItemEntity,Row,Boolean,Boolean):DateRow"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapDateRow</span><span class="params">(<span name="runDateStr">runDateStr: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ist">ist: <a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a></span>, <span name="row">row: <span class="extype" name="org.apache.spark.sql.Row">Row</span></span>, <span name="isSimulation">isSimulation: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="isDcFlow">isDcFlow: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="../model/DateRow.html" class="extype" name="carrefour.forecast.model.DateRow">DateRow</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@mapDateRow(runDateStr:String,ist:carrefour.forecast.model.ItemEntity,row:org.apache.spark.sql.Row,isSimulation:Boolean,isDcFlow:Boolean):carrefour.forecast.model.DateRow" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Read information from input data row<br />
+从输入数据列中读取数据
+</p><div class="fullcomment"><div class="comment cmt"><p>Read information from input data row<br />
+从输入数据列中读取数据
+</p></div><dl class="paramcmts block"><dt class="param">runDateStr</dt><dd class="cmt"><p>Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式</p></dd><dt class="param">ist</dt><dd class="cmt"><p>Item and store information 单品及门店信息</p></dd><dt class="param">row</dt><dd class="cmt"><p>Input data row  输入数据列</p></dd><dt class="param">isSimulation</dt><dd class="cmt"><p>Whether it is simulation run 是否为模拟运行</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算大订单</p></dd><dt>returns</dt><dd class="cmt"><p>Daily information for order logic 用于订单逻辑的每日数据</p></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -367,6 +525,27 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="carrefour.forecast.core.OrderLogic#processPastDcOrders" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="processPastDcOrders(ist:carrefour.forecast.model.ItemEntity,pastDcOrdersMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <a id="processPastDcOrders(ItemEntity,Map[ItemEntity,List[(String,Double)]]):Map[String,Double]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">processPastDcOrders</span><span class="params">(<span name="ist">ist: <a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a></span>, <span name="pastDcOrdersMap">pastDcOrdersMap: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../model/ItemEntity.html" class="extype" name="carrefour.forecast.model.ItemEntity">ItemEntity</a>, <span class="extype" name="scala.collection.immutable.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>)]]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Double">Double</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#carrefour.forecast.core.OrderLogic$@processPastDcOrders(ist:carrefour.forecast.model.ItemEntity,pastDcOrdersMap:Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]):Map[String,Double]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Get past DC order for this item and con holding<br />
+获取当前单品及供应商的过去生成的订单
+</p><div class="fullcomment"><div class="comment cmt"><p>Get past DC order for this item and con holding<br />
+获取当前单品及供应商的过去生成的订单
+</p></div><dl class="paramcmts block"><dt class="param">ist</dt><dd class="cmt"><p>Item and con holding information 单品及供应商信息</p></dd><dt class="param">pastDcOrdersMap</dt><dd class="cmt"><p>Past DC order results 过去生成的货仓订单</p></dd><dt>returns</dt><dd class="cmt"><p>Past DC order information 过去生成的大仓订单信息</p></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

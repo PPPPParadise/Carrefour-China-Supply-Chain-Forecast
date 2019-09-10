@@ -49,7 +49,9 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Data model used for flow type<br />
+用于储存物流模式的数据模型
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -161,8 +163,14 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Flow type of job run.</p><div class="fullcomment"><div class="comment cmt"><p>Flow type of job run. OnStock, XDocking, Or DC
-脚本运行对应的Flow Type。
+      <p class="shortcomment cmt">Flow type of job run.</p><div class="fullcomment"><div class="comment cmt"><p>Flow type of job run. There are 3 possible values.<br />
+1. OnStock - Store order for on stock items<br />
+2. XDocking - Store order for cross docking items<br />
+3. DC - DC order<br />
+脚本运行对应的物流模式。有如下三种可能值<br />
+1. OnStock - 存库商品门店订单<br />
+2. XDocking - 越库商品门店订单<br />
+3. DC - 大仓订单
 </p></div></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>

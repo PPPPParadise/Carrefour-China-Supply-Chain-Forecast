@@ -47,13 +47,37 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"></div>
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Classes under this package are the core logics for demand planing process<br />
+此包中的类是系统运行的核心类，包含了所有运算逻辑
+</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
         
 
       <div id="mbrsel">
         <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
-        
-        
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="carrefour.forecast.core"><span>core</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
             <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
@@ -70,7 +94,7 @@
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="carrefour.forecast.core.OrderLogic" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="carrefour.forecast.core.OrderLogic" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="OrderLogic"></a>
       <a id="OrderLogic:OrderLogic"></a>
       <h4 class="signature">
@@ -86,10 +110,28 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Logic to calculate order quantity for each order day
-计算每个订单日订货量的逻辑
-</p>
-    </li><li name="carrefour.forecast.core.ProcessLogic" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <p class="shortcomment cmt">This class contains logic to calculate order quantity for each order day<br />
+System uses below input to calculate stock level in future dates.<br />
+1 Current stock level<br />
+2.</p><div class="fullcomment"><div class="comment cmt"><p>This class contains logic to calculate order quantity for each order day<br />
+System uses below input to calculate stock level in future dates.<br />
+1 Current stock level<br />
+2. Daily sales forecast<br />
+3. On the way stock<br />
+4. DM orders<br />
+Compare it with minimum required stock to decide whether order is needed and order quantity<br />
+Order quantity will be transformed into order unit<br />
+Previously generated orders are included to keep consistency for the forecast for suppliers<br /></p><p>此类包含了计算每个订单日需要的订货量的逻辑<br />
+系统使用下列输入数据区计算未来每日库存水平<br />
+1. 当前真实库存<br />
+2. 每日销量预测<br />
+3. 在途订单<br />
+4. DM订单<br />
+系统通过比较未来库存水平和最低库存要求来决定是否下单和单量<br />
+订单量会转化为单位订单量的整数倍<br />
+过去生成的订单预测也会被引入，用以维持提供给供应商预测的准确性<br />
+</p></div></div>
+    </li><li name="carrefour.forecast.core.ProcessLogic" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ProcessLogic"></a>
       <a id="ProcessLogic:ProcessLogic"></a>
       <h4 class="signature">
@@ -105,7 +147,24 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">This class contains logic for system flow.</p><div class="fullcomment"><div class="comment cmt"><p>This class contains logic for system flow. It contains below steps<br />
+1. Load items that may have order today<br />
+2. Load item stop period information. For each item load on what days they should not be ordered. <br />
+3. Load sales prediction<br />
+4. Load current stock level<br />
+5. Load DM orders<br />
+6. Load past generated orders<br />
+7. Submit all data to OrderLogic to calculate order quantity<br />
+8. Store order quantity to datalake<br /></p><p>此类包含了系统工作逻辑, 有如下步骤<br />
+1. 读取所有以系统运行日为订单日的单品<br />
+2. 读取单品停止订货信息，确定单品可以和不可以订货的时间段 <br />
+3. 读取每日销量预测<br />
+4. 读取当前库存水平<br />
+5. 读取DM订单<br />
+6. 读取过去生成的订单<br />
+7. 将订单提交到OrderLogic类来计算订单量<br />
+8. 将生成的订单量储存在数据池<br />
+</p></div></div>
     </li></ol>
             </div>
 
@@ -115,7 +174,11 @@
         </div>
 
         <div id="inheritedMembers">
-        
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
         
         </div>
 

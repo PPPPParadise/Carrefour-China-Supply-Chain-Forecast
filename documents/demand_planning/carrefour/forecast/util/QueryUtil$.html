@@ -49,7 +49,8 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Utility used to query data
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Utility used to query data<br />
+用于查询数据的工具函数
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -259,7 +260,7 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get current store stock level.</p><div class="fullcomment"><div class="comment cmt"><p>Get current store stock level. Negative stock level with be considered as 0 stock
+      <p class="shortcomment cmt">Get current store stock level.</p><div class="fullcomment"><div class="comment cmt"><p>Get current store stock level. Negative stock level with be considered as 0 stock<br />
 获取当前门店库存.
 </p></div><dl class="paramcmts block"><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">flowType</dt><dd class="cmt"><p>Flow Type</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt class="param">isSimulation</dt><dd class="cmt"><p>Whether it is simulation process 是否为模拟运行</p></dd><dt>returns</dt><dd class="cmt"><p>Current store stock level 当前门店库存</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -295,10 +296,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get current DC stock level
-获取当前DC/货仓库存
-</p><div class="fullcomment"><div class="comment cmt"><p>Get current DC stock level
-获取当前DC/货仓库存
+      <p class="shortcomment cmt">Get current DC stock level<br />
+获取当前大仓库存
+</p><div class="fullcomment"><div class="comment cmt"><p>Get current DC stock level<br />
+获取当前大仓库存
 </p></div><dl class="paramcmts block"><dt class="param">stockDateStr</dt><dd class="cmt"><p>Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>Current DC stock level 当前DC/货仓库存</p></dd></dl></div>
     </li><li name="carrefour.forecast.util.QueryUtil#getDmOrderMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDmOrderMap(startDateStr:String,endDateStr:String,isDcFlow:Boolean,isSimulation:Boolean,viewName:String,spark:org.apache.spark.sql.SparkSession):Map[carrefour.forecast.model.ItemEntity,List[(String,Double)]]"></a>
@@ -316,9 +317,9 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get DM orders
+      <p class="shortcomment cmt">Get DM orders<br />
 获取DM订单
-</p><div class="fullcomment"><div class="comment cmt"><p>Get DM orders
+</p><div class="fullcomment"><div class="comment cmt"><p>Get DM orders<br />
 获取DM订单
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">isSimulation</dt><dd class="cmt"><p>Whether it is simulation process 是否为模拟运行</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>DM orders. DM订单</p></dd></dl></div>
     </li><li name="carrefour.forecast.util.QueryUtil#getOnTheWayStockMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -337,9 +338,9 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get store on the way order quantity and delivery date
+      <p class="shortcomment cmt">Get store on the way order quantity and delivery date<br />
 获取门店在途订单订货量及其抵达日期
-</p><div class="fullcomment"><div class="comment cmt"><p>Get store on the way order quantity and delivery date
+</p><div class="fullcomment"><div class="comment cmt"><p>Get store on the way order quantity and delivery date<br />
 获取门店在途订单订货量及其抵达日期
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">orderTableName</dt><dd class="cmt"><p>Database and name for order table 订单表的数据库名及表名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>On the way order 在途订单</p></dd></dl></div>
     </li><li name="carrefour.forecast.util.QueryUtil#getPastOrdersMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -358,9 +359,9 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get past generated orders
+      <p class="shortcomment cmt">Get past generated orders<br />
 获取过去生成的订单规划
-</p><div class="fullcomment"><div class="comment cmt"><p>Get past generated orders
+</p><div class="fullcomment"><div class="comment cmt"><p>Get past generated orders<br />
 获取过去生成的订单规划
 </p></div><dl class="paramcmts block"><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">isDcFlow</dt><dd class="cmt"><p>Whether it is DC flow 是否为计算DC/货仓订单</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">orderTableName</dt><dd class="cmt"><p>Database and name for order table 订单表的数据库名及表名</p></dd><dt class="param">spark</dt><dd class="cmt"><p>Spark session</p></dd><dt>returns</dt><dd class="cmt"><p>Past generated orders 过去生成的订单规划</p></dd></dl></div>
     </li><li name="carrefour.forecast.util.QueryUtil#getSalesPrediction" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -379,9 +380,9 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get sales predictions
+      <p class="shortcomment cmt">Get sales predictions<br />
 获取销量预测
-</p><div class="fullcomment"><div class="comment cmt"><p>Get sales predictions
+</p><div class="fullcomment"><div class="comment cmt"><p>Get sales predictions<br />
 获取销量预测
 </p></div><dl class="paramcmts block"><dt class="param">dateMapDf</dt><dd class="cmt"><p>All combinations of item, store, and dates 全部商品，门店，及日期的组合</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">sqlc</dt><dd class="cmt"><p>Spark SQLContext</p></dd><dt>returns</dt><dd class="cmt"><p>Sales predictions 销量预测</p></dd></dl></div>
     </li><li name="carrefour.forecast.util.QueryUtil#getStoreOrderToDc" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -400,10 +401,10 @@
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Get future store orders to DC
-获取门店向DC/货仓未来订货量
-</p><div class="fullcomment"><div class="comment cmt"><p>Get future store orders to DC
-获取门店向DC/货仓未来订货量
+      <p class="shortcomment cmt">Get future store orders to DC<br />
+获取门店向大仓未来订货量
+</p><div class="fullcomment"><div class="comment cmt"><p>Get future store orders to DC<br />
+获取门店向大仓未来订货量
 </p></div><dl class="paramcmts block"><dt class="param">dateMapDf</dt><dd class="cmt"><p>All combinations of item, store, and dates 全部商品，门店，及日期的组合</p></dd><dt class="param">startDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">endDateStr</dt><dd class="cmt"><p>Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式</p></dd><dt class="param">viewName</dt><dd class="cmt"><p>Temp view name used by job run 脚本运行时使用的临时数据库视图名</p></dd><dt class="param">sqlc</dt><dd class="cmt"><p>Spark SQLContext</p></dd><dt>returns</dt><dd class="cmt"><p>Future store orders to DC 门店向DC/货仓未来订货量</p></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>

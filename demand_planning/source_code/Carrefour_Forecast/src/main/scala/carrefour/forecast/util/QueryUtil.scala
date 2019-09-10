@@ -7,12 +7,13 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 import carrefour.forecast.model.EnumFlowType.FlowType
 
 /**
-  * Utility used to query data
+  * Utility used to query data<br />
+  * 用于查询数据的工具函数
   */
 object QueryUtil {
 
   /**
-    * Get current store stock level. Negative stock level with be considered as 0 stock
+    * Get current store stock level. Negative stock level with be considered as 0 stock<br />
     * 获取当前门店库存.
     *
     * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
@@ -54,8 +55,8 @@ object QueryUtil {
   }
 
   /**
-    * Get current DC stock level
-    * 获取当前DC/货仓库存
+    * Get current DC stock level<br />
+    * 获取当前大仓库存
     *
     * @param stockDateStr Stock level in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
@@ -87,7 +88,7 @@ object QueryUtil {
   }
 
   /**
-    * Get DM orders
+    * Get DM orders<br />
     * 获取DM订单
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -142,7 +143,7 @@ object QueryUtil {
   }
 
   /**
-    * Get store on the way order quantity and delivery date
+    * Get store on the way order quantity and delivery date<br />
     * 获取门店在途订单订货量及其抵达日期
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -184,7 +185,7 @@ object QueryUtil {
   }
 
   /**
-    * Get sales predictions
+    * Get sales predictions<br />
     * 获取销量预测
     *
     * @param dateMapDf All combinations of item, store, and dates 全部商品，门店，及日期的组合
@@ -210,8 +211,8 @@ object QueryUtil {
   }
 
   /**
-    * Get future store orders to DC
-    * 获取门店向DC/货仓未来订货量
+    * Get future store orders to DC<br />
+    * 获取门店向大仓未来订货量
     *
     * @param dateMapDf All combinations of item, store, and dates 全部商品，门店，及日期的组合
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -236,7 +237,7 @@ object QueryUtil {
   }
 
   /**
-    * Get past generated orders
+    * Get past generated orders<br />
     * 获取过去生成的订单规划
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式

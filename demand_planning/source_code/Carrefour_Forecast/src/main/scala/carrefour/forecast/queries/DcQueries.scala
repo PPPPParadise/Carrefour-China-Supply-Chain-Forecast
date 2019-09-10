@@ -1,13 +1,14 @@
 package carrefour.forecast.queries
 
 /**
-  * SQL queries for DC order
+  * This class is used to store SQL queries for DC order process <br />
+  * 用于储存大仓订单需要的SQL查询语句
   */
 object DcQueries {
 
   /**
-    * SQL query to get in scope items for this job run for DC flow
-    * 查询货仓订单流程中应包括的商品的SQL
+    * SQL query to get in scope items for this job run for DC flow <br />
+    * 查询大仓订单流程中应包括的商品的SQL
     *
     * @param orderDateStr Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
@@ -47,8 +48,8 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get all order days for DC job run
-    * DC/货仓脚本查询周期中包括的全部订单日的SQL
+    * SQL query to get all order days for DC job run <br />
+    * 大仓脚本查询周期中包括的全部订单日的SQL
     *
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
     * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
@@ -92,8 +93,8 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get future store orders to DC
-    * 查询门店向DC/货仓未来订货量的SQL
+    * SQL query to get future store orders to DC <br />
+    * 查询门店向大仓未来订货量的SQL
     *
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
     * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
@@ -147,7 +148,7 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get orders from DM process
+    * SQL query to get orders from DM process <br />
     * 查询DM订单系统生成的DM订单的SQL
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -176,8 +177,8 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get current stock level for DC
-    * 查询DC/货仓当前库存的SQL
+    * SQL query to get current stock level for DC <br />
+    * 查询大仓当前库存的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
@@ -201,8 +202,8 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get on the way order quantity and delivery date for DC
-    * 查询DC/货仓在途订单订货量及其抵达日期的SQL
+    * SQL query to get on the way order quantity and delivery date for DC <br />
+    * 查询大仓在途订单订货量及其抵达日期的SQL
     *
     * @param dateStr Start date in yyyyMMdd String format 文本格式的日期，为yyyyMMdd格式
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
@@ -226,8 +227,8 @@ object DcQueries {
   }
 
   /**
-    * SQL query to get past generated orders for DC
-    * 查询过去生成的DC订单规划的SQL
+    * SQL query to get past generated orders for DC <br />
+    * 查询过去生成的大仓订单规划的SQL
     *
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
     * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式

@@ -4,7 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 /**
-  * Utility for logging
+  * Utility for logging<br />
+  * 用于记录日志的工具函数
   */
 object LogUtil {
 

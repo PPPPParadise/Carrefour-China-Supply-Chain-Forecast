@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Simulation process for on stock store order
-  * On Stock 商品门店订单模拟运行
+  * Simulation process for on stock store order<br />
+  * 存库商品门店订单模拟运行
   */
 object OnStockSimulationProcess {
 

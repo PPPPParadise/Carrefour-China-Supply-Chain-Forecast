@@ -1,10 +1,14 @@
 package carrefour.forecast.queries
 
+/**
+  * This class is used to store SQL queries for store order process <br />
+  * 用于储存门店订单需要的SQL查询语句
+  */
 object StoreQueries {
 
   /**
-    * SQL query to get in scope items for this job run for on stock items store flow
-    * 查询on stock商品门店订单流程中应包括的商品的SQL
+    * SQL query to get in scope items for this job run for on stock items store flow <br />
+    * 查询存库商品门店订单流程中应包括的商品的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
@@ -47,8 +51,8 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get in scope items for on stock items store flow
-    * 查询on stock商品门店订单脚本中应包括的商品的SQL
+    * SQL query to get in scope items for on stock items store flow <br />
+    * 查询存库商品门店订单脚本中应包括的商品的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
@@ -100,8 +104,8 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get in scope items for this job run for cross docking flow
-    * 查询cross docking商品订单流程中应包括的商品的SQL
+    * SQL query to get in scope items for this job run for cross docking flow <br />
+    * 查询越库商品订单流程中应包括的商品的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
@@ -146,8 +150,8 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get in scope items for cross docking flow
-    * 查询cross docking商品订单脚本中应包括的商品的SQL
+    * SQL query to get in scope items for cross docking flow <br />
+    * 查询越库商品订单脚本中应包括的商品的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
@@ -210,7 +214,7 @@ object StoreQueries {
 
 
   /**
-    * SQL query to get current stock level for store
+    * SQL query to get current stock level for store <br />
     * 查询门店当前库存的SQL
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
@@ -234,7 +238,7 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get all dates in current job
+    * SQL query to get all dates in current job <br />
     * 查询当前脚本对应的全部日期的SQL
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -245,7 +249,7 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get sales predictions
+    * SQL query to get sales predictions <br />
     * 查询销量预测的SQL
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -292,7 +296,7 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get orders from DM process
+    * SQL query to get orders from DM process <br />
     * 查询DM订单系统生成的DM订单的SQL
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -322,7 +326,7 @@ object StoreQueries {
   }
 
   /**
-    * SQL query to get on the way order quantity and delivery date
+    * SQL query to get on the way order quantity and delivery date <br />
     * 查询在途订单订货量及其抵达日期的SQL
     *
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
@@ -352,7 +356,7 @@ object StoreQueries {
 
 
   /**
-    * SQL query to get past generated orders
+    * SQL query to get past generated orders <br />
     * 查询过去生成的订单规划的SQL
     *
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式

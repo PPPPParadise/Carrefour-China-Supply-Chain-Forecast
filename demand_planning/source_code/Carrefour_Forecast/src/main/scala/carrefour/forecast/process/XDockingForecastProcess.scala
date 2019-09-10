@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Generate cross docking order
-  * 生成 cross docking 商品订单
+  * Generate cross docking order<br />
+  * 生成越库商品门店订单
   */
 object XDockingForecastProcess {
 

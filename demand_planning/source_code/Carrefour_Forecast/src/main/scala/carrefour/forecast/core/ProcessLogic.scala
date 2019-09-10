@@ -9,6 +9,28 @@ import carrefour.forecast.queries.{DcQueries, StoreQueries}
 import carrefour.forecast.util._
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
+/**
+  * This class contains logic for system flow. It contains below steps<br />
+  * 1. Load items that may have order today<br />
+  * 2. Load item stop period information. For each item load on what days they should not be ordered. <br />
+  * 3. Load sales prediction<br />
+  * 4. Load current stock level<br />
+  * 5. Load DM orders<br />
+  * 6. Load past generated orders<br />
+  * 7. Submit all data to OrderLogic to calculate order quantity<br />
+  * 8. Store order quantity to datalake<br />
+  *
+  * 此类包含了系统工作逻辑, 有如下步骤<br />
+  * 1. 读取所有以系统运行日为订单日的单品<br />
+  * 2. 读取单品停止订货信息，确定单品可以和不可以订货的时间段 <br />
+  * 3. 读取每日销量预测<br />
+  * 4. 读取当前库存水平<br />
+  * 5. 读取DM订单<br />
+  * 6. 读取过去生成的订单<br />
+  * 7. 将订单提交到OrderLogic类来计算订单量<br />
+  * 8. 将生成的订单量储存在数据池<br />
+  */
+
 object ProcessLogic {
 
   /**
@@ -169,8 +191,6 @@ object ProcessLogic {
 
       var predictionWithSalesDf = salesPredictionDf
 
-
-
       outputLine = s"Number of sales predictions: ${predictionWithSalesDf.count()}"
       LogUtil.info(outputLine)
       outputSb.append(outputLine).append(",")
@@ -297,14 +317,14 @@ object ProcessLogic {
 
   /**
     * SQL query to get in scope items for this job run
-    * 生成查询运行中应包括的商品的SQL
+    * 生成查询运行中应包括的单品的SQL
     *
     * @param modelRun Job run information 脚本运行信息
     * @param orderDateStr Order date in yyyyMMdd String format 文本格式的订单日期，为yyyyMMdd格式
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
     * @return SQL query
     */
-  private def getInScopeItemEntitySql(modelRun: ModelRun, orderDateStr: String,
+  def getInScopeItemEntitySql(modelRun: ModelRun, orderDateStr: String,
                                       stockDateStr: String): String = {
     val inScopeItemEntitySql = modelRun.flowType match {
       case FlowType.XDocking => StoreQueries.getXdockInScopeItemsSql(orderDateStr, stockDateStr)
@@ -326,7 +346,7 @@ object ProcessLogic {
     * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
     * @return SQL query
     */
-  private def getOrderDeliverySql(modelRun: ModelRun, stockDateStr: String, startDateStr: String,
+  def getOrderDeliverySql(modelRun: ModelRun, stockDateStr: String, startDateStr: String,
                                   endDateStr: String): String = {
     val orderDeliverySql = modelRun.flowType match {
       case FlowType.XDocking => StoreQueries.getXDockingInScopeOrderDaysSql(stockDateStr,
@@ -348,7 +368,7 @@ object ProcessLogic {
     * @param sqlc Spark SQL context
     * @return Order days that not in stop period 不在停止订货日期内的订单日
     */
-  private def extractActiveOrderOpportunities(df: DataFrame, modelRun: ModelRun, sqlc: SQLContext): DataFrame = {
+  def extractActiveOrderOpportunities(df: DataFrame, modelRun: ModelRun, sqlc: SQLContext): DataFrame = {
 
     val newDf = df.where("(item_stop_start_date='' and item_stop_end_date='') " +
       "or ( item_stop_start_date!='' and to_timestamp(delivery_date, 'yyyyMMdd') < to_timestamp(item_stop_start_date, 'dd/MM/yyyy')) " +
@@ -359,12 +379,12 @@ object ProcessLogic {
 
   /**
     * Get information for items that can be ordered
-    * 获取可以订货的商品的信息
+    * 获取可以订货的单品的信息
     *
     * @param df Order days 订单日期
-    * @return Item information 商品信息
+    * @return Item information 单品信息
     */
-  private def extractActiveItem(df: DataFrame): DataFrame = {
+  def extractActiveItem(df: DataFrame): DataFrame = {
     df.select("item_id", "sub_id", "dept_code", "item_code",
       "sub_code", "con_holding", "store_code", "entity_code",
       "supplier_code", "rotation", "pcb", "delivery_time").distinct()
@@ -376,7 +396,7 @@ object ProcessLogic {
     * 获取当前库存
     *
     * @param stockDateStr Stock level date in yyyyMMdd String format 文本格式的库存日期，为yyyyMMdd格式
-    * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+    * @param isDcFlow Whether it is DC flow 是否为计算大仓订单
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @param spark Spark session
     * @param isSimulation Whether it is simulation process 是否为模拟运行
@@ -405,7 +425,7 @@ object ProcessLogic {
     * @param sqlc Spark SQL context
     * @return Sales prediction 销量预测
     */
-  private def getSalesPrediction(modelRun: ModelRun, dateMapDf: DataFrame, startDateStr: String, endDateStr: String,
+  def getSalesPrediction(modelRun: ModelRun, dateMapDf: DataFrame, startDateStr: String, endDateStr: String,
                                  sqlc: SQLContext): DataFrame = {
 
     if (modelRun.flowType == FlowType.DC && modelRun.isSimulation) {
@@ -436,7 +456,7 @@ object ProcessLogic {
     * @param spark Spark session
     * @return On the way order 在途订单
     */
-  private def getOnTheWayStockMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
+  def getOnTheWayStockMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
                                   spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     modelRun.flowType match {
       case FlowType.XDocking | FlowType.OnStockStore => {
@@ -470,7 +490,7 @@ object ProcessLogic {
     * @param spark Spark session
     * @return On the way order 在途订单
     */
-  private def getPastOrderForecastMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
+  def getPastOrderForecastMap(modelRun: ModelRun, startDateStr: String, endDateStr: String,
                                   spark: SparkSession): Map[ItemEntity, List[Tuple2[String, Double]]] = {
     modelRun.flowType match {
       case  FlowType.OnStockStore => {

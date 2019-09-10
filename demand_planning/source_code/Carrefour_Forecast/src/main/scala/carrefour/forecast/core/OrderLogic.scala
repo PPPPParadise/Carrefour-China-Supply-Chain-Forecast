@@ -10,16 +10,33 @@ import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 /**
-  * Logic to calculate order quantity for each order day
-  * 计算每个订单日订货量的逻辑
+  * This class contains logic to calculate order quantity for each order day<br />
+  * System uses below input to calculate stock level in future dates.<br />
+  * 1 Current stock level<br />
+  * 2. Daily sales forecast<br />
+  * 3. On the way stock<br />
+  * 4. DM orders<br />
+  * Compare it with minimum required stock to decide whether order is needed and order quantity<br />
+  * Order quantity will be transformed into order unit<br />
+  * Previously generated orders are included to keep consistency for the forecast for suppliers<br />
+  *
+  * 此类包含了计算每个订单日需要的订货量的逻辑<br />
+  * 系统使用下列输入数据区计算未来每日库存水平<br />
+  * 1. 当前真实库存<br />
+  * 2. 每日销量预测<br />
+  * 3. 在途订单<br />
+  * 4. DM订单<br />
+  * 系统通过比较未来库存水平和最低库存要求来决定是否下单和单量<br />
+  * 订单量会转化为单位订单量的整数倍<br />
+  * 过去生成的订单预测也会被引入，用以维持提供给供应商预测的准确性<br />
   */
 object OrderLogic {
 
   /**
-    * Generate orders
-    * 生成订单
+    * Logic to calculate order quantity for each order day<br />
+    * 计算每个订单日订货量的逻辑
     *
-    * @param ist                   Item and store information 商品及门店信息
+    * @param ist                   Item and store information 单品及门店信息
     * @param rows                  Input data rows. One row per day. 输入数据列。每个自然日对应一行
     * @param runDateStr            Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
     * @param modelRun              Job run information 脚本运行信息
@@ -290,15 +307,15 @@ object OrderLogic {
 
 
   /**
-    * Generate empty orer
+    * Generate empty order<br />
     * 生成空订单
     *
     * @param runDateStr Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
     * @param ist        Item and store information 商品及门店信息
-    * @param isDcFlow   Whether it is DC flow 是否为计算DC/货仓订单
+    * @param isDcFlow   Whether it is DC flow 是否为计算大仓订单
     * @return Empty order 空订单
     */
-  private def getEmptyOrder(runDateStr: String, ist: ItemEntity, isDcFlow: Boolean): DateRow = {
+  def getEmptyOrder(runDateStr: String, ist: ItemEntity, isDcFlow: Boolean): DateRow = {
 
     if (isDcFlow) {
       DateRow(runDateStr, "", ist.item_id, ist.sub_id, "", "", ""
@@ -312,17 +329,17 @@ object OrderLogic {
   }
 
   /**
-    * Read information from input data row
+    * Read information from input data row<br />
     * 从输入数据列中读取数据
     *
     * @param runDateStr   Run date in yyyyMMdd String format 文本格式的运行日期，为yyyyMMdd格式
-    * @param ist          Item and store information 商品及门店信息
+    * @param ist          Item and store information 单品及门店信息
     * @param row          Input data row  输入数据列
     * @param isSimulation Whether it is simulation run 是否为模拟运行
-    * @param isDcFlow     Whether it is DC flow 是否为计算DC/货仓订单
+    * @param isDcFlow     Whether it is DC flow 是否为计算大订单
     * @return Daily information for order logic 用于订单逻辑的每日数据
     */
-  private def mapDateRow(runDateStr: String, ist: ItemEntity, row: Row, isSimulation: Boolean,
+  def mapDateRow(runDateStr: String, ist: ItemEntity, row: Row, isSimulation: Boolean,
                          isDcFlow: Boolean): DateRow = {
 
     val dateRow = DateRow(
@@ -375,13 +392,13 @@ object OrderLogic {
   }
 
   /**
-    * Get minimum required store stock level
+    * Get minimum required store stock level<br />
     * 获取最低门店库存要求
     *
     * @param row Input data row.  输入数据列
     * @return Minimum required stock level 最低门店库存要求
     */
-  private def getMinimumStoreStock(row: Row): Double = {
+  def getMinimumStoreStock(row: Row): Double = {
     val minumumStock: Double = 1
 
     minumumStock
@@ -389,14 +406,14 @@ object OrderLogic {
 
 
   /**
-    * Get DM orders for this item and store
-    * 获取当前商品和门店的DM订单
+    * Get DM orders for this item and store<br />
+    * 获取当前单品和门店的DM订单
     *
-    * @param ist         Item and store information 商品及门店信息
+    * @param ist         Item and store information 单品及门店信息
     * @param dmOrdersMap DM order quantity and delivery date / DM 订单订货量及其抵达日期
     * @return DM order quantity and delivery date / DM 订单订货量及其抵达日期
     */
-  private def getDmDeliveryMap(ist: ItemEntity,
+  def getDmDeliveryMap(ist: ItemEntity,
                                dmOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var dmDeliveryMap: Map[String, Double] = Map()
     var deliveryMap: Map[String, Double] = Map()
@@ -418,14 +435,14 @@ object OrderLogic {
   }
 
   /**
-    * Get on the way order for this item and store
-    * 获取当前商品和门店的在途订单
+    * Get on the way order for this item and store<br />
+    * 获取当前单品和门店的在途订单
     *
-    * @param ist              Item and store information 商品及门店信息
+    * @param ist              Item and store information 单品及门店信息
     * @param onTheWayStockMap On the way order quantity and delivery date 在途订单订货量及其抵达日期
     * @return On the way order quantity and delivery date 在途订单订货量及其抵达日期
     */
-  private def getDeliveryMap(ist: ItemEntity,
+  def getDeliveryMap(ist: ItemEntity,
                              onTheWayStockMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var deliveryMap: Map[String, Double] = Map()
 
@@ -444,14 +461,14 @@ object OrderLogic {
   }
 
   /**
-    * Get past DC order for this item and con holding
-    * 获取当前商品及供应商的过去生成的订单
+    * Get past DC order for this item and con holding<br />
+    * 获取当前单品及供应商的过去生成的订单
     *
-    * @param ist             Item and con holding information 商品及供应商信息
+    * @param ist             Item and con holding information 单品及供应商信息
     * @param pastDcOrdersMap Past DC order results 过去生成的货仓订单
-    * @return Past DC order information 过去生成的货仓订单信息
+    * @return Past DC order information 过去生成的大仓订单信息
     */
-  private def processPastDcOrders(ist: ItemEntity,
+  def processPastDcOrders(ist: ItemEntity,
                                   pastDcOrdersMap: Map[ItemEntity, List[Tuple2[String, Double]]]): Map[String, Double] = {
     var orderMap: Map[String, Double] = Map()
 
@@ -465,14 +482,14 @@ object OrderLogic {
   }
 
   /**
-    * Check if order day is within 2 weeks of run date
+    * Check if order day is within 2 weeks of run date<br />
+    * 检测订单日是否在当前运行时间的两周后
     *
-    *
-    * @param orderDayStr Order day
-    * @param twoWeeksAfterRunDate 2 weeks date in future
+    * @param orderDayStr Order day 订单日
+    * @param twoWeeksAfterRunDate 2 weeks date in future 当前运行时间的两周后
     * @return
     */
-  private def isAfterTwoWeeks(orderDayStr: String, twoWeeksAfterRunDate: Date): Boolean = {
+  def isAfterTwoWeeks(orderDayStr: String, twoWeeksAfterRunDate: Date): Boolean = {
     val dateKeyFormat = new SimpleDateFormat("yyyyMMdd")
     val orderDate = dateKeyFormat.parse(orderDayStr)
 
@@ -480,13 +497,13 @@ object OrderLogic {
   }
 
   /**
-    * Change order quantity while keep consistency 在确保consistency的前提下更改订单量
+    * Change order quantity while keep consistency 在确保consistency的前提下更改订单量<br />
     * @param orderQty order quantity 订单量
     * @param factor Change ratio 更改比例
     * @param order order row 其它订单信息
     * @return Changed order quantity 更改后的订单量
     */
-  private def changeOrderQtyWithConsistency(orderQty: Double, factor: Double, order: DateRow): Double = {
+  def changeOrderQtyWithConsistency(orderQty: Double, factor: Double, order: DateRow): Double = {
 
     val pastOrderBox = math.ceil(orderQty / order.qty_per_box)
 

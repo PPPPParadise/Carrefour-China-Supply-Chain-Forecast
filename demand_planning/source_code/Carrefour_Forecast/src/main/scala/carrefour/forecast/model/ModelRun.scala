@@ -3,6 +3,8 @@ package carrefour.forecast.model
 import carrefour.forecast.model.EnumFlowType.FlowType
 
 /**
+  * Data model used to store information related to job run<br />
+  * 用于记录脚本运行相关信息的数据模型
   *
   * @param runDateStr Job run date 脚本运行时间
   * @param flowType Flow Type
@@ -14,7 +16,7 @@ import carrefour.forecast.model.EnumFlowType.FlowType
   * @param itemId Item ID
   * @param subId Sub ID
   * @param storeCode Store code
-  * @param isDcFlow Whether it is DC flow 是否为计算DC/货仓订单
+  * @param isDcFlow Whether it is DC flow 是否为计算大仓订单
   * @param isDebug Whether it is debug process 是否为调试运行
   * @param debugTableName Database and table name for debug process 调试结果表的数据库名及表名
   * @param isSimulation Whether it is simulation process 是否为模拟运行

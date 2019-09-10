@@ -4,14 +4,15 @@ import carrefour.forecast.model.{DateRow, ModelRun}
 import org.apache.spark.sql.{DataFrame, _}
 
 /**
-  * Utility used for processing dataframe
+  * Utility used for processing dataframe<br />
+  * 用于处理分布式数据集的工具函数
   */
 object DataUtil {
 
   /**
     * Filter dataframe by using item ID, sub ID, and Entity ID (store code or con holding code).
-    * One or more of these three conditions can be used
-    * 从dataframe中筛选对应的记录。可以使用三种条件中的一种或多种。
+    * One or more of these three conditions can be used<br />
+    * 从分布式数据集中筛选对应的记录。可以使用三种条件中的一种或多种。
     * 三种条件为item ID, sub ID, 和 Entity ID (store code 或者 con holding code).
     *
     * @param inputDf Dataframe
@@ -43,8 +44,8 @@ object DataUtil {
   }
 
   /**
-    * Insert job run information to datalake
-    * 将脚本运行信息写入datalake
+    * Insert job run information to datalake<br />
+    * 将脚本运行信息写入数据池
     *
     * @param modelRun Job run information 脚本运行信息
     * @param output Job run output 脚本运行输出
@@ -78,8 +79,8 @@ object DataUtil {
   }
 
   /**
-    * Insert debug result to datalake
-    * 将debug运行结果写入datalake
+    * Insert debug result to datalake<br />
+    * 将调试运行结果写入数据池
     *
     * @param debugDf debug result. debug运行结果
     * @param debugTableName Database and table name for debug process 调试结果表的数据库名及表名
@@ -94,8 +95,8 @@ object DataUtil {
 
 
   /**
-    * Insert generated store order to datalake
-    * 将门店订单结果写入datalake
+    * Insert generated store order to datalake<br />
+    * 将门店订单结果写入数据池
     *
     * @param orderDf
     * @param modelRun Job run information 脚本运行信息
@@ -140,8 +141,8 @@ object DataUtil {
   }
 
   /**
-    * Insert generated DC order to datalake
-    * 将DC/货仓订单结果写入datalake
+    * Insert generated DC order to datalake<br />
+    * 将大仓订单结果写入数据池
     *
     * @param resDf
     * @param modelRun Job run information 脚本运行信息

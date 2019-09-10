@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Generate DC order
-  * 生成DC/货仓订单
+  * Generate DC order<br />
+  * 生成大仓订单
   */
 object DcForecastProcess {
 

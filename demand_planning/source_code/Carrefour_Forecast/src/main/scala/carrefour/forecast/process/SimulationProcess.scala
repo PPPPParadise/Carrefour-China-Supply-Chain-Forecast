@@ -6,7 +6,7 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Simulation process
+  * Simulation process<br />
   * 订单模拟运行
   */
 object SimulationProcess {

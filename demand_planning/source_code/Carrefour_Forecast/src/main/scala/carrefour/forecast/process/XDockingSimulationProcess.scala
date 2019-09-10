@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Simulation process for cross docking order
-  * Cross docking 商品订单模拟运行
+  * Simulation process for cross docking order<br />
+  * 越库商品门店订单模拟运行
   */
 object XDockingSimulationProcess {
 

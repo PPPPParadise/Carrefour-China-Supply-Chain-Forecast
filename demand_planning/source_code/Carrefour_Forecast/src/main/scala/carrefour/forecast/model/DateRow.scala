@@ -1,8 +1,8 @@
 package carrefour.forecast.model
 
 /**
-  * A case class used for order related information per day
-  * 用于储存每日订单相关信息的case class
+  * A data model class used for order related information per day<br />
+  * 用于储存每日订单相关信息的数据模型
   *
   * @param run_date Job run date 脚本运行时间
   * @param date_key Mapped date 对应的日期
@@ -32,9 +32,6 @@ package carrefour.forecast.model
   * @param dm_delivery Delivery quantity from DM order
   * @param order_delivery Delivery quantity from ordinary order
   * @param day_end_stock_with_predict Day end stock level with predicted sales
-  * @param ittreplentyp ittreplentyp
-  * @param shelf_capacity Shelf capacity
-  * @param ittminunit
   * @param minStock Minimum stock level for DC
   * @param maxStock Maximum stock level for DC
   * @param actual_sales Actual sales

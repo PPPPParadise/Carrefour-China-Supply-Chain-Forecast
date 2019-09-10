@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Generate store order for on stock flow
-  * 生成On Stock 商品门店订单
+  * Generate store order for on stock flow<br />
+  * 生成存库商品门店订单
   */
 object OnStockForecastProcess {
 

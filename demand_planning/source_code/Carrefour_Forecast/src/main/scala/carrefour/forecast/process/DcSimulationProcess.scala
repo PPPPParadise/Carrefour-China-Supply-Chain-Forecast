@@ -6,8 +6,8 @@ import carrefour.forecast.model.ModelRun
 import carrefour.forecast.util.Utils
 
 /**
-  * Simulation process for DC order
-  * DC/货仓订单模拟运行
+  * Simulation process for DC order<br />
+  * 大仓订单模拟运行
   */
 object DcSimulationProcess {
 

@@ -326,6 +326,7 @@ CREATE TABLE vartefact.forecast_dc_daily_order_files (
   STORED AS PARQUET
 
 
+
 CREATE TABLE vartefact.foreacst_store_monitor (
     store_code STRING,
     rotation STRING, 
@@ -353,25 +354,41 @@ CREATE TABLE vartefact.foreacst_dc_monitor (
 	run_date STRING) 
 	STORED AS parquet
 
-CREATE VIEW vartefact.v_forecast_latest_service_level_item_dc
-AS
-(
-		SELECT r.*
-		FROM vartefact.monitor_service_level_item_dc r
-		JOIN (
-			SELECT fsr.item_code,
-				fsr.sub_code,
-				fsr.dept_code,
-				max(fsr.date_key) AS max_run_date
-			FROM vartefact.monitor_service_level_item_dc fsr
-			GROUP BY fsr.item_code,
-				fsr.sub_code,
-				fsr.dept_code
-			) t ON r.item_code = t.item_code
-			AND r.sub_code = t.sub_code
-			AND r.dept_code = t.dept_code
-			AND r.date_key = t.max_run_date
-)
+CREATE TABLE vartefact.forecast_monitor_dc_order_diff (
+    dept_code STRING,
+    item_code STRING,
+    sub_code STRING,
+    qty_per_box STRING,
+    holding_code STRING,
+    risk_item_unilever STRING,
+    rotation STRING,
+    supplier_code STRING,
+    warehouse STRING,
+    delivery_date STRING,
+    cn_name STRING,
+    purchase_quantity STRING,
+    main_barcode STRING,
+    service_level STRING,
+    artefact_order_qty STRING,
+    actual_order_qty STRING,
+    actual_order_numbers STRING,
+    order_qty_diff STRING
+) PARTITIONED BY (date_key STRING) STORED AS PARQUET
+
+CREATE TABLE vartefact.forecast_monitor_store_order_diff (
+    store_code STRING,
+    dept_code STRING,
+    item_code STRING,
+    sub_code STRING,
+    cn_name STRING,
+    rotation STRING,
+    supplier_code STRING,
+    holding_code STRING,
+    risk_item_unilever STRING,
+    artefact_order_qty STRING,
+    actual_order_qty STRING,
+    order_qty_diff STRING
+) PARTITIONED BY (date_key STRING) STORED AS PARQUET 
 
 CREATE VIEW vartefact.v_forecast_inscope_store_item_details AS
 SELECT
@@ -392,6 +409,9 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
         distinct dc.*
     from
         vartefact.forecast_dc_item_details dc
+        join vartefact.forecast_store_item_details id ON dc.dept_code = id.dept_code
+        AND dc.item_code = id.item_code
+        AND dc.sub_code = id.sub_code
         LEFT OUTER JOIN vartefact.forecast_sep_17_dm_store_items dm ON dc.dept_code = dm.dept_code
         AND dc.item_code = dm.item_code
         AND dc.sub_code = dm.sub_code
@@ -400,7 +420,6 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
         AND dc.seasonal = 'No'
         AND dc.item_type not in ('New','Company Purchase','Seasonal')
 )
-
     
 CREATE TABLE vartefact.forecast_simulation_dm_orders (
 	item_id INT,
@@ -519,6 +538,7 @@ CREATE TABLE vartefact.forecast_simulation_result (
     flow_type STRING
 	) STORED AS PARQUET;
 
+
 CREATE VIEW vartefact.v_forecast_simulation_lastest_result
 AS
 (
@@ -541,6 +561,7 @@ AS
 			AND r.date_key = t.date_key
 			AND r.run_date = t.max_run_date
 		)
+
 
 CREATE VIEW vartefact.v_forecast_simulation_stock
 AS

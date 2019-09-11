@@ -60,18 +60,18 @@ def get_store_to_dc_day(row):
 # +
 warnings.filterwarnings('ignore')
 
-excel_input = pd.read_excel('East Parameter 20190906.xlsx', 'Detail', header=0, dtype=str).fillna("")
+excel_input = pd.read_excel('East Parameter 20190911.xlsx', 'Detail', header=0, dtype=str).fillna("")
 # -
 
 # # Get store item list
 
 store_items = excel_input[["Store", "Dept", "Item code", "sub code", "CN Name", "Store Status",
                    "Main Supplier", "DS Supplier", "Repl type", "Order day", "LT" , "Order by",
-                   "Qty/Pack", "Pack/Box", "DC Status", "Rotation", "Itemtype", "Risk Item (Unilever)"]].drop_duplicates().reset_index(drop=True)
+                   "Qty/Pack", "Pack/Box", "DC Status", "Rotation", "Itemtype", "Remark", "Risk Item (Unilever)"]].drop_duplicates().reset_index(drop=True)
 
 store_items.columns = ["store_code", "dept_code", "item_code", "sub_code", "cn_name", "store_status",
                    "dc_supplier_code", "ds_supplier_code", "repl_type", "order_day", "lead_time", "order_by",
-                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "item_type", "risk_item_unilever"]
+                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "item_type", "remark", "risk_item_unilever"]
 
 store_items['qty_per_unit'] = store_items.apply(get_qty_per_unit, axis = 1)
 

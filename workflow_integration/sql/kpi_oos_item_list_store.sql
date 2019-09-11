@@ -9,7 +9,8 @@ with store_stock_in_scope as
         a.balance_qty,
         b.rotation,
         b.con_holding,
-        b.cn_name
+        b.cn_name,
+        concat(a.dept_code, a.item_code, a.sub_code) as full_item_code
     
     from
         fds.p4cm_daily_stock a

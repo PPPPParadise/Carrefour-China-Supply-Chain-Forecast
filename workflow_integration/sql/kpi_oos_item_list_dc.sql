@@ -7,10 +7,13 @@ with dcstock_in_scope as
         a.stock_available_sku,
         b.rotation,
         b.holding_code,
+        b.primary_ds_supplier,
         b.dept_code,
         b.item_code,
         b.sub_code,
-        b.item_name_local
+        b.item_name_local,
+        a.item_id,
+        a.sub_id
     from lfms.daily_dcstock a
     inner join {database_name}.v_forecast_inscope_dc_item_details b  -- this table is manually loaded
     on

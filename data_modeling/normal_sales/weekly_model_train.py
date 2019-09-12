@@ -254,6 +254,11 @@ def run_model(folder, data_set1, data_set2, futur_prediction, date_stop_train):
         for target_week_value, week in zip(target_week_value_copied, week_shift):
 
             train_base_week = train_base_all[np.isfinite(train_base_all[target_week_value])].copy()
+            ## if there is no sales for the target week value we use the median sales to fill the na
+            if train_base_week.shape[0] == 0:
+                train_base_all[target_week_value] = train_base_all[target_week_value].fillna(train_base_all['sales_qty_sum'].median())
+                train_base_week = train_base_all[np.isfinite(train_base_all[target_week_value])].copy()
+
             train_base_week = train_base_week[train_base_week[target_week_value] != -1].copy()
             
             train_base_week.reset_index(drop=True, inplace=True)

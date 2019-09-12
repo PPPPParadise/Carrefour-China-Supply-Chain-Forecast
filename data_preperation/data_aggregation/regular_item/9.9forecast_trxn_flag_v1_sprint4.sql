@@ -8,7 +8,7 @@
 -- Input: {database}.forecast_trxn_v7_full_item_id_sprint4
 --        {database}.forecast_trxn_v7_full_item_id_sprint4_group_id
 --        {database}.shipment_scope_map_corrected
---        {database}.grouped_to_be_shipment_groupped_0712
+--        {database}.grouped_to_be_shipment_groupped
 --        {database}.forecast_item_store_perc_flagged
 -- Output:{database}.forecast_trxn_flag_v1_sprint4
 -- Usage: flag planned BPs in transaction table then remove it
@@ -54,7 +54,7 @@ left join (
             max(delivery_date) as delivery_date,
             max(delivery_qty_sum) as delivery_qty_sum,
             1 as planned_bp
-        from {database}.grouped_to_be_shipment_groupped_0712   -- last version based on Python
+        from {database}.grouped_to_be_shipment_groupped   -- last version based on Python
         group by group_id, item_id, sub_id, store_code) as b
 on a.group_id = cast(b.group_id as string)
     and a.item_id = b.item_id
@@ -72,7 +72,7 @@ select distinct
     sales_qty,
     delivery_date,
     delivery_qty_sum
-from {database}.grouped_to_be_shipment_groupped_0712
+from {database}.grouped_to_be_shipment_groupped
 ),
 
 ratio_per_item_store_group as (

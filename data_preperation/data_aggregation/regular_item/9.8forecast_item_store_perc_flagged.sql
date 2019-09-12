@@ -5,7 +5,7 @@
 ===================================================================
 */
 
--- Input: {database}.grouped_to_be_shipment_groupped_0712
+-- Input: {database}.grouped_to_be_shipment_groupped
 -- Output: {database}.forecast_item_store_perc_flagged
 create table {database}.forecast_item_store_perc_flagged as
 with distinct_selected as
@@ -18,7 +18,7 @@ with distinct_selected as
     sales_qty,
     delivery_date,
     delivery_qty_sum
-from {database}.grouped_to_be_shipment_groupped_0712),     
+from {database}.grouped_to_be_shipment_groupped),     
 
 ratio_per_item_store_group as
 (select

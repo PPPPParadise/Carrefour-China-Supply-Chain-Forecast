@@ -60,7 +60,7 @@ default_args = {
 }
 
 
-dag = DAG('forecast_normal_flow',
+dag = DAG('forecast_regular_flow',
           schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
 
@@ -334,7 +334,10 @@ step9.set_upstream(step8)
 # op_kwargs={'table_name': "forecast_trxn_v7_full_item_id_sprint4_group_id_new",
 def step9_1_execute_scala():
    #  os.system(f"""spark-submit --class --master yarn --num-executors 8 {config['parent_path']}/sqls/BpTrxnGroup-assembly-1.0.jar""")
-   os.system(f"""spark-submit --class "carrefour.forecast.process.BpTrxnGroup" --master yarn --num-executors 8 --executor-memory 8G {config['parent_path']}/data_preperation/data_aggregation/regular_item/bptrxngroup_2.11-1.0.jar {config['database']} forecast_trxn_v7_full_item_id_sprint4 forecast_trxn_v7_full_item_id_sprint4_group_id_new""")
+   checking_script = os.system(f"""spark-submit --class "carrefour.forecast.process.BpTrxnGroup" --master yarn --num-executors 8 --executor-memory 8G {config['parent_path']}/data_preperation/data_aggregation/regular_item/bptrxngroup_2.11-1.0.jar {config['database']} forecast_trxn_v7_full_item_id_sprint4 forecast_trxn_v7_full_item_id_sprint4_group_id_new""")
+   if checking_script != 0:
+      print("model tranining failed")
+      raise ValueError
    sql = f""" INVALIDATE METADATA {config['database']}.forecast_trxn_v7_full_item_id_sprint4_group_id_new """
    impalaexec(sql)
 
@@ -400,8 +403,10 @@ step9_6.set_upstream(step9_5)
 #9.7 是一个python文件 
 # op_kwargs={'table_name': "grouped_to_be_shipment_groupped",
 def step9_7_execute_python():
-   os.system(f"""python3.6 ./data_preperation/data_aggregation/regular_item/9.7grouped_to_be_shipment_groupped_0729.py -d {config['database']}""")
-
+   checking_script = os.system(f"""python3.6 ./data_preperation/data_aggregation/regular_item/9.7grouped_to_be_shipment_groupped_0729.py -d {config['database']}""")
+   if checking_script != 0:
+      print("model tranining failed")
+      raise ValueError
 step9_7 = PythonOperator(task_id="step9_7",
                            python_callable=step9_7_execute_python,
                            dag=dag)
@@ -667,7 +672,10 @@ def step27_model_execute_python(**kwargs):
                               set_timeperiod=False,database='config',dropfirst=False)
    delta = datetime.timedelta(days = 5)
    starting_date = str((parser.parse(kwargs.get('ds'))+delta).date())
-   os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
+   checking_script =  os.system(f"""python3.6 {config['parent_path']}/data_modeling/normal_sales/all_included_weekly.py -d {config['database']} -f '{config['parent_path']}/data_modeling/normal_sales/normal_folder_weekly/' -s '{starting_date}' -c '{config['config_data_path']}' """)
+   if checking_script != 0:
+      print("model tranining failed")
+      raise ValueError
    ## insert the new data into the summary table
    execute_impala_by_sql_file('result_forecast_10w_on_the_fututre_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/regular_item/27.result_forecast_10w_on_the_fututre_all-insert.sql',
@@ -685,8 +693,11 @@ step27_model.set_upstream(step26)
 # op_kwargs={'table_name': "forecast_big_events",  
 # op_kwargs={'table_name': "forecast_dm_pattern",  
 def step_normal_to_day_1_execute_python(**kwargs):
-   os.system(f""" python3.6 {config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' -c '{config['config_data_path']}' """)
-   
+   checking_script = os.system(f""" python3.6 {config['parent_path']}/data_preperation/data_aggregation/conversion_week_to_day/1_2018_big_event_impact.py  -d {config['database']} -s '20180101' -e '20190101' -c '{config['config_data_path']}' """)
+   if checking_script != 0:
+      print("model tranining failed")
+      raise ValueError
+
 step_normal_to_day_1 = PythonOperator(task_id="step_normal_to_day_1",
                            python_callable=step_normal_to_day_1_execute_python,
                            dag=dag)

@@ -13,7 +13,9 @@ with store_stock_in_scope as
         b.cn_name,
         concat(a.dept_code, a.item_code, a.sub_code) as full_item_code,
         a.item_id,
-        a.sub_id
+        a.sub_id,
+        b.store_status,
+        b.dc_status
     from
         fds.p4cm_daily_stock a
         
@@ -36,5 +38,5 @@ left outer join vartefact.t_forecast_daily_sales_prediction fr
     and itm.sub_id = fr.sub_id
     and itm.store_code = fr.store_code
     and fr.date_key = "{oos_check_date}"
-where balance_qty <= 0 
-order by store_code, rotation, con_holding, item_code
+where itm.balance_qty <= 0 
+order by itm.store_code, itm.rotation, itm.con_holding, itm.item_code

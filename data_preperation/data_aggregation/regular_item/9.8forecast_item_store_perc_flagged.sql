@@ -16,7 +16,6 @@ with distinct_selected as
     store_code,
     group_id,
     sales_qty,
-    delivery_date,
     delivery_qty_sum
 from {database}.grouped_to_be_shipment_groupped),     
 

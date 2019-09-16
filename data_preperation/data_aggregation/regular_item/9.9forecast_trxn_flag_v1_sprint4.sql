@@ -59,7 +59,7 @@ left join (
 on a.group_id = cast(b.group_id as string)
     and a.item_id = b.item_id
     and a.sub_id = b.sub_id
-    and cast(a.store_code as int) = b.store_code
+    and cast(a.store_code as int) = cast(b.store_code as int)
 ),
 
 distinct_selected as (
@@ -114,7 +114,7 @@ left join (
     where perc_flagged > 20000) as b  -- threshold to add back links with high error
     on a.item_id = b.item_id
         and a.sub_id = b.sub_id
-        and cast(a.store_code as int) = b.store_code
+        and cast(a.store_code as int) = cast(b.store_code as int)
 ),
 
 planned_bp_corrected_added as (

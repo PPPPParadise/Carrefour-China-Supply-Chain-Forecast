@@ -132,9 +132,10 @@ for i, item in items.iterrows():
                 trxnTmp["counter"]= counter
                 
                 #trxnTmp = pd.DataFrame(trxns[j]).transpose()
-                trxnTmp = pd.DataFrame(trxns[j].copy().update(trxnTmp)).transpose()
+                # trxnTmp = pd.DataFrame(trxns[j].copy().update(trxnTmp)).transpose()
+                trxns[j].update(trxnTmp)
                 markedTrxn.append(trxns[j])
-                trxnTmp.to_csv('trxn_with_shipments.csv',mode='a',index=False, header=False)
+                # trxnTmp.to_csv('trxn_with_shipments.csv',mode='a',index=False, header=False)
                 
             elif shipmentQty > 0:
                 shipmentQty = 0
@@ -144,9 +145,9 @@ for i, item in items.iterrows():
                 trxnTmp["counter"]= counter
                 
                 #trxnTmp = pd.DataFrame(trxns[j]).transpose()
-                trxnTmp = pd.DataFrame(trxns[j].copy().update(trxnTmp)).transpose()
+                trxns[j].update(trxnTmp)
                 markedTrxn.append(trxns[j])
-                trxnTmp.to_csv('trxn_with_shipments.csv',mode='a',index=False, header=False)
+                # trxnTmp.to_csv('trxn_with_shipments.csv',mode='a',index=False, header=False)
                 
             j = j+1
         i = i+1
@@ -168,5 +169,34 @@ markedTrxnDf = sqlc.createDataFrame(markedTrxnDf)
 
 markedTrxnDf.write.mode("overwrite").saveAsTable(f"{config['database']}.grouped_to_be_shipment_groupped")
 
+sqlStr = \
+f"""
+refresh table {config['database']}.grouped_to_be_shipment_groupped
+"""
+df = timed_pull(sqlStr)
+
 spark.stop()
 
+from impala.dbapi import connect
+def impalaexec(sql,create_table=False):
+   """
+   execute sql using impala
+   """
+   print(sql)
+   while True:
+      try:
+            with connect(host='dtla1apps14', port=21050, auth_mechanism='PLAIN', user='CHEXT10211', password='datalake2019', database=config['database']) as conn:
+               curr = conn.cursor()
+               curr.execute(sql)
+            break
+      except:
+            print(sys.exc_info())
+            if create_table != False:
+               sql_drop = f'''
+               drop table if exists {create_table}
+               '''
+               impalaexec(sql_drop)
+            time.sleep(300)
+
+sql = f""" INVALIDATE METADATA {config['database']}.grouped_to_be_shipment_groupped """
+impalaexec(sql)

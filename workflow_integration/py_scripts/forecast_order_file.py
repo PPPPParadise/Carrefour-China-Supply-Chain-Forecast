@@ -66,11 +66,7 @@ def store_order_file_process(date_str, record_folder, output_path,
         SELECT
         dm.store_code,
         dm.dept_code,
-        CASE WHEN (dm.rotation='X')
-            THEN dm.ds_supplier_code
-        ELSE
-            dm.dc_supplier_code
-        END as supplier_code,
+        dm.dc_supplier_code as supplier_code,
         dm.item_code,
         dm.sub_code
         FROM vartefact.forecast_dm_orders dm
@@ -188,11 +184,7 @@ def store_order_file_process(date_str, record_folder, output_path,
         SELECT
         dm.store_code,
         dm.dept_code,
-        CASE WHEN (dm.rotation='X')
-            THEN dm.ds_supplier_code
-        ELSE
-            dm.dc_supplier_code
-        END as supplier_code,
+        dm.dc_supplier_code as supplier_code,
         dm.item_code,
         dm.sub_code
         FROM vartefact.forecast_dm_orders dm

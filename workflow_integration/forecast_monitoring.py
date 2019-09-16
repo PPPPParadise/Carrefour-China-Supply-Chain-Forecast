@@ -242,6 +242,7 @@ copy_output = BashOperator(
     dag=forecast_monitoring
 )
 
-copy_output.set_upstream(run_monitoring)
-check_dc_order.set_upstream(copy_output)
-check_store_order.set_upstream(copy_output)
+check_dc_order.set_upstream(run_monitoring)
+check_store_order.set_upstream(run_monitoring)
+copy_output.set_upstream(check_dc_order)
+copy_output.set_upstream(check_store_order)

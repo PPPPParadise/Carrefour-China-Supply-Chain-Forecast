@@ -61,6 +61,8 @@ def get_store_to_dc_day(row):
 warnings.filterwarnings('ignore')
 
 excel_input = pd.read_excel('East Parameter 20190911.xlsx', 'Detail', header=0, dtype=str).fillna("")
+
+store_delivery = pd.read_excel('store_delivery_time.xlsx', 'Sheet1', header=0, dtype=str).fillna("")
 # -
 
 # # Get store item list
@@ -206,6 +208,10 @@ xdock_order_mapping_df = xdock_order_mapping_df.withColumn("dc_to_store_time", x
 
 xdock_order_mapping_df.write.mode("overwrite").saveAsTable("vartefact.forecast_xdock_order_mapping")
 # -
+
+store_delivery_df = sqlc.createDataFrame(store_delivery[['store_code', 'delivery_time']])
+
+store_delivery_df.write.mode("overwrite").saveAsTable("vartefact.forecast_stores_delv_time")
 
 sc.stop()
 

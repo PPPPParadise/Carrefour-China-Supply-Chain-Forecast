@@ -395,14 +395,10 @@ SELECT
     id.*
 FROM
     vartefact.forecast_store_item_details id
-    LEFT OUTER JOIN vartefact.forecast_sep_17_dm_store_items dm ON id.dept_code = dm.dept_code
-    AND id.item_code = dm.item_code
-    AND id.sub_code = dm.sub_code
-    AND id.store_code = dm.store_code
 WHERE
     id.store_status != 'Stop'
     AND id.item_type NOT IN ('New', 'Company Purchase', 'Seasonal')
-    AND dm.item_code IS NULL
+
 
 create view vartefact.v_forecast_inscope_dc_item_details as (
     select
@@ -412,9 +408,6 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
         join vartefact.forecast_store_item_details id ON dc.dept_code = id.dept_code
         AND dc.item_code = id.item_code
         AND dc.sub_code = id.sub_code
-        LEFT OUTER JOIN vartefact.forecast_sep_17_dm_store_items dm ON dc.dept_code = dm.dept_code
-        AND dc.item_code = dm.item_code
-        AND dc.sub_code = dm.sub_code
     where
         dc.dc_status != 'Stop'
         AND dc.seasonal = 'No'

@@ -64,7 +64,7 @@ def dm_order_simulation(date_str):
 
     stock_date = run_date + timedelta(days=-1)
 
-    parameter = "Run date:" + start_date.strftime("%Y%m%d") \
+    parameter = "Run date:" + run_date.strftime("%Y%m%d") \
                 + ", DM start date:" + start_date.strftime("%Y%m%d") \
                 + ", DM end date:" + end_date.strftime("%Y%m%d")
 
@@ -116,14 +116,14 @@ def dm_order_simulation(date_str):
             AND icis.item_code = fdo.item_code
             AND icis.sub_code = fdo.sub_code
             AND icis.store_code = fdo.store_code
-        WHERE del.extract_order = 40
-            AND ndt.theme_start_date >= '{1}'
-            AND ndt.theme_start_date < '{2}'
-            AND ndt.dm_theme_id = 29733
+        WHERE del.extract_order >= 40
+            AND del.date_key = '{1}'
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
         """.replace("\n", " ")
 
-    dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                                 end_date.isoformat())
+    dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                                 start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
 
     # # Exclude the DM that already have orders
 
@@ -456,13 +456,15 @@ def dm_order_simulation(date_str):
             AND dcid.dc_status != 'Stop'
             AND dcid.seasonal = 'No'
             AND dcid.item_type not in ('New','Company Purchase','Seasonal')
-        WHERE del.extract_order = 40
-            AND ndt.theme_start_date >= '{1}'
-            AND ndt.theme_start_date <= '{2}'
+        WHERE del.extract_order >= 40
+            AND del.date_key = '{1}'
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
         """.replace("\n", " ")
 
-    dm_item_dc_sql = dm_item_dc_sql.format(run_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                           end_date.isoformat())
+    
+    dm_item_dc_sql = dm_item_dc_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                           start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
 
     dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
 

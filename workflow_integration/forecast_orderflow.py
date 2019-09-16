@@ -48,7 +48,7 @@ default_args = {
 }
 
 forecast_orderflow = DAG('forecast_orderflow',
-                         schedule_interval='30 23 * * *',
+                         schedule_interval='01 23 * * *',
                          max_active_runs=1,
                          default_args=default_args, catchup=True)
 

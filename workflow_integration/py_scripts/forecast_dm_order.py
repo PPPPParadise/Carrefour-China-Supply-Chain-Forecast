@@ -27,57 +27,10 @@ def insert_script_run(date_str, status, parameter, output_str, info_str, error_s
 
     sql = sql.format(date_str, status, parameter, output_str, info_str, error_str)
     sqlc.sql(sql)
-
-
-def dm_order_process(date_str, log_file):
-    warehouse_location = abspath('spark-warehouse')
     
+
+def run_dm_store_order(output_str, info_str, stock_date, run_date, start_date, end_date, log_file, sqlc):
     
-    
-    print_output(f'\n Forecast process for DM start with input date {date_str} \n', log_file)
-
-    # for logging
-    output_str = ""
-    info_str = f"Job start:{get_current_time()}, "
-
-    spark = SparkSession.builder \
-        .appName("Forecast process for DM") \
-        .config("spark.sql.warehouse.dir", warehouse_location) \
-        .config("spark.driver.memory", '6g') \
-        .config("spark.executor.memory", '6g') \
-        .config("spark.num.executors", '14') \
-        .config("hive.exec.compress.output", 'false') \
-        .config("spark.sql.broadcastTimeout", 7200) \
-        .config("spark.sql.autoBroadcastJoinThreshold", -1) \
-        .enableHiveSupport() \
-        .getOrCreate()
-
-    sc = spark.sparkContext
-
-    sqlc = SQLContext(sc)
-    sqlc.setConf("hive.support.concurrency", "true")
-    sqlc.setConf("hive.exec.parallel", "true")
-    sqlc.setConf("hive.exec.dynamic.partition", "true")
-    sqlc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
-    sqlc.setConf("hive.exec.max.dynamic.partitions", "4096")
-    sqlc.setConf("hive.exec.max.dynamic.partitions.pernode", "4096")
-
-    print_output('Spark environment loaded', log_file)
-
-    run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
-
-    # starting day of the DM calculation period
-    start_date = run_date + timedelta(weeks=4)
-
-    # end day of the DM calculation period
-    end_date = run_date + timedelta(weeks=5)
-
-    stock_date = run_date + timedelta(days=-1)
-
-    parameter = "Run date:" + start_date.strftime("%Y%m%d") \
-                + ", DM start date:" + start_date.strftime("%Y%m%d") \
-                + ", DM end date:" + end_date.strftime("%Y%m%d")
-
     print_output(f"Load DM items and stores for DM that starts between {start_date} and {end_date}", log_file)
 
     dm_item_store_sql = \
@@ -126,14 +79,14 @@ def dm_order_process(date_str, log_file):
             AND icis.item_code = fdo.item_code
             AND icis.sub_code = fdo.sub_code
             AND icis.store_code = fdo.store_code
-        WHERE del.extract_order = 40
-            AND ndt.theme_start_date >= '{1}'
-            AND ndt.theme_start_date < '{2}'
-            AND ndt.dm_theme_id = 29733
+        WHERE del.extract_order >= 40
+            AND del.date_key = '{1}'
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
         """.replace("\n", " ")
 
-    dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                                 end_date.isoformat())
+    dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                                 start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
 
     # # Exclude the DM that already have orders
 
@@ -164,10 +117,11 @@ def dm_order_process(date_str, log_file):
     output_str = output_str + f"After getting only first DM {dm_item_store_cnt}," + ","
 
     if dm_item_store_cnt == 0:
-        print_output(f"skip date {date_str} cause no active order opportunity for today", log_file)
+        run_date_str = run_date.strftime("%Y%m%d")
+        print_output(f"skip date {run_date_str} cause no active order opportunity for today", log_file)
         info_str = info_str + f"Job Finish:{get_current_time()},"
-        info_str = info_str + f"skip date {date_str} cause no active order opportunity for today"
-        insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
+        info_str = info_str + f"skip date {run_date_str} cause no active order opportunity for today"
+        
         return
 
     dm_item_store_df.write.mode("overwrite").format("parquet").saveAsTable("vartefact.tmp_dm_item_store")
@@ -426,14 +380,17 @@ def dm_order_process(date_str, log_file):
         FROM dm_final_pcb
         """.replace("\n", " ")
 
-    sqlc.sql(dm_sql)
+    if dm_item_store_cnt > 0:
+        sqlc.sql(dm_sql)
 
     sqlc.sql("refresh table vartefact.forecast_dm_orders")
 
     print_output("Finish writing store order to datalake", log_file)
-
-    print_output("Start generating DC orders", log_file)
-
+    
+    
+def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_date, log_file, sqlc):
+    print_output(f"Load DM items and DC for DM that starts between {start_date} and {end_date}", log_file)
+    
     dm_item_dc_sql = \
         """
         SELECT distinct ndt.dm_theme_id,
@@ -471,14 +428,16 @@ def dm_order_process(date_str, log_file):
             AND dcid.dc_status != 'Stop'
             AND dcid.seasonal = 'No'
             AND dcid.item_type not in ('New','Company Purchase','Seasonal')
-        WHERE del.extract_order = 40
-            AND ndt.theme_start_date >= '{1}'
-            AND ndt.theme_start_date <= '{2}'
+        WHERE del.extract_order >= 40
+            AND del.date_key = '{1}'
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+            AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
         """.replace("\n", " ")
 
-    dm_item_dc_sql = dm_item_dc_sql.format(run_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                           end_date.isoformat())
-
+    
+    dm_item_dc_sql = dm_item_dc_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                           start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
+    
     dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
 
     first_dc_dm = dm_item_dc_df. \
@@ -642,7 +601,59 @@ def dm_order_process(date_str, log_file):
     sqlc.sql("refresh table vartefact.forecast_dm_dc_orders")
 
     info_str = info_str + f"Job Finish:{get_current_time()}"
-    insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
+    
 
+def dm_order_process(date_str, log_file):
+    warehouse_location = abspath('spark-warehouse')
+    
+    print_output(f'\n Forecast process for DM start with input date {date_str} \n', log_file)
+
+    spark = SparkSession.builder \
+        .appName("Forecast process for DM") \
+        .config("spark.sql.warehouse.dir", warehouse_location) \
+        .config("spark.driver.memory", '6g') \
+        .config("spark.executor.memory", '6g') \
+        .config("spark.num.executors", '14') \
+        .config("hive.exec.compress.output", 'false') \
+        .config("spark.sql.broadcastTimeout", 7200) \
+        .config("spark.sql.autoBroadcastJoinThreshold", -1) \
+        .enableHiveSupport() \
+        .getOrCreate()
+
+    sc = spark.sparkContext
+
+    sqlc = SQLContext(sc)
+    sqlc.setConf("hive.support.concurrency", "true")
+    sqlc.setConf("hive.exec.parallel", "true")
+    sqlc.setConf("hive.exec.dynamic.partition", "true")
+    sqlc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
+    sqlc.setConf("hive.exec.max.dynamic.partitions", "4096")
+    sqlc.setConf("hive.exec.max.dynamic.partitions.pernode", "4096")
+
+    print_output('Spark environment loaded', log_file)
+
+    run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
+
+    # starting day of the DM calculation period
+    start_date = run_date + timedelta(weeks=4)
+
+    # end day of the DM calculation period
+    end_date = run_date + timedelta(weeks=5)
+
+    stock_date = run_date + timedelta(days=-1)
+
+    parameter = "Run date:" + run_date.strftime("%Y%m%d") \
+                + ", DM start date:" + start_date.strftime("%Y%m%d") \
+                + ", DM end date:" + end_date.strftime("%Y%m%d")
+    
+    output_str = ""
+    info_str = f"DM process start:{get_current_time()}, "
+    
+    run_dm_store_order(output_str, info_str, stock_date, run_date, start_date, end_date, log_file, sqlc)
+
+    run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_date, log_file, sqlc)
+
+    insert_script_run(date_str, "Success", parameter, output_str, info_str, "", sqlc)
+    
     sc.stop()
     print_output("Job finish", log_file)

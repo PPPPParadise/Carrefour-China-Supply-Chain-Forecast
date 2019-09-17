@@ -442,6 +442,7 @@ def dm_order_simulation(date_str):
             icis.date_key AS run_date
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
+        JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
         JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
             AND del.item_code = CONCAT (
                 icis.dept_code,
@@ -456,6 +457,10 @@ def dm_order_simulation(date_str):
             AND dcid.dc_status != 'Stop'
             AND dcid.seasonal = 'No'
             AND dcid.item_type not in ('New','Company Purchase','Seasonal')
+        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
+            AND dcid.dept_code = id.dept_code
+            AND dcid.item_code = id.item_code
+            AND dcid.sub_code = id.sub_code
         WHERE del.extract_order >= 40
             AND del.date_key = '{1}'
             AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')

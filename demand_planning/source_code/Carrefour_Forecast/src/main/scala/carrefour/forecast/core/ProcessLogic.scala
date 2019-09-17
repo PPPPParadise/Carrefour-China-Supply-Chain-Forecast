@@ -434,7 +434,7 @@ object ProcessLogic {
 
     } else if (modelRun.flowType == FlowType.DC) {
       QueryUtil
-        .getStoreOrderToDc(dateMapDf, startDateStr, endDateStr, modelRun.viewName, sqlc)
+        .getStoreOrderToDc(dateMapDf, startDateStr, endDateStr, modelRun.runDateStr, modelRun.viewName, sqlc)
 
     } else if (modelRun.isSimulation) {
       SimulationUtil

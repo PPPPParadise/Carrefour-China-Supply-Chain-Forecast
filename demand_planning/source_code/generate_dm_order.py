@@ -30,7 +30,7 @@ sqlc = SQLContext(sc)
 # +
 print(str(datetime.datetime.now()), "start")
 # The input
-date_str = '20190902'
+date_str = '20190916'
 
 run_date = datetime.datetime.strptime(date_str, '%Y%m%d').date()
 
@@ -89,26 +89,26 @@ dm_item_store_sql = \
             )
         AND del.sub_code = id.sub_code
         AND del.dept_code = id.dept_code
+        AND id.store_status != 'Stop'
+        AND id.item_type not in ('New','Company Purchase','Seasonal')
     JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
         AND id.item_code = icis.item_code
         AND id.sub_code = icis.sub_code
         AND id.dept_code = icis.dept_code
         AND id.store_code = icis.store_code
-        AND id.store_status != 'Stop'
-        AND id.item_type not in ('New','Company Purchase','Seasonal')
-    LEFT JOIN vartefact.forecast_simulation_dm_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
+    LEFT JOIN vartefact.forecast_dm_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
         AND icis.dept_code = fdo.dept_code
         AND icis.item_code = fdo.item_code
         AND icis.sub_code = fdo.sub_code
         AND icis.store_code = fdo.store_code
-    WHERE del.extract_order = 40
-        AND ndt.theme_start_date >= '{1}'
-        AND ndt.theme_start_date < '{2}'
-        AND ndt.dm_theme_id = 29733
+    WHERE del.extract_order >= 40
+        AND del.date_key = '{1}'
+        AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+        AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
     """.replace("\n", " ")
 
-dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                             end_date.isoformat())
+dm_item_store_sql = dm_item_store_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                                 start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
 # -
 
 # # Exclude the DM that already have orders
@@ -373,7 +373,7 @@ dm_final_pcb.createOrReplaceTempView("dm_final_pcb")
 
 dm_sql = \
     """
-    INSERT INTO vartefact.forecast_simulation_dm_orders
+    INSERT INTO vartefact.forecast_dm_orders
     PARTITION (dm_theme_id)
     SELECT 
         item_id,
@@ -411,7 +411,7 @@ dm_sql = \
 #sqlc.sql(dm_sql)
 # -
 
-sqlc.sql("refresh table vartefact.forecast_simulation_dm_orders")
+sqlc.sql("refresh table vartefact.forecast_dm_orders")
 
 # # DC Order
 
@@ -436,9 +436,11 @@ dm_item_dc_sql = \
         icis.sub_id,
         icis.item_code,
         icis.sub_code,
-        icis.date_key AS run_date
+        icis.date_key AS run_date,
+        fdo.first_order_date AS past_result
     FROM vartefact.forecast_nsa_dm_extract_log del
     JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
+    JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
     JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
         AND del.item_code = CONCAT (
             icis.dept_code,
@@ -453,13 +455,22 @@ dm_item_dc_sql = \
         AND dcid.dc_status != 'Stop'
         AND dcid.seasonal = 'No'
         AND dcid.item_type not in ('New','Company Purchase','Seasonal')
-    WHERE del.extract_order = 40
-        AND ndt.theme_start_date >= '{1}'
-        AND ndt.theme_start_date <= '{2}'
+    JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
+        AND dcid.dept_code = id.dept_code
+        AND dcid.item_code = id.item_code
+        AND dcid.sub_code = id.sub_code
+    LEFT JOIN vartefact.forecast_dm_dc_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
+        AND icis.dept_code = fdo.dept_code
+        AND icis.item_code = fdo.item_code
+        AND icis.sub_code = fdo.sub_code
+    WHERE del.extract_order >= 40
+        AND del.date_key = '{1}'
+        AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
+        AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') < to_timestamp('{3}', 'yyyyMMdd')
     """.replace("\n", " ")
 
-dm_item_dc_sql = dm_item_dc_sql.format(run_date.strftime("%Y%m%d"), start_date.isoformat(),
-                                       end_date.isoformat())
+dm_item_dc_sql = dm_item_dc_sql.format(stock_date.strftime("%Y%m%d"), run_date.strftime("%Y%m%d"),
+                                           start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
 # -
 
 dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
@@ -549,7 +560,7 @@ dm_store_to_dc_sql = \
       sum(sod.order_qty) as dm_order_qty_without_pcb,
       dm.dm_theme_id
     FROM 
-        vartefact.forecast_simulation_dm_orders sod
+        vartefact.forecast_dm_orders sod
     JOIN dm_item_dc_order dm
         on sod.item_id = dm.item_id
         and sod.sub_id = dm.sub_id
@@ -590,7 +601,7 @@ dm_dc_pcb.createOrReplaceTempView("dm_dc_final")
 
 dm_dc_sql = \
     """
-    INSERT INTO vartefact.forecast_simulation_dm_dc_orders
+    INSERT INTO vartefact.forecast_dm_dc_orders
     PARTITION (dm_theme_id)
     SELECT 
       item_id,
@@ -624,6 +635,6 @@ dm_dc_sql = \
 #sqlc.sql(dm_dc_sql)
 # -
 
-sqlc.sql("refresh table vartefact.forecast_simulation_dm_dc_orders")
+sqlc.sql("refresh table vartefact.forecast_dm_dc_orders")
 
 sc.stop()

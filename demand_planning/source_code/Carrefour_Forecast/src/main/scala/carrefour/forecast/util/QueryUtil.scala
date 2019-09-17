@@ -217,15 +217,17 @@ object QueryUtil {
     * @param dateMapDf All combinations of item, store, and dates 全部商品，门店，及日期的组合
     * @param startDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
     * @param endDateStr Start date in yyyyMMdd String format 文本格式的起始日期，为yyyyMMdd格式
+    * @param runDateStr Input job run date in yyyyMMdd String format 文本格式的脚本运行输入时间，为yyyyMMdd格式
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @param sqlc Spark SQLContext
     * @return Future store orders to DC 门店向DC/货仓未来订货量
     */
-  def getStoreOrderToDc(dateMapDf: DataFrame, startDateStr: String, endDateStr: String, viewName: String,
+  def getStoreOrderToDc(dateMapDf: DataFrame, startDateStr: String, endDateStr: String,
+                        runDateStr: String, viewName: String,
                         sqlc: SQLContext): DataFrame = {
 
     // Get sales prediction
-    val storeOrderToDcSql = DcQueries.getStoreOrderToDcSql(startDateStr, endDateStr, viewName)
+    val storeOrderToDcSql = DcQueries.getStoreOrderToDcSql(startDateStr, endDateStr, runDateStr, viewName)
     var storeOrderToDcDf = sqlc.sql(storeOrderToDcSql)
 
     storeOrderToDcDf = dateMapDf.join(storeOrderToDcDf, Seq("item_id", "sub_id", "entity_code", "date_key"), "left")

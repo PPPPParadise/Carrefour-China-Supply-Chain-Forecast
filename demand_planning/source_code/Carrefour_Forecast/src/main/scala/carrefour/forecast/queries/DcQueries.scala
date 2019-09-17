@@ -98,10 +98,12 @@ object DcQueries {
     *
     * @param startDateStr Query start date in yyyyMMdd String format 文本格式的查询开始日期，为yyyyMMdd格式
     * @param endDateStr Query end date in yyyyMMdd String format 文本格式的查询截止日期，为yyyyMMdd格式
+    * @param runDateStr Input job run date in yyyyMMdd String format 文本格式的脚本运行输入时间，为yyyyMMdd格式
     * @param viewName Temp view name used by job run 脚本运行时使用的临时数据库视图名
     * @return SQL with variables filled 拼装好的SQL
     */
-  def getStoreOrderToDcSql(startDateStr: String, endDateStr: String, viewName: String): String = {
+  def getStoreOrderToDcSql(startDateStr: String, endDateStr: String,
+                           runDateStr: String, viewName: String): String = {
     s"""
       SELECT t.item_id,
         t.sub_id,
@@ -115,11 +117,12 @@ object DcQueries {
           fcst.con_holding as entity_code,
           fcst.order_day as date_key,
           sum(fcst.order_qty) as order_qty
-        FROM vartefact.forecast_onstock_orders fcst
+        FROM vartefact.forecast_onstock_orders_hist fcst
         JOIN ${viewName} itmd ON fcst.item_id = itmd.item_id
           AND fcst.sub_id = itmd.sub_id
         WHERE fcst.order_day >= '${startDateStr}'
           AND fcst.order_day <= '${endDateStr}'
+          AND fcst.run_date = '${runDateStr}'
        GROUP BY
           fcst.item_id,
           fcst.sub_id,
@@ -133,7 +136,7 @@ object DcQueries {
             dm.con_holding as entity_code,
             dm.first_order_date as date_key,
             dm.first_dm_order_qty as order_qty
-          FROM vartefact.forecast_simulation_dm_orders dm
+          FROM vartefact.forecast_dm_orders dm
           JOIN ${viewName} itmd ON dm.item_id = dm.item_id
             AND dm.sub_id = itmd.sub_id
           WHERE dm.first_order_date >= '${startDateStr}'

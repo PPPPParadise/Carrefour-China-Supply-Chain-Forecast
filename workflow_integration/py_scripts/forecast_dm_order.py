@@ -411,9 +411,11 @@ def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_
             icis.sub_id,
             icis.item_code,
             icis.sub_code,
-            icis.date_key AS run_date
+            icis.date_key AS run_date,
+            fdo.first_order_date AS past_result
         FROM vartefact.forecast_nsa_dm_extract_log del
         JOIN ods.nsa_dm_theme ndt ON del.dm_theme_id = ndt.dm_theme_id
+        JOIN ods.p4md_stogld ps ON del.city_code = ps.stocity
         JOIN vartefact.forecast_item_code_id_stock icis ON icis.date_key = '{0}'
             AND del.item_code = CONCAT (
                 icis.dept_code,
@@ -428,6 +430,14 @@ def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_
             AND dcid.dc_status != 'Stop'
             AND dcid.seasonal = 'No'
             AND dcid.item_type not in ('New','Company Purchase','Seasonal')
+        JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
+            AND dcid.dept_code = id.dept_code
+            AND dcid.item_code = id.item_code
+            AND dcid.sub_code = id.sub_code
+        LEFT JOIN vartefact.forecast_dm_dc_orders fdo ON ndt.dm_theme_id = fdo.dm_theme_id
+            AND icis.dept_code = fdo.dept_code
+            AND icis.item_code = fdo.item_code
+            AND icis.sub_code = fdo.sub_code
         WHERE del.extract_order >= 40
             AND del.date_key = '{1}'
             AND to_timestamp(ndt.theme_start_date, 'yyyy-MM-dd') >= to_timestamp('{2}', 'yyyyMMdd')
@@ -440,12 +450,38 @@ def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_
     
     dm_item_dc_df = sqlc.sql(dm_item_dc_sql)
 
+    # # Exclude the DM that already have orders
+
+    print_output("Exclude the DM that already have orders", log_file)
+
+    dm_item_dc_df = dm_item_dc_df.filter("past_result is null")
+
+    output_line = f"After filtering already calculated DM {dm_item_dc_df.count()}"
+
+    print_output(output_line, log_file)
+    output_str = output_str + output_line + ","
+
+    # # Only consider the nearest DM
+
     first_dc_dm = dm_item_dc_df. \
         groupBy(['item_id', 'sub_id']). \
         agg(F.min("theme_start_date").alias("theme_start_date"))
 
     dm_item_dc_df = dm_item_dc_df.join(first_dc_dm, ['item_id', 'sub_id', 'theme_start_date'])
 
+    dm_item_dc_cnt = dm_item_dc_df.count()
+
+    print_output(f"After getting only first DM in DC {dm_item_dc_cnt}", log_file)
+    output_str = output_str + f"After getting only first DM in DC {dm_item_dc_cnt}," + ","
+
+    if dm_item_dc_cnt == 0:
+        run_date_str = run_date.strftime("%Y%m%d")
+        print_output(f"skip date {run_date_str} cause no active order opportunity for today", log_file)
+        info_str = info_str + f"Job Finish:{get_current_time()},"
+        info_str = info_str + f"skip date {run_date_str} cause no active order opportunity for today"
+        
+        return
+    
     output_line = f"Number of item that will have DM order in DC {dm_item_dc_df.count()}"
     print_output(output_line, log_file)
     output_str = output_str + output_line + ","
@@ -453,6 +489,7 @@ def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_
     dm_item_dc_df.cache()
 
     dm_item_dc_df.createOrReplaceTempView("dm_item_dc")
+    
 
     # +
     dc_order_sql = \

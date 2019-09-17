@@ -47,6 +47,7 @@ store_order_file = Variable.get("store_order_file_name")
 
 # airflow backfill forecast_normal_dm_flow -s 2019-08-19 -e 2019-08-21
 
+############################### Config ##########################
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 13),
@@ -59,19 +60,18 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
-
 dag = DAG('forecast_regular_flow',
           schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
 
-
-############################### Config ##########################
 config = {}
 config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
 config['starting_date'] = 20170101
 ###############################  End  ##########################
+
+
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])
 

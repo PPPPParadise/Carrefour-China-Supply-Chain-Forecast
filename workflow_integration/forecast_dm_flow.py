@@ -63,6 +63,7 @@ order_output_folder = Variable.get("order_output_folder")
 store_order_file = Variable.get("store_order_file_name")
 
 
+############################### Config ##########################
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 18, 2, 0),
@@ -74,20 +75,15 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
-
 dag = DAG('forecast_dm_flow',
 schedule_interval='0 2 * * 0 0',
    default_args=default_args, catchup=False)
 
-
-############################### Config ##########################
 config = {}
 config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
-config['incremental'] = True
 config['starting_date'] = 20170101
-# config['ending_date'] = 20170107
 ###############################  End  ##########################
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])

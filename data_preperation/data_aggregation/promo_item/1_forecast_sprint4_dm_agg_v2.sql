@@ -5,7 +5,7 @@
 /*
 Input: 
     {database}.forecast_sprint4_add_dm_to_daily
-    {database}.p4cm_item_map_complete_2021
+    {database}.p4cm_item_map_complete
     {database}.forecast_trxn_flag_v1_sprint4
     nsa.dm_extract_log
     ods.nsa_dm_theme

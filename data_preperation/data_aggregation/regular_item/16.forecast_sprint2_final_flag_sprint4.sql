@@ -57,15 +57,15 @@ on a.item_id = c.itbitmid
 and a.sub_id = c.itbsubid
 ),
 
-out_of_stock as (
-    select
-        cast(item_id as int) as item_id,
-        cast(sub_id as int) as sub_id,
-        store_code,
-        date_key,
-        cast(out_stock_flag as int) as out_stock_flag
-    from {database}.poisson_filtering
-),
+-- out_of_stock as (
+--     select
+--         cast(item_id as int) as item_id,
+--         cast(sub_id as int) as sub_id,
+--         store_code,
+--         date_key,
+--         cast(out_stock_flag as int) as out_stock_flag
+--     from {database}.poisson_filtering
+-- ),
 
 date_week_link as (
         select
@@ -75,47 +75,47 @@ date_week_link as (
         group by date_key, week_key
 ),
 
-add_week_key as (
-    select
-        a.*,
-        b.week_key
+-- add_week_key as (
+--     select
+--         a.*,
+--         b.week_key
 
-    from out_of_stock a
-    left join date_week_link b
-    on b.date_key = a.date_key
-),
+--     from out_of_stock a
+--     left join date_week_link b
+--     on b.date_key = a.date_key
+-- ),
 
-week_key_out_stock as (
-    select
-    week_key,
-    max(out_stock_flag) as out_stock_flag,
-    store_code,
-    sub_id,
-    item_id
+-- week_key_out_stock as (
+--     select
+--     week_key,
+--     max(out_stock_flag) as out_stock_flag,
+--     store_code,
+--     sub_id,
+--     item_id
 
-from add_week_key
-group by item_id, sub_id, week_key, store_code
-),
+-- from add_week_key
+-- group by item_id, sub_id, week_key, store_code
+-- ),
 
-add_out_stock_flag as (
-select
-    a.*,
-    b.out_stock_flag
+-- add_out_stock_flag as (
+-- select
+--     a.*,
+--     b.out_stock_flag
 
-from  add_desc_bar a
-left join week_key_out_stock b
-on b.item_id = a.item_id
-and b.sub_id = a.sub_id
-and b.week_key = a.week_key
-and b.store_code = a.store_code
-),
+-- from  add_desc_bar a
+-- left join week_key_out_stock b
+-- on b.item_id = a.item_id
+-- and b.sub_id = a.sub_id
+-- and b.week_key = a.week_key
+-- and b.store_code = a.store_code
+-- ),
 
 add_festival_type_to_all_feature as (
     select
     a.*,
     if(c.festival_type is not null, cast(c.festival_type as int), null) as festival_type
 
-    from  add_out_stock_flag as a
+    from add_desc_bar as a
     left join
         (   select
                 week_key,
@@ -244,7 +244,7 @@ select
     cast(next_dm_v5_extract_datetime as string) as next_dm_v5_extract_datetime,
     next_dm_w1_sales_qty,
     next_dm_w2_sales_qty,
-    out_stock_flag,
+    0 as out_stock_flag, 
     -- planned_bp_flag,
     promo_disc_sum,
     psp_nsp_ratio,

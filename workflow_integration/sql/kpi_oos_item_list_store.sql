@@ -18,7 +18,6 @@ with store_stock_in_scope as
         b.dc_status
     from
         fds.p4cm_daily_stock a
-        
     join {database_name}.v_forecast_inscope_store_item_details b
         on a.dept_code = b.dept_code
         and a.item_code = b.item_code
@@ -31,12 +30,20 @@ with store_stock_in_scope as
 
 select itm.*, 
 coalesce(fr.daily_sales_prediction, -1) as sales_prediction_with_confidence_interval, 
-coalesce(fr.daily_sales_prediction_original, -1) as sales_prediction
+coalesce(fr.daily_sales_prediction_original, -1) as sales_prediction,
+psi.item_stop_start_date,
+psi.item_stop_end_date
 from store_stock_in_scope itm
 left outer join vartefact.t_forecast_daily_sales_prediction fr
     on itm.item_id = fr.item_id
     and itm.sub_id = fr.sub_id
     and itm.store_code = fr.store_code
     and fr.date_key = "{oos_check_date}"
+left outer join ods.p4cm_store_item psi
+    on itm.dept_code = psi.dept_code
+    and itm.item_code = psi.item_code
+    and itm.sub_code = psi.sub_code
+    and itm.store_code = psi.store_code
+    and psi.date_key = "{oos_check_date}"
 where itm.balance_qty <= 0 
 order by itm.store_code, itm.rotation, itm.con_holding, itm.item_code

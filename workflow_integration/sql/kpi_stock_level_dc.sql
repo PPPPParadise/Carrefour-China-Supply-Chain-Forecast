@@ -10,7 +10,8 @@ Input:
 */
 
 select
-    dc_site, in_dm, holding_code, rotation, date_key, sum(total_stock) as stock_level
+    dc_site, in_dm, holding_code, rotation, date_key, 
+    sum(total_stock) as stock_level, sum(total_stock_value) as stock_value
 from
     {database}.foreacst_dc_monitor
 where 

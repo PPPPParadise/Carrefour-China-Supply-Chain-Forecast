@@ -325,17 +325,17 @@ CREATE TABLE vartefact.forecast_dc_daily_order_files (
 ) PARTITIONED BY (date_key STRING) 
   STORED AS PARQUET
 
-
-
 CREATE TABLE vartefact.foreacst_store_monitor (
     store_code STRING,
     rotation STRING, 
     con_holding STRING,
+    ds_supplier_code STRING,
     in_dm INT,
     date_key STRING,
     n_items INT,
     n_not_oos_items INT,
-    total_stock DECIMAL(15, 4)
+    total_stock DECIMAL(15, 4),
+    total_stock_value DECIMAL(15, 4)
 	) PARTITIONED BY (
 	run_date STRING) 
 	STORED AS parquet
@@ -345,11 +345,13 @@ CREATE TABLE vartefact.foreacst_dc_monitor (
     dc_site STRING,
     rotation STRING, 
     holding_code STRING,
+    ds_supplier_code STRING,
     in_dm INT,
     date_key STRING,
     n_items INT,
     n_not_oos_items INT,
-    total_stock DECIMAL(15, 4)
+    total_stock DECIMAL(15, 4),
+    total_stock_value DECIMAL(15, 4)
 	) PARTITIONED BY (
 	run_date STRING) 
 	STORED AS parquet

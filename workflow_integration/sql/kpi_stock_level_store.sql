@@ -12,7 +12,8 @@ Input:
 */
 
 select
-    store_code, con_holding, rotation, in_dm, date_key, sum(total_stock) as stock_level
+    store_code, con_holding, rotation, in_dm, date_key, 
+    sum(total_stock) as stock_level, sum(total_stock_value) as stock_value
 from
     vartefact.foreacst_store_monitor
 where run_date = "{run_date}"

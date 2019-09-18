@@ -27,7 +27,6 @@ store_stock_in_scope as
             and fpds.sub_code = b.sub_code
     where
         fpds.date_key between "{date_start}" and "{date_end}"
-        and id.dc_status != 'Stop'
 )
 insert overwrite table vartefact.foreacst_store_monitor 
 partition (run_date)

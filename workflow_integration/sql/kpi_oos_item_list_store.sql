@@ -25,7 +25,6 @@ with store_stock_in_scope as
         and a.store_code = b.store_code
     where
         a.date_key = "{oos_check_date}"
-         and b.dc_status != 'Stop'
 )
 
 select itm.*, 

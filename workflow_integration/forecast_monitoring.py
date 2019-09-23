@@ -224,6 +224,13 @@ run_monitoring = BashOperator(
     dag=forecast_monitoring
 )
 
+run_consistency = BashOperator(
+    task_id='run_consistency',
+    wait_for_downstream=True,
+    bash_command="MONITOR_RUN_DATE='{{ ds_nodash }}' jupyter nbconvert --execute " + project_folder + '/consistency_check.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ ds_nodash }}.html --ExecutePreprocessor.timeout=1800 --no-input',
+    dag=forecast_monitoring
+)
+
 check_dc_order = PythonOperator(task_id='check_dc_order',
                                    python_callable=python_check_dc_order,
                                    provide_context=True,
@@ -244,5 +251,7 @@ copy_output = BashOperator(
 
 check_dc_order.set_upstream(run_monitoring)
 check_store_order.set_upstream(run_monitoring)
+run_consistency.set_upstream(run_monitoring)
 copy_output.set_upstream(check_dc_order)
 copy_output.set_upstream(check_store_order)
+copy_output.set_upstream(run_consistency)

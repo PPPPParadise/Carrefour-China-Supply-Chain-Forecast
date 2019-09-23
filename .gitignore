@@ -5,6 +5,7 @@
 *.patch
 *.class
 *.cache
+*.zip
 *$*
 demand_planning/source_code/Carrefour_Forecast/project/target/*
 demand_planning/source_code/Carrefour_Forecast/target/*

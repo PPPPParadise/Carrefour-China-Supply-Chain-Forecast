@@ -227,7 +227,7 @@ run_monitoring = BashOperator(
 run_consistency = BashOperator(
     task_id='run_consistency',
     wait_for_downstream=True,
-    bash_command="MONITOR_RUN_DATE='{{ ds_nodash }}' jupyter nbconvert --execute " + project_folder + '/consistency_check.ipynb --to=html --output=' + record_folder + '/monitoring/report_monitor_{{ ds_nodash }}.html --ExecutePreprocessor.timeout=1800 --no-input',
+    bash_command="MONITOR_RUN_DATE='{{ ds_nodash }}' jupyter nbconvert --execute " + project_folder + '/consistency_check.ipynb --to=html --output=' + record_folder + '/monitoring/report_consistency_{{ ds_nodash }}.html --ExecutePreprocessor.timeout=1800 --no-input',
     dag=forecast_monitoring
 )
 

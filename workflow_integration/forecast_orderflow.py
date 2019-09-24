@@ -39,7 +39,7 @@ default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 11),
     'end_date': datetime.datetime(2049, 1, 1),
-    'depends_on_past': True,
+    'depends_on_past': False,
     'email': ['house.gong@artefact.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -120,39 +120,34 @@ def show_dag_args(ds, **kwargs):
 load_data = PythonOperator(task_id='load_data',
                            python_callable=python_load_data,
                            provide_context=True,
-                           wait_for_downstream=True,
                            retries=4,
                            dag=forecast_orderflow)
 
 calculate_service_level = PythonOperator(task_id='calculate_service_level',
                                          python_callable=python_calculate_service_level,
                                          provide_context=True,
-                                         wait_for_downstream=True,
+                    
                                          dag=forecast_orderflow)
 
 run_dm_order = PythonOperator(task_id='run_dm_order',
                               python_callable=python_dm_order,
                               provide_context=True,
-                              wait_for_downstream=True,
                               dag=forecast_orderflow)
 
 run_onstock_store_order = BashOperator(
     task_id='run_onstock_store_order',
-    wait_for_downstream=True,
     bash_command='spark-submit --class "carrefour.forecast.process.OnStockForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_onstock_store_order.log',
     dag=forecast_orderflow,
 )
 
 run_xdock_order = BashOperator(
     task_id='run_xdock_order',
-    wait_for_downstream=True,
     bash_command='spark-submit --class "carrefour.forecast.process.XDockingForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_xdock_order.log',
     dag=forecast_orderflow,
 )
 
 run_dc_order = BashOperator(
     task_id='run_dc_order',
-    wait_for_downstream=True,
     bash_command='spark-submit --class "carrefour.forecast.process.DcForecastProcess" --master yarn --driver-memory 6G --num-executors 14 ' + order_process_jar + ' {{ tomorrow_ds_nodash }} day_shift=1 >> ' + log_folder + '/forecast_orderflow/ds_{{ ds }}/run_dc_order.log',
     dag=forecast_orderflow,
 )
@@ -185,7 +180,6 @@ generate_forecast_file = PythonOperator(task_id='generate_forecast_file',
 show_dag_args = PythonOperator(task_id="show_dag_args",
                                python_callable=show_dag_args,
                                provide_context=True,
-                               wait_for_downstream=True,
                                dag=forecast_orderflow)
 
 load_data.set_upstream(show_dag_args)

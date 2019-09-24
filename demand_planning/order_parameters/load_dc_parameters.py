@@ -57,10 +57,8 @@ def get_conholding(ds_supplier_code):
 # +
 warnings.filterwarnings('ignore')
 
-dc_items = pd.read_excel('East 3 Supps DC Item list 20190830.xlsx', 'Item Detail', header=0, dtype=str).fillna('')
+dc_items = pd.read_excel('East 3 Supps DC Item list 20190920.xlsx', 'Item Detail', header=0, dtype=str).fillna('')
 # -
-
-dc_items.drop("dummy", axis=1, inplace=True)
 
 dc_items.rename(columns={'Item code':'Full item code'}, inplace=True)
 
@@ -68,13 +66,14 @@ dc_items["Dept code"] = dc_items["Full item code"].str.slice(0, 2)
 dc_items["Item code"] = dc_items["Full item code"].str.slice(2, 8)
 dc_items["Sub code"] = dc_items["Full item code"].str.slice(8)
 
-dc_items.columns = ['dc', 'dc_site', 'full_item_code', 'dc_status', 'item_name_english',
+dc_items.columns = ['dc', 'dc_site', 'full_item_code', 'item_name_english',
 'item_name_local', 'current_warehouse', 'primary_ds_supplier',
 'primary_ds_supplier_name', 'qty_per_box', 'primary_barcode',
 'rotation', 'box_per_layer_ti', 'layer_per_pallet_hi',
 'stop_start_date', 'stop_reason', 'qty_per_pack', 'pack_per_box',
 'holding_supplier_code', 'holding_code', 'risk_item_unilever',
-'order_uint', 'seasonal', 'item_type', 'dept_code', 'item_code', 'sub_code']
+'order_uint', 'dc_status', 'item_type',
+'dept_code', 'item_code', 'sub_code']
 
 dc_items["holding_code"] = dc_items.apply(
     lambda r: get_conholding(r.primary_ds_supplier), axis=1)

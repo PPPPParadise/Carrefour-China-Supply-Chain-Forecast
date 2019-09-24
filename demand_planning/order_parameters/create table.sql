@@ -412,9 +412,9 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
         AND dc.sub_code = id.sub_code
     where
         dc.dc_status != 'Stop'
-        AND dc.seasonal = 'No'
         AND dc.item_type not in ('New','Company Purchase','Seasonal')
 )
+
     
 CREATE TABLE vartefact.forecast_simulation_dm_orders (
 	item_id INT,

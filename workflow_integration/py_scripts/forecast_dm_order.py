@@ -428,7 +428,6 @@ def run_dm_dc_order(output_str, info_str, stock_date, run_date, start_date, end_
             AND dcid.dept_code = icis.dept_code
             AND dcid.rotation != 'X'
             AND dcid.dc_status != 'Stop'
-            AND dcid.seasonal = 'No'
             AND dcid.item_type not in ('New','Company Purchase','Seasonal')
         JOIN vartefact.forecast_store_item_details id ON ps.stostocd = id.store_code
             AND dcid.dept_code = id.dept_code

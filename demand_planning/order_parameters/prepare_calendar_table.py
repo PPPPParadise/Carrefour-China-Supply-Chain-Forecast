@@ -32,9 +32,9 @@ sqlc.sql("drop table if exists vartefact.forecast_dc_order_delivery_mapping")
 # # Calendar
 
 # +
-nestle_skip_order_day = [datetime.date(2019, 9, 13),datetime.date(2010, 10, 1),datetime.date(2010, 10, 4)]
+nestle_skip_order_day = [datetime.date(2019, 9, 13),datetime.date(2019, 10, 1),datetime.date(2019, 10, 4)]
 
-pg_skip_order_day = [datetime.date(2010, 10, 3),datetime.date(2010, 10, 7)]
+pg_skip_order_day = [datetime.date(2019, 10, 3),datetime.date(2019, 10, 7)]
 
 un_skip_order_day = [datetime.date(2019, 9, 13), datetime.date(2019, 10, 1)]
 

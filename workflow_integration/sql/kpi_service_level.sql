@@ -11,7 +11,7 @@ Parameters:
 Input:
     * lfms.daily_dctrxn                                    -- received by dc
     * lfms.ord                                             -- ordered by dc
-    * vartefact.forecast_itemid_list_threebrands_sprint4   -- items in scope
+    * vartefact.v_forecast_inscope_dc_item_details         -- items in scope
 To:
     * vartefact.monitor_service_level_item_dc
 */
@@ -22,42 +22,38 @@ with combine_ordered_received as
         rec.item_code,
         rec.sub_code,
         rec.dept_code,
-        -- rec.supplier_code,
         c.holding_code,
-        -- ord.mother_warehouse_code,
         rec.date_key,
-        sum(rec.trxn_qty) as trxn_qty,
-        sum(ord.basic_order_qty) as basic_order_qty
+        sum(ord.basic_order_qty) as basic_order_qty,
+        sum(coalesce(rec.trxn_qty, 0)) as trxn_qty
     from
-        lfms.daily_dctrxn rec  -- received
-        inner join
-            lfms.ord ord       -- ordered
+        lfms.ord ord -- ordered
+        join
+            vartefact.v_forecast_inscope_dc_item_details c
+        ON 
+            ord.department_code = c.dept_code
+            and ord.item_code = c.item_code
+            and ord.sub_code = c.sub_code
+        left join lfms.daily_dctrxn rec  -- received  
         on
             rec.item_code = ord.item_code
             and rec.sub_code = ord.sub_code
             and rec.dept_code = ord.department_code
             and rec.supplier_code = ord.supplier_code
             and rec.order_number = ord.order_number
-        left join
-            {database_name}.forecast_itemid_list_threebrands_sprint4 c
-        on rec.item_id = c.item_id
+            and rec.date_key >= "{date_start}"
     where
-        rec.item_id in (
-            select item_id
-            from {database_name}.forecast_itemid_list_threebrands_sprint4
-        )
-        and rec.dc_site = 'DC1'
+        rec.dc_site = 'DC1'
         and ord.order_status = 'C'   -- cancelled orders
         -- and ord.mother_warehouse_code not in ('KP01', 'kp01')   -- excluded BPs
         and ord.mother_warehouse_code in ('KS01', 'KX01')
-        and rec.date_key between "{date_start}" and "{date_end}"
+        and ord.date_key between "{date_start}" and "{date_end}"
     group by
         rec.item_code,
         rec.sub_code,
         rec.dept_code,
         c.holding_code,
         rec.date_key
-        -- ord.mother_warehouse_code
 ),
 
 service_lvl as
@@ -72,7 +68,11 @@ service_lvl as
         sum(basic_order_qty) as basic_order_qty_sum,
         count(*) as last_trxns_count,
         -- calculate service level (+0.001 is to avoid error when 0/0)
-        sum(trxn_qty) / (sum(basic_order_qty) + 0.001) as service_level
+        case 
+            when sum(trxn_qty) = sum(basic_order_qty)
+            then 1 
+            else sum(trxn_qty) / (sum(basic_order_qty) + 0.001) 
+        end as service_level
     from
         combine_ordered_received a
     group by
@@ -81,7 +81,6 @@ service_lvl as
         a.dept_code,
         a.date_key,
         a.holding_code
-        -- a.mother_warehouse_code
 )
 
 select * from service_lvl

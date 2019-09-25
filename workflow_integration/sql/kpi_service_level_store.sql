@@ -34,6 +34,11 @@ SELECT
     pdo.qty_per_pack,
     pdo.order_qty * pdo.ord_unit_qty as order_qty_in_sku,
     id.con_holding as holding_code,
+    case 
+        when id.dc_supplier_code = 'KSSE' then 'Y'
+        when id.dc_supplier_code = 'KXS1' then 'Y' 
+    else 'N'
+    end as piece_picking,
     row_number() OVER (PARTITION BY pdo.store_code, pdo.item_code, 
                            pdo.sub_code, pdo.dept_code, 
                            pdo.supplier_code, pdo.order_number
@@ -64,7 +69,8 @@ select
     ord_unit_qty, 
     qty_per_pack,
     order_qty_in_sku,
-    holding_code
+    holding_code,
+    piece_picking
 from order_qty_tb
 where row_ = 1
 group by 
@@ -81,7 +87,8 @@ group by
     ord_unit_qty, 
     qty_per_pack,
     order_qty_in_sku,
-    holding_code
+    holding_code,
+    piece_picking
 ),
 
 store_receive as (
@@ -125,7 +132,8 @@ select
     s_ord.ord_unit_qty, 
     s_ord.order_qty_in_sku,
     coalesce(s_rec.delivery_qty_in_sku, 0) as delivery_qty_in_sku,
-    s_ord.holding_code
+    s_ord.holding_code,
+    s_ord.piece_picking
 
 from order_qty_clean s_ord
 
@@ -146,6 +154,7 @@ select
     sub_code,
     dept_code,
     holding_code,
+    piece_picking,
     sum(order_qty_in_sku) as order_qty_in_sku_sum, 
     sum(delivery_qty_in_sku) as delivery_qty_in_sku_sum,
     count(1) as orders_count,
@@ -164,7 +173,8 @@ group by
     item_code,
     sub_code, 
     dept_code,
-    holding_code
+    holding_code,
+    piece_picking
 )
 
 select * 

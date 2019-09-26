@@ -71,6 +71,7 @@ def store_order_file_process(date_str, record_folder, output_path,
         dm.sub_code
         FROM vartefact.forecast_dm_orders dm
         WHERE dm.first_order_date = '{0}'
+        and dm.rotaion !='X'
     ) ords
         """.replace("\n", " ").format(run_date.strftime("%Y%m%d"))
 
@@ -188,7 +189,9 @@ def store_order_file_process(date_str, record_folder, output_path,
         dm.item_code,
         dm.sub_code
         FROM vartefact.forecast_dm_orders dm
-        WHERE dm.first_order_date = '{0}'
+        WHERE dm_theme_id=29786
+        and dm.first_order_date < '20191008'
+        and dm.rotaion ='X'
     ) ords
         """.replace("\n", " ").format(run_date.strftime("%Y%m%d"))
 
@@ -229,7 +232,8 @@ def store_order_file_process(date_str, record_folder, output_path,
         AND osi.dept_code = dm.dept_code
         AND osi.item_code = dm.item_code
         AND osi.sub_code =  dm.sub_code
-        AND dm.first_order_date = '{0}'
+        AND dm_theme_id=29786
+        and dm.first_order_date < '20191008'
     LEFT JOIN vartefact.service_level_safety2_vinc sl
         on ord.item_code = sl.item_code
         and  ord.sub_code = sl.sub_code
@@ -446,7 +450,8 @@ def dc_order_file_process(date_str, record_folder, output_path, dc_order_filenam
     FROM vartefact.forecast_dc_orders ord
     LEFT JOIN vartefact.forecast_dm_dc_orders dm ON ord.item_id = dm.item_id
         AND ord.sub_id = dm.sub_id
-        AND dm.first_order_date = '{0}'
+        AND dm_theme_id=29786
+        and dm.first_order_date < '20191008'
     LEFT JOIN vartefact.service_level_safety2_vinc sl ON ord.item_code = sl.item_code
         AND ord.sub_code = sl.sub_code
         AND ord.dept_code = sl.dept_code

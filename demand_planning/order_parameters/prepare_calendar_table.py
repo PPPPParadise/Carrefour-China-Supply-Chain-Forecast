@@ -36,7 +36,7 @@ nestle_skip_order_day = [datetime.date(2019, 9, 13),datetime.date(2019, 10, 1),d
 
 pg_skip_order_day = [datetime.date(2019, 10, 3),datetime.date(2019, 10, 7)]
 
-un_skip_order_day = [datetime.date(2019, 9, 13), datetime.date(2019, 10, 1)]
+un_skip_order_day = [datetime.date(2019, 9, 13), datetime.date(2019, 10, 1), datetime.date(2019, 10, 4)]
 
 # +
 start_day = datetime.date(2017, 1, 1)

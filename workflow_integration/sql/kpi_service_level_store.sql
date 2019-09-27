@@ -34,6 +34,7 @@ SELECT
     pdo.qty_per_pack,
     pdo.order_qty * pdo.ord_unit_qty as order_qty_in_sku,
     id.con_holding as holding_code,
+    id.rotation,
     case 
         when id.dc_supplier_code = 'KSSE' then 'Y'
         when id.dc_supplier_code = 'KXS1' then 'Y' 
@@ -70,7 +71,8 @@ select
     qty_per_pack,
     order_qty_in_sku,
     holding_code,
-    piece_picking
+    piece_picking,
+    rotation
 from order_qty_tb
 where row_ = 1
 group by 
@@ -88,7 +90,8 @@ group by
     qty_per_pack,
     order_qty_in_sku,
     holding_code,
-    piece_picking
+    piece_picking,
+    rotation
 ),
 
 store_receive as (
@@ -133,7 +136,8 @@ select
     s_ord.order_qty_in_sku,
     coalesce(s_rec.delivery_qty_in_sku, 0) as delivery_qty_in_sku,
     s_ord.holding_code,
-    s_ord.piece_picking
+    s_ord.piece_picking,
+    s_ord.rotation
 
 from order_qty_clean s_ord
 
@@ -155,6 +159,7 @@ select
     dept_code,
     holding_code,
     piece_picking,
+    rotation,
     sum(order_qty_in_sku) as order_qty_in_sku_sum, 
     sum(delivery_qty_in_sku) as delivery_qty_in_sku_sum,
     count(1) as orders_count,
@@ -174,7 +179,8 @@ group by
     sub_code, 
     dept_code,
     holding_code,
-    piece_picking
+    piece_picking,
+    rotation
 )
 
 select * 

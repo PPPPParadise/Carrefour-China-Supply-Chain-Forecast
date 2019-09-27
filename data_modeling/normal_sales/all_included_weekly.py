@@ -210,6 +210,91 @@ def main():
     spark_df = spark_df.withColumn("order_prediction", spark_df["order_prediction"].cast(FloatType()))
     spark_df = spark_df.withColumn("store_code", lpad(spark_df['store_code'],3,'0'))
     spark_df.write.mode('overwrite').saveAsTable(f"{config['database']}.result_forecast_10w_on_the_fututre")
+
+    sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """
+    impalaexec(sql)
+    print('csv saved in the table')
+
+    sql = f'''
+    with
+        latest_prediction as (
+            select
+                *
+            from {config['database']}.result_forecast_10w_on_the_fututre
+        ),
+        week_key_list as (
+            select
+                distinct
+                week_key
+            from latest_prediction
+        ),
+        count_predict_week_number as (
+            select
+                item_id, sub_id, store_code,
+                count(distinct week_key) as week_number
+            from latest_prediction
+            group by item_id, sub_id, store_code
+        ),
+        get_missing_item_list as (
+            select
+                distinct
+                item_id,
+                sub_id,
+                store_code
+            from count_predict_week_number
+            where week_number != 10
+        ),
+        get_missed_item_full_list as (
+            select
+                get_missing_item_list.item_id,
+                get_missing_item_list.sub_id,
+                get_missing_item_list.store_code,
+                week_key_list.week_key
+            from get_missing_item_list
+            left join week_key_list
+                on 1=1
+        ),
+        get_missing_item_week_list as (
+            select
+                distinct
+                item_id,
+                sub_id,
+                store_code,
+                week_key
+            from latest_prediction
+            where item_id in (select item_id from get_missing_item_list)
+        ),
+        get_final_list as (
+            select
+                get_missed_item_full_list.item_id,
+                get_missed_item_full_list.sub_id,
+                get_missed_item_full_list.store_code,
+                get_missed_item_full_list.week_key,
+                missed.item_id as m_item_id,
+                missed.week_key as m_week_key
+            from get_missed_item_full_list
+            left join get_missing_item_week_list missed
+                on  missed.item_id  = get_missed_item_full_list.item_id
+                and missed.sub_id = get_missed_item_full_list.sub_id
+                and missed.week_key = get_missed_item_full_list.week_key
+                and missed.store_code = get_missed_item_full_list.store_code
+        )
+    insert into {config['database']}.result_forecast_10w_on_the_fututre 
+    select
+        concat(cast(item_id as string),'_',cast(sub_id as string)) as full_item,
+        store_code,
+        week_key,
+        0 as train_mape_score,
+        0 as sales_prediction,
+        0 as predict_sales_error_squared,
+        0 as max_confidence_interval,
+        0 as order_prediction,
+        item_id,
+        sub_id
+    from get_final_list
+    where m_item_id is null
+    '''
+    df_get_final_list2 = spark.sql(sql).toPandas()
     spark.stop()
 
     sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """

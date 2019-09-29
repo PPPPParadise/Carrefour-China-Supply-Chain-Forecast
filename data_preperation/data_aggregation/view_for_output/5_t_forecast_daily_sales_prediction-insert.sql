@@ -1,4 +1,4 @@
-insert into {database}.t_forecast_daily_sales_prediction 
+insert OVERWRITE {database}.t_forecast_daily_sales_prediction 
 partition(date_key)
 SELECT reg.item_id,
 	reg.sub_id,
@@ -27,5 +27,6 @@ LEFT OUTER JOIN {database}.forecast_daily_dm_view  dm
 	AND reg.sub_id 		= dm.sub_id
 	AND reg.store_code 	= dm.store_code
 	AND reg.date_key 	= dm.date_key
-	AND reg.date_key 	> '{ending_date}'
-    
+	and dm.dm_theme_id != 29690
+where 
+	reg.date_key > '{ending_date}'

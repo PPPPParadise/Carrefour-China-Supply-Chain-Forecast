@@ -60,7 +60,7 @@ def get_store_to_dc_day(row):
 # +
 warnings.filterwarnings('ignore')
 
-excel_input = pd.read_excel('East Parameter 20190920.xlsx', 'Detail', header=0, dtype=str).fillna("")
+excel_input = pd.read_excel('East Parameter 20190927.xlsx', 'Detail', header=0, dtype=str).fillna("")
 
 store_delivery = pd.read_excel('store_delivery_time.xlsx', 'Sheet1', header=0, dtype=str).fillna("")
 # -
@@ -69,11 +69,13 @@ store_delivery = pd.read_excel('store_delivery_time.xlsx', 'Sheet1', header=0, d
 
 store_items = excel_input[["Store", "Dept", "Item code", "sub code", "CN Name", "Store Status",
                    "Main Supplier", "DS Supplier", "Order day", "LT" , "Order by",
-                   "Qty/Pack", "Pack/Box", "DC Status", "Rotation", "ItemType", "OrigItemType", "Risk Item (Unilever)"]].drop_duplicates().reset_index(drop=True)
+                   "Qty/Pack", "Pack/Box", "DC_status", "Rotation", "ItemType", "OrigItemType", 
+                    "Risk Item (Unilever)", "Item inputdate"]].drop_duplicates().reset_index(drop=True)
 
 store_items.columns = ["store_code", "dept_code", "item_code", "sub_code", "cn_name", "store_status",
                    "dc_supplier_code", "ds_supplier_code", "order_day", "lead_time", "order_by",
-                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "item_type", "orig_item_type", "risk_item_unilever"]
+                   "qty_per_pack", "pack_per_box", "dc_status", "rotation", "item_type", "orig_item_type",
+                    "risk_item_unilever", "item_inputdate"]
 
 store_items['qty_per_unit'] = store_items.apply(get_qty_per_unit, axis = 1)
 

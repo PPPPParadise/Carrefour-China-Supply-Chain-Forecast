@@ -411,8 +411,8 @@ create view vartefact.v_forecast_inscope_dc_item_details as (
         AND dc.item_code = id.item_code
         AND dc.sub_code = id.sub_code
     where
-        dc.dc_status != 'Stop'
-        AND dc.item_type not in ('New','Company Purchase','Seasonal')
+        id.dc_status != 'Stop'
+        AND id.item_type not in ('New','Company Purchase','Seasonal')
 )
 
     

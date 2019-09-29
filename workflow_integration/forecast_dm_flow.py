@@ -63,7 +63,6 @@ order_output_folder = Variable.get("order_output_folder")
 store_order_file = Variable.get("store_order_file_name")
 
 
-############################### Config ##########################
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 18, 2, 0),
@@ -75,15 +74,20 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
+
 dag = DAG('forecast_dm_flow',
 schedule_interval='0 2 * * 0 0',
    default_args=default_args, catchup=False)
 
+
+############################### Config ##########################
 config = {}
 config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
+config['incremental'] = True
 config['starting_date'] = 20170101
+# config['ending_date'] = 20170107
 ###############################  End  ##########################
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])
@@ -922,13 +926,22 @@ def step_promo_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   # # house table
-   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
-                              set_timeperiod=True,database='config',dropfirst=False)
 
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
+
+
+# house_table
+# execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
+#                            f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql')
+insert_house_table = PythonOperator(task_id="insert_house_table",
+                              python_callable=execute_impala_by_sql_file,
+                              provide_context=True,
+                              op_kwargs={'table_name': "t_forecast_daily_sales_prediction",
+                                 'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
+                                 'set_timeperiod':True,'database':'config','dropfirst':False},
+                              dag=dag)
+insert_house_table.set_upstream(step_promo_to_day_5)
 

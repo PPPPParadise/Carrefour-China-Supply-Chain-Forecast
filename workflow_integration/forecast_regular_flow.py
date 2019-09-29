@@ -47,7 +47,6 @@ store_order_file = Variable.get("store_order_file_name")
 
 # airflow backfill forecast_normal_dm_flow -s 2019-08-19 -e 2019-08-21
 
-############################### Config ##########################
 default_args = {
     'owner': 'Carrefour',
     'start_date': datetime.datetime(2019, 8, 13),
@@ -60,18 +59,19 @@ default_args = {
     'end_date': datetime.datetime(2030, 1, 1),
 }
 
+
 dag = DAG('forecast_regular_flow',
           schedule_interval='0 2 * * 2 0',
           default_args=default_args, catchup=False)
 
+
+############################### Config ##########################
 config = {}
 config['database'] = 'vartefact'
 config['parent_path'] = "/data/jupyter/Carrefour-China-Supply-Chain-Forecast"
 config['config_data_path'] = config['parent_path'] + "/config/input_config_data" 
 config['starting_date'] = 20170101
 ###############################  End  ##########################
-
-
 os.chdir(config['parent_path'])
 sys.path.append(config['parent_path'])
 
@@ -770,11 +770,6 @@ def step_normal_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/2_daily_normal_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
-   # # house table
-   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
-                              f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
-                              set_timeperiod=True,database='config',dropfirst=False)
-
 step_normal_to_day_5 = PythonOperator(task_id="step_normal_to_day_5",
                            python_callable=step_normal_to_day_5_output_table,
                            dag=dag)

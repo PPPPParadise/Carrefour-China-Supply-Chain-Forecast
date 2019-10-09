@@ -38,7 +38,7 @@ def write_forecast_file(con_holding, supplier_name, forecast_file,
     wb = Workbook()
     ws = wb.active
     ws.append(
-        ['Supplier_name', 'Barcode', 'Department_code', 'Item_code',
+        ['Rotation', 'Supplier_name', 'Barcode', 'Department_code', 'Item_code',
          'Sub_code', 'Item_desc_chn', 'Item_desc_eng',
          f'Week1_{date_str_list[0]}_Permanent_Box', f'Week1_{date_str_list[0]}_DM_Box',
          f'Week2_{date_str_list[1]}_Permanent_Box', f'Week2_{date_str_list[1]}_DM_Box',
@@ -51,7 +51,7 @@ def write_forecast_file(con_holding, supplier_name, forecast_file,
          f'Week9_{date_str_list[8]}_Permanent_Box', f'Week9_{date_str_list[8]}_DM_Box'])
 
     for index, row in items_df[items_df["holding_code"] == con_holding].iterrows():
-        ws.append([supplier_name, row.primary_barcode,
+        ws.append([row.rotation, supplier_name, row.primary_barcode,
                    row.dept_code, row.item_code, row.sub_code, row.item_name_local, row.item_name_english,
                    get_order_qty(all_regular_forecast, row, date_str_list[0]), get_dm_qty(all_dm_forecast, row, date_str_list[0]),
                    get_order_qty(all_regular_forecast, row, date_str_list[1]), get_dm_qty(all_dm_forecast, row, date_str_list[1]),
@@ -109,6 +109,7 @@ def forecast_file_process(date_str, record_folder, output_folder, forecast_file_
 
     items_sql = """
         SELECT
+            dc.rotation,
             dc.holding_code,
             dc.primary_barcode,
             dc.dept_code,

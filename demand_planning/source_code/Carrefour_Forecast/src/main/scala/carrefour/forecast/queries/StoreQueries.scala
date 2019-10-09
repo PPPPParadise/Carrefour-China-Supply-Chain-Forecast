@@ -377,8 +377,14 @@ object StoreQueries {
         on ord.item_id = itmd.item_id
         and ord.sub_id = itmd.sub_id
         and ord.store_code = itmd.store_code
+    left outer join vartefact.forecast_dm_orders dm
+        on dm.item_id = ord.item_id
+        and dm.sub_id = ord.sub_id
+        and dm.store_code = ord.store_code
+        and dm.first_order_date = ord.order_day
     WHERE ord.order_day >= '${startDateStr}'
         AND ord.order_day <= '${endDateStr}'
+        AND dm.order_qty is null
     """
   }
 }

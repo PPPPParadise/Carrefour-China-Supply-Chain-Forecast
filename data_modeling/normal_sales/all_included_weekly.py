@@ -115,6 +115,7 @@ def main():
         .config("spark.num.executors", '10') \
         .config("spark.executor.memory", '15G') \
         .config("spark.executor.cores", '20') \
+        .config("spark.sql.crossJoin.enable", True) \
         .enableHiveSupport() \
         .getOrCreate()
 

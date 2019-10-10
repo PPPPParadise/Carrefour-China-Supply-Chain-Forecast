@@ -47,7 +47,7 @@ sqlc = SQLContext(sc)
 record_folder = "/data/jupyter/ws_house/"
 
 # +
-run_date_str = "20190930"
+run_date_str = "20191006"
 
 date_str = run_date_str
 
@@ -173,7 +173,8 @@ onstock_store['four_weeks_after_dm'] = onstock_store['four_weeks_after_dm'].fill
 
 onstock_store['service_level'] = onstock_store['service_level'].fillna(1)
 
-onstock_store['total_order'] = onstock_store['order_qty'] + onstock_store['dm_order_qty']
+onstock_store['total_order'] = np.ceil((onstock_store['order_qty_without_pcb'] + onstock_store['dm_order_qty_without_pcb'])
+                                       / onstock_store['qty_per_unit']) * onstock_store['qty_per_unit']
 
 onstock_store['total_order_in_unit'] = onstock_store['total_order'] / onstock_store['qty_per_unit']
 

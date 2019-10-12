@@ -25,8 +25,7 @@ item_id_list_PG AS (
     WHERE holding_code = '693'
     AND store_code IN (SELECT stostocd FROM store_code_list)
     AND dept_code IN ('11', '12')
-    AND date_key >= cast({starting_date} as string)
-    AND date_key < cast({ending_date} as string)
+   
 ),
 item_id_list_Unilever AS (
     SELECT
@@ -36,8 +35,7 @@ item_id_list_Unilever AS (
     WHERE holding_code = '700'
     AND store_code IN (SELECT stostocd FROM store_code_list)
     AND dept_code IN ('11', '12', '14')
-    AND date_key >= cast({starting_date} as string)
-    AND date_key < cast({ending_date} as string)
+  
 ),
 item_id_list_Nestle AS (
     SELECT
@@ -47,8 +45,7 @@ item_id_list_Nestle AS (
     WHERE holding_code = '002'
     AND store_code IN (SELECT stostocd FROM store_code_list)
     AND dept_code IN ('14', '15')
-   AND date_key >= cast({starting_date} as string)
-    AND date_key < cast({ending_date} as string)
+ 
 )
 SELECT
     *

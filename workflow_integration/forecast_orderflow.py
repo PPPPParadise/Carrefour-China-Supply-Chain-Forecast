@@ -18,6 +18,7 @@ from py_scripts.forecast_order_file import dc_order_file_process
 from py_scripts.forecast_check_missing_orders import store_missing_order_process
 from py_scripts.forecast_check_missing_orders import dc_missing_order_process
 from py_scripts.generate_supplier_forecast import forecast_file_process
+from py_scripts.record_supplier_forecast import record_forecast_file_process
 
 project_folder = Variable.get("project_folder").strip()
 record_folder = Variable.get("record_folder").strip()
@@ -103,6 +104,10 @@ def python_generate_forecast_file(ds, **kwargs):
     order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
     forecast_file_process(order_day, record_folder, forecast_output_folder,
                              weekly_forecast_filename)
+    
+def python_record_forecast_file(ds, **kwargs):
+    order_day = get_order_day(kwargs['tomorrow_ds_nodash'])
+    record_forecast_file_process(order_day, record_folder, weekly_forecast_filename)
 
 def show_dag_args(ds, **kwargs):
     logFile = open(f'{log_folder}/forecast_orderflow/ds_{ds}/run_parameter.log', "a")
@@ -177,6 +182,11 @@ generate_forecast_file = PythonOperator(task_id='generate_forecast_file',
                                 provide_context=True,
                                 dag=forecast_orderflow)
 
+record_forecast_file = PythonOperator(task_id='record_forecast_file',
+                                python_callable=python_record_forecast_file,
+                                provide_context=True,
+                                dag=forecast_orderflow)
+
 show_dag_args = PythonOperator(task_id="show_dag_args",
                                python_callable=show_dag_args,
                                provide_context=True,
@@ -195,3 +205,4 @@ check_store_order.set_upstream(generate_store_order_file)
 check_dc_order.set_upstream(generate_dc_order_file)
 generate_forecast_file.set_upstream(check_store_order)
 generate_forecast_file.set_upstream(check_dc_order)
+record_forecast_file.set_upstream(generate_forecast_file)

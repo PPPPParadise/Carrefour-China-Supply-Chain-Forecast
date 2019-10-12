@@ -325,6 +325,20 @@ CREATE TABLE vartefact.forecast_dc_daily_order_files (
 ) PARTITIONED BY (date_key STRING) 
   STORED AS PARQUET
 
+
+CREATE TABLE vartefact.forecast_weekly_forecast_file (
+	week_start_day STRING,
+    con_holding STRING,
+    dept_code STRING,
+    item_code STRING,
+    sub_code STRING,
+    item_desc_chn STRING,
+	order_qty INT,
+	dm_order_qty INT
+) PARTITIONED BY (run_date STRING) 
+  STORED AS PARQUET
+
+
 CREATE TABLE vartefact.foreacst_store_monitor (
     store_code STRING,
     rotation STRING, 

@@ -215,7 +215,7 @@ def main():
     sql = f""" invalidate metadata {config['database']}.result_forecast_10w_on_the_fututre """
     impalaexec(sql)
     print('csv saved in the table')
-
+    spark.conf.set("spark.sql.crossJoin.enabled", True)
     sql = f'''
     with
         latest_prediction as (

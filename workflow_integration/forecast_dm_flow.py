@@ -164,7 +164,7 @@ def execute_impala_by_sql_file(table_name,file_path,set_timeperiod=False,databas
       sql = sql.format(database=database)
    # execute the SQL
    database_table_name = f"{database}.{table_name}"
-   if '_all' not in database_table_name:
+   if ('_all' not in database_table_name) and (database_table_name != 't_forecast_daily_sales_prediction'):
       impalaexec(sql,database_table_name)
    else:
       impalaexec(sql)
@@ -904,7 +904,7 @@ step_promo_to_day_4.set_upstream(step_promo_to_day_3)
 # execute_impala_by_sql_file('forecast_DM_results_to_day',\
 #                            '../sqls/PRED_TO_DAY/3_5forecast_DM_results_to_day.sql', 
 #                            set_timeperiod=True)
-def step_promo_to_day_5_output_table():
+def step_promo_to_day_5_output_table(**kwargs):
    ## create table if not exists
    execute_impala_by_sql_file('forecast_dm_results_to_day_all',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/conversion_week_to_day/3_5forecast_DM_results_to_day_all-create.sql',
@@ -922,21 +922,13 @@ def step_promo_to_day_5_output_table():
    execute_impala_by_sql_file('forecast_daily_normal_view',\
                               f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/4_daily_dm_view.sql',
                               set_timeperiod=False,database='config',dropfirst=False)
+   execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
+                           f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
+                           set_timeperiod=True,database='config',dropfirst=False,ds=kwargs.get('ds'))
 
 step_promo_to_day_5 = PythonOperator(task_id="step_promo_to_day_5",
                            python_callable=step_promo_to_day_5_output_table,
+                           provide_context=True,
                            dag=dag)
 step_promo_to_day_5.set_upstream(step_promo_to_day_4)
 
-
-# house_table
-# execute_impala_by_sql_file('t_forecast_daily_sales_prediction',\
-#                            f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql')
-insert_house_table = PythonOperator(task_id="insert_house_table",
-                              python_callable=execute_impala_by_sql_file,
-                              provide_context=True,
-                              op_kwargs={'table_name': "t_forecast_daily_sales_prediction",
-                                 'file_path':f'{config["parent_path"]}/data_preperation/data_aggregation/view_for_output/5_t_forecast_daily_sales_prediction-insert.sql',
-                                 'set_timeperiod':True,'database':'config','dropfirst':False},
-                              dag=dag)
-insert_house_table.set_upstream(step_promo_to_day_5)

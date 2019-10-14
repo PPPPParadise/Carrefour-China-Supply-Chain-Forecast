@@ -184,21 +184,21 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
                 then 'Missing stock in table fds.p4cm_daily_stock'
             when ldd.stock_available_sku is null 
                 then 'Missing stock in table lfms.daily_dcstock'
+            when fdls.avg_sales_qty is null 
+                then 'Missing average sales in table lfms.ord'
             else 'Others'
             END as reason
         from
-            vartefact.forecast_dc_latest_sales fdls
-        JOIN vartefact.forecast_dc_order_delivery_mapping dodm 
-            ON dodm.con_holding = fdls.con_holding
-            AND dodm.order_date = '{0}'
-        JOIN vartefact.v_forecast_inscope_dc_item_details itm ON fdls.item_code = itm.item_code
-            AND fdls.sub_code = itm.sub_code
-            AND fdls.dept_code = itm.dept_code
-            AND dodm.risk_item_unilever = itm.risk_item_unilever
+            vartefact.v_forecast_inscope_dc_item_details itm
+        JOIN vartefact.forecast_dc_order_delivery_mapping dodm
+            on dodm.risk_item_unilever = itm.risk_item_unilever
             AND dodm.con_holding = itm.holding_code
-            AND itm.rotation != 'X'
+            AND dodm.order_date = '{0}'
         JOIN vartefact.forecast_calendar ord
             on ord.date_key = dodm.order_date
+        LEFT OUTER JOIN vartefact.forecast_dc_latest_sales fdls ON fdls.item_code = itm.item_code
+            AND fdls.sub_code = itm.sub_code
+            AND fdls.dept_code = itm.dept_code
         LEFT join vartefact.forecast_dc_orders ords on itm.dept_code = ords.dept_code
             and itm.item_code = ords.item_code
             and itm.sub_code = ords.sub_code
@@ -218,6 +218,7 @@ def dc_missing_order_process(date_str, record_folder, output_path, dc_missing_fi
             and ldd.dc_site = 'DC1'
         where
             ords.order_qty is null
+            AND itm.rotation != 'X'
         order by
             itm.dept_code,
             itm.item_code,
